@@ -35,7 +35,7 @@
             (string/join " - " strings)
             "Error"))
         (when print-stack?
-          (str "\n" (string/join "\n" (drop 1 (string/split-lines (.-stack err)))))))))
+          (str "\n" (string/join "\n" (string/split-lines (.-stack err))))))))
 
 (defn echo-callback
   "Callback that just echoes the result map. It also asserts the correct
