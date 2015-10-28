@@ -56,7 +56,7 @@
    (remove-ns env/*compiler* ns))
   ([state ns]
    {:pre [(symbol? ns)]}
-   (swap! state update-in [::ana/namespaces] dissoc ns)))
+   (swap! state update-in [:cljs.analyzer/namespaces] dissoc ns)))
 
 (defn map-keys
   [f m]
@@ -423,6 +423,8 @@
   It initializes the repl harness if necessary."
   [opts cb source]
   (init-repl-if-necessary! opts cb)
+  (when (:verbose opts)
+    (debug-prn "Evaluating: " source))
   (try
     (let [expression-form (repl-read-string source)
           opts (valid-opts opts)]
@@ -454,7 +456,8 @@
 
   1. remove the input namespaces from the compiler environment
   2. set *e to nil
-  3. in-ns to cljs.user
+  3. reset the last warning
+  4. in-ns to cljs.user
 
   It accepts a sequence of symbols or strings."
   ([]
@@ -462,5 +465,6 @@
   ([namespaces]
    (doseq [ns namespaces]
      (remove-ns st (symbol ns)))
+   (reset-last-warning!)
    (read-eval-call {} identity "(set! *e nil)")
    (read-eval-call {} identity "(in-ns 'cljs.user)")))

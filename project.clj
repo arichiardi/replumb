@@ -9,7 +9,7 @@
 
   ;; :figwheel {:repl false}
 
-  :clean-targets ^{:protect false} ["resources/public/js/compiled" "resources/private/test/compiled" "target"]
+  :clean-targets ^{:protect false} ["resources/public/js/compiled" "resources/private/test/compiled" :target-path]
   :source-paths ["src/clj"]
 
   :cljsbuild {:builds [{:id "dev"
