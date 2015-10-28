@@ -456,7 +456,8 @@
 
   1. remove the input namespaces from the compiler environment
   2. set *e to nil
-  3. in-ns to cljs.user
+  3. reset the last warning
+  4. in-ns to cljs.user
 
   It accepts a sequence of symbols or strings."
   ([]
@@ -464,5 +465,6 @@
   ([namespaces]
    (doseq [ns namespaces]
      (remove-ns st (symbol ns)))
+   (reset-last-warning!)
    (read-eval-call {} identity "(set! *e nil)")
    (read-eval-call {} identity "(in-ns 'cljs.user)")))
