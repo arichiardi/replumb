@@ -157,3 +157,8 @@
       (is (re-find #"undeclared Var.*_arsenununpa42" (extract-message (unwrap-result (first @results)))) "Evaluating an undefined symbol should")
       (reset! results [])
       (repl/reset-env!))))
+
+(deftest options
+  ;; always check valid-opts-set for supported options
+  (is (= {:verbose :true} (repl/valid-opts {:verbose :true})))
+  (is (= {} (repl/valid-opts {:asdasdasd :kk}))))

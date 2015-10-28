@@ -108,7 +108,7 @@
 (defn valid-opts
   "Extract options according to the valid-opts-set."
   [opts]
-  (into {} (filter (comp valid-opts-set first) @app-env)))
+  (into {} (filter (comp valid-opts-set first) opts)))
 
 (defn env-opts!
   "Reads the map of environment options. Usually these are set when the
@@ -428,6 +428,8 @@
   (try
     (let [expression-form (repl-read-string source)
           opts (valid-opts opts)]
+      (when (:verbose opts)
+        (debug-prn "Evaluating " expression-form " with options " opts))
       (binding [ana/*cljs-warning-handlers* [(partial custom-warning-handler opts cb)]]
         (if (docs/repl-special? expression-form)
           (process-repl-special opts cb expression-form)
@@ -449,6 +451,8 @@
                                                 identity
                                                 ret))))))
     (catch :default e
+      (when (:verbose opts)
+        (debug-prn "Exception caught in read-eval-call: " e))
       (handle-eval-result! opts cb (common/wrap-error e)))))
 
 (defn reset-env!
