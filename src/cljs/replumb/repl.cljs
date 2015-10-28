@@ -279,11 +279,13 @@
                  ns-form
                  (make-base-eval-opts! opts)
                  (fn [error]
+                   (when (:verbose opts)
+                     (debug-prn "Callback in process-require received: " error))
                    (handle-eval-result! opts cb
                                         #(when is-self-require?
                                            (swap! app-env assoc :current-ns restore-ns))
                                         (if error
-                                          (common/wrap-error error)
+                                          error
                                           (common/wrap-success nil))))))))
 
 (defn process-doc
@@ -351,8 +353,8 @@
     (case (first expression-form)
       in-ns (process-in-ns opts cb argument)
       require (process-require opts cb :require (rest expression-form))
-      require-macros (handle-eval-result! opts cb (common/error-keyword-not-supported "require-macros" ex-info-data)) ;; (process-require :require-macros identity (rest expression-form))
-      import (process-require  opts cb :import (rest expression-form))
+      require-macros (process-require opts cb :require-macros (rest expression-form))
+      import (process-require opts cb :import (rest expression-form))
       doc (process-doc cb env argument)
       source (handle-eval-result! opts cb (common/error-keyword-not-supported "source" ex-info-data))                 ;; (println (fetch-source (get-var env argument)))
       pst (process-pst opts cb argument)
@@ -423,8 +425,6 @@
   It initializes the repl harness if necessary."
   [opts cb source]
   (init-repl-if-necessary! opts cb)
-  (when (:verbose opts)
-    (debug-prn "Evaluating: " source))
   (try
     (let [expression-form (repl-read-string source)
           opts (valid-opts opts)]
