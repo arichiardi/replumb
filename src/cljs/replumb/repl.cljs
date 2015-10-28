@@ -56,7 +56,7 @@
    (remove-ns env/*compiler* ns))
   ([state ns]
    {:pre [(symbol? ns)]}
-   (swap! state update-in [::ana/namespaces] dissoc ns)))
+   (swap! state update-in [:cljs.analyzer/namespaces] dissoc ns)))
 
 (defn map-keys
   [f m]
@@ -423,6 +423,8 @@
   It initializes the repl harness if necessary."
   [opts cb source]
   (init-repl-if-necessary! opts cb)
+  (when (:verbose opts)
+    (debug-prn "Evaluating: " source))
   (try
     (let [expression-form (repl-read-string source)
           opts (valid-opts opts)]
