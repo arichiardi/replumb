@@ -154,6 +154,6 @@
       (is (= 1 (count @results)) "Evaluating an undefined symbol should return one message only")
       (is (not (success? (first @results))) "Evaluating an undefined symbol should not succeed")
       (is (valid-eval-error? (unwrap-result (first @results))) "Evaluating an undefined symbol should result in an js/Error")
-      (is #(re-find #"undeclared Var.*_arsenununpa42" (unwrap-result (first @results))) "Evaluating an undefined symbol should")
+      (is (re-find #"undeclared Var.*_arsenununpa42" (extract-message (unwrap-result (first @results)))) "Evaluating an undefined symbol should")
       (reset! results [])
       (repl/reset-env!))))
