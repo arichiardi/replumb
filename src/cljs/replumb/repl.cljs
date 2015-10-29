@@ -220,14 +220,12 @@
 (defn validated-call-back!
   [call-back! res]
   {:pre [(map? res)
-         (or (find res :error) (find res :value))]
-   :post [(map? %)
-          (find % :form)
-          (or (find % :error) (find % :value))
-          (or (and (find % :value) (get % :success?))
-              (and (find % :error) (not (get % :success?))))
-          (or (and (find % :value) (string? (get % :value)))
-              (and (find % :error) (instance? js/Error (get % :error))))]}
+         (find res :form)
+         (or (find res :error) (find res :value))
+         (or (and (find res :value) (get res :success?))
+             (and (find res :error) (not (get res :success?))))
+         (or (and (find res :value) (string? (get res :value)))
+             (and (find res :error) (instance? js/Error (get res :error))))]}
   (call-back! res))
 
 (defn call-side-effect!
@@ -242,8 +240,8 @@
 
 (defn warning-error-map!
   "Checks if there has been a warning and if so will return the correct
-  error map instead of the input one. Notice that if the input map was
-  already an error map, the warning will be ignored."
+  error map instead of the input one. Note that if the input map was
+  already an :error, the warning will be ignored."
   [opts {:keys [value error] :as original-res}]
   (if error
     original-res
