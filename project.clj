@@ -1,4 +1,8 @@
 (defproject replumb "0.1.0-SNAPSHOT"
+  :description "ClojureScript plumbing for your bootstrapped REPLs."
+  :url "https://github.com/clojurex/replumb"
+  :license {:name "Eclipse Public License"
+            :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "1.7.145"]
                  [cljsjs/jqconsole "2.12.0-0"]

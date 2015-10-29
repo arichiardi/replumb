@@ -24,20 +24,17 @@
   ```
 
   It initializes the repl harness if necessary."
-  {:added "0.1.0"}
   ([callback source] (repl/read-eval-call {} callback source))
   ([opts callback source] (repl/read-eval-call opts callback source)))
 
 (defn ^:export get-prompt
   "Retrieves the repl prompt to display, according to the current
   namespace. Returns a string."
-  {:added "0.1.0"}
   []
   (str (repl/current-ns) "=> "))
 
 (defn ^:export error->str
   "Return the message string of the input `js/Error`."
-  {:added "0.1.0"}
   ([error] (common/extract-message error))
   ([error print-stack?] (common/extract-message error print-stack?)))
 
@@ -46,7 +43,6 @@
 
   It returns the content of `:value` in case of success and the content
   of `:error` (a `js/Error`) in case of failure."
-  {:added "0.1.0"}
   [result-map]
   (if (:success? result-map)
     (:value result-map)
@@ -55,12 +51,10 @@
 (defn ^:export success?
   "Given a `result-map`, tells whether the evaluation was successful."
   [result-map]
-  {:added "0.1.0"}
   (:success? result-map))
 
 (defn ^:export result->string
   "Given a `result-map`, returns the result of an evaluation as string."
-  {:added "0.1.0"}
   ([result-map]
    (result->string result-map false))
   ([result-map print-stack?]
