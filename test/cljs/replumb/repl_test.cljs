@@ -157,3 +157,49 @@
       (is (re-find #"undeclared Var.*_arsenununpa42" (extract-message (unwrap-result (first @results)))) "Evaluating an undefined symbol should")
       (reset! results [])
       (repl/reset-env!))))
+
+(deftest options
+  ;; always check valid-opts-set for supported options
+  (is (= {:verbose :true} (repl/valid-opts {:verbose :true})))
+  (is (= {} (repl/valid-opts {:asdasdasd :kk}))))
+
+(deftest macros
+  ;;;;;;;;;;;;;;;;
+  ;; Implementing examples from Mike Fikes work at:
+  ;; http://blog.fikesfarm.com/posts/2015-09-07-messing-with-macros-at-the-repl.html
+  ;; (it's not that I don't trust Mike, you know)
+  ;;;;;;;;;;;;;;;;
+  (let [res (repl/read-eval-call {:verbose true} echo-callback "(defmacro hello [x] `(inc ~x))")
+        out (unwrap-result res)]
+    (is (success? res) "(defmacro hello ..) should succeed")
+    (is (valid-eval-result? out) "(defmacro hello ..) should have a valid result")
+    (is (= "true" out) "(defmacro hello ..) shoud return true")
+    (repl/reset-env!))
+
+  (let [res (do (repl/read-eval-call {} echo-callback "(defmacro hello [x] `(inc ~x))")
+                (repl/read-eval-call {} echo-callback "(hello nil nil 13)"))
+        out (unwrap-result res)]
+    (is (success? res) "Executing (defmacro hello ..) as function should succeed")
+    (is (valid-eval-result? out) "Executing (defmacro hello ..) as function should have a valid result")
+    (is (= "(inc 13)" out) "Executing (defmacro hello ..) as function shoud return (inc 13)")
+    (repl/reset-env!))
+
+  (let [res (do (repl/read-eval-call {} echo-callback "(ns foo.core$macros)")
+                (repl/read-eval-call {} echo-callback "(defmacro hello [x] (prn &form) `(inc ~x))")
+                (repl/read-eval-call {} echo-callback "(foo.core/hello (+ 2 3))"))
+        out (unwrap-result res)]
+    (is (success? res) "Executing (foo.core/hello ..) as function should succeed")
+    (is (valid-eval-result? out) "Executing (foo.core/hello ..) hello ..) as function should have a valid result")
+    (is (= "6" out) "Executing (foo.core/hello ..) hello ..) as function shoud return 6")
+    (repl/reset-env!))
+
+  (let [res (do (repl/read-eval-call {} echo-callback "(ns foo.core$macros)")
+                (repl/read-eval-call {} echo-callback "(defmacro hello [x] (prn &form) `(inc ~x))")
+                (repl/read-eval-call {} echo-callback "(ns another.ns)")
+                (repl/read-eval-call {} echo-callback "(require-macros '[foo.core :refer [hello]])")
+                (repl/read-eval-call {} echo-callback "(hello (+ 2 3))"))
+        out (unwrap-result res)]
+    (is (success? res) "Executing (foo.core/hello ..) as function should succeed")
+    (is (valid-eval-result? out) "Executing (foo.core/hello ..) hello ..) as function should have a valid result")
+    (is (= "6" out) "Executing (foo.core/hello ..) hello ..) as function shoud return 6")
+    (repl/reset-env!)))
