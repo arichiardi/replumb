@@ -172,7 +172,7 @@
   ;; http://blog.fikesfarm.com/posts/2015-09-07-messing-with-macros-at-the-repl.html
   ;; (it's not that I don't trust Mike, you know)
   ;;;;;;;;;;;;;;;;
-  (let [res (repl/read-eval-call {:verbose true} echo-callback "(defmacro hello [x] `(inc ~x))")
+  (let [res (repl/read-eval-call {} echo-callback "(defmacro hello [x] `(inc ~x))")
         out (unwrap-result res)]
     (is (success? res) "(defmacro hello ..) should succeed")
     (is (valid-eval-result? out) "(defmacro hello ..) should have a valid result")
