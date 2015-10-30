@@ -2,38 +2,55 @@
 
 ClojureScript plumbing for your bootstrapped REPLs.
 
-This library tries to ease the burden of talking direcly to ClojureScript ```cljs.js``` and puts together [pieces](https://github.com/kanaka/cljs-bootstrap) [of](https://github.com/mfikes/planck) [work](https://github.com/mfikes/replete) contributed by the ClojureScript community at this points in time. It aspires to be a common starting point for  custom REPLs and/or REPL-ish apps.
+This library tries to ease the burden of talking direcly to ClojureScript ```cljs.js``` and puts together [pieces](https://github.com/kanaka/cljs-bootstrap) [of](https://github.com/mfikes/planck) [work](https://github.com/mfikes/replete) contributed by the ClojureScript community at disparate points in time. It aspires to be a common starting point for  custom REPLs and/or REPL-ish apps (educational interactive environments for instance).
 
-## Contributions
+## Usage
 
-Controbutions are welcome, especially about testing and issue tracking.
+__Leiningen__ ([via Clojars](https://clojars.org/replumb))
 
-#### Figwheel:
+Put the following into the `:dependencies` vector.
 
-This project *TANRTN ```lein fig-dev```  **or** ```lein fig-dev*``` if you want to clean as well.
+[![Clojars Project](http://clojars.org/replumb/latest-version.svg)](http://clojars.org/replumb)
 
-Figwheel will automatically push cljs changes to the browser.
+Then in your code, call directly ```replumb.core```:
 
-Wait a bit, then browse to [http://localhost:3449](http://localhost:3449).
+``` clojure
+(defn handle-result!
+  [console result]
+  (let [write-fn (if (replumb/success? result) console/write-return! console/write-exception!)]
+    (write-fn console (replumb/unwrap-result result))))
 
-## Production Build
+(defn cljs-read-eval-print!
+  [console user-input]
+  (replumb/read-eval-call (partial handle-result! console) user-input))
+```
 
-```lein minify``` **or** ```lein do clean, cljsbuild once min```
+See ```repl-demo``` for an actual implementation using [```jq-console```](https://github.com/replit/jq-console).
 
-## Testing
+## Design
 
-Tests work in the Firefox/Chrome Developer Console also with PhanthomJS, SlimerJS.
+The implementation was designed not to conceal ClojureScript's ```cljs.js/eval``` quirks and idiosyncrasies. Therefore tricks like Mike Fikes' ["Messing with macros at the REPL"](http://blog.fikesfarm.com/posts/2015-09-07-messing-with-macros-at-the-repl.html) are still part of the game and actually implemented as tests.
 
-The former is easier to check: after having booted Figwheel you have to open the Developer Console and run ```luncher.test.run()```. Moreover, tests are executed every time Figwheel reloads.
+This will in the long run be useful for both ```replumb``` and the ```ClojureScript``` community as it will help in finding and fix issues.
 
-First you need [PhantomJS](https://github.com/ariya/phantomjs/) and/or [SlimerJS](http://slimerjs.org/), after which you can: ```lein test-phantom``` and/or ```lein test-slimer``` respectively. Featuring [doo](https://github.com/bensu/doo) here.
-Run ```lein test-slimer``` or ```lein test-phantom```, to run all ```lein tests```
+Another challenge faced during the development was about the asynchronous evaluation response: we were torn between keeping the callback model as per ```cljs.js``` or adopting the novel and cutting-edge channel model of ```core.async```. We did not see any strong evidence for adding channels here, therefore avoiding inflating the artifact size and delegating the choice to client code.
 
-## Docs
+This project adheres to the [SemVer](http://semver.org/) specification.
 
-The documentation tool of choice is [Codox](https://github.com/weavejester/codox). You just need to execute `lein codox` and open `doc/index.html` in order to see the result.
+### Documentation
 
-## Resources
+The documentation referring to the latest version can always be found in the ```doc``` folder.
 
- * [JQConsole](https://github.com/replit/jq-console)
- * [CLJSJS](https://github.com/cljsjs/packages)
+### Contributions
+
+Contributions are welcome, any of them. Have a look at ```CONTRIBUTING.md``` for details.
+
+### Thanks
+
+As [current maintainer](https://github.com/arichiardi) of the project I would like to thank each and every present and future contributor, [Scalac](https://scalac.io) for actively supporting the (Clojure) open source community and [Mikes Fikes](https://github.com/mfikes) for having answered to my incessant questions on Slack and aided in brainstorming the project name. 
+
+### License
+
+Copyright (C) 2015 Scalac Sp. z o.o.
+
+Distributed under the Eclipse Public License, the same as Clojure.
