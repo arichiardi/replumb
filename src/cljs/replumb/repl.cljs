@@ -412,7 +412,6 @@
     (debug-prn "Initializing REPL environment..." ))
   (assert (= cljs.analyzer/*cljs-ns* 'cljs.user))
   (set! *target* "default")
-  (swap! app-env merge (valid-opts opts))
   (set! (.. js/window -cljs -user) #js {}))
 
 (defn update-to-initializing
@@ -445,13 +444,12 @@
   The second parameter cb, should be a 1-arity function which receives
   the result map.
 
-  Therefore, given cb (fn [result] ...), the main map keys are:
+  Therefore, given cb (fn [result-map] ...), the main map keys are:
 
-  ```
-  { :success? ;; a boolean indicating if everything went right
-    :value    ;; (if (success? result)) will contain the actual yield of the evaluation
-    :error    ;; (if (not (success? result)) will contain a js/Error }
-  ```
+  :success? ;; a boolean indicating if everything went right
+  :value    ;; (if (success? result)) will contain the actual yield of the evaluation
+  :error    ;; (if (not (success? result)) will contain a js/Error
+  :form     ;; the evaluated form as data structure (not a string)
 
   It initializes the repl harness if necessary."
   [opts cb source]
@@ -460,8 +458,6 @@
           opts (valid-opts opts)
           data {:form expression-form}]
       (init-repl-if-necessary! opts cb)
-      (when (:verbose opts)
-        (debug-prn "Evaluating: " source))
       (when (:verbose opts)
         (debug-prn "Evaluating " expression-form " with options " opts))
       (binding [ana/*cljs-warning-handlers* [(partial custom-warning-handler opts cb)]]
