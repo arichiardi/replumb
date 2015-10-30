@@ -9,34 +9,35 @@
   :plugins [[lein-cljsbuild "1.1.0"]
             [lein-codox "0.9.0"]]
 
-  ;; :figwheel {:repl false}
-
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "resources/private/test/compiled" :target-path]
-  :source-paths ["src/clj"]
+  :source-paths ["src/cljs"]
 
   :cljsbuild {:builds [{:id "dev"
                         :source-paths ["src/cljs" "repl-demo/cljs" "test/cljs"]
                         :figwheel {:on-jsload "launcher.test/run"
                                    :css-dirs ["resources/public/styles"]}
                         :compiler {:main replumb-repl.core
-                                   :output-to "resources/public/js/compiled/replumb-repl.js"
-                                   :output-dir "resources/public/js/compiled/out"
+                                   :output-to "dev-resources/public/js/compiled/replumb-repl.js"
+                                   :output-dir "dev-resources/public/js/compiled/out"
                                    :asset-path "js/compiled/out"
                                    :optimizations :none
                                    :source-map-timestamp true}}
                        {:id "test"
                         :source-paths ["src/cljs" "test/cljs" "test/doo"]
                         :compiler {:main launcher.runner
-                                   :output-to "resources/private/test/compiled/replumb-repl.js"
+                                   :output-to "dev-resources/private/test/compiled/replumb-repl.js"
                                    :pretty-print false}}
                        {:id "min"
                         :source-paths ["src/cljs"]
                         :compiler { ;; :main cljs-browser-repl.core ;; https://github.com/emezeske/lein-cljsbuild/issues/420
-                                   :output-to "resources/public/js/compiled/replumb-repl.js"
+                                   :output-to "dev-resources/public/js/compiled/replumb-repl.js"
                                    :optimizations :advanced
                                    :pretty-print false
+                                   :elide-asserts true
                                    :externs ["resources/replumb.ext.js"]}}]}
+  ;; :figwheel {:repl false}
 
+  :prep-tasks ["codox"]
   :codox {:language :clojurescript
           :source-paths ["src/cljs"]
           :namespaces [replumb.core]
@@ -45,7 +46,8 @@
 
   :aliases {"fig-dev" ^{:doc "Start figwheel with dev profile."} ["figwheel" "dev"]
             "fig-dev*" ^{:doc "Clean and start figwheel with dev profile"} ["do" "clean" ["figwheel" "dev"]]
-            "minify" ^{:doc "Clean and compile sources minified for production."} ["do" "clean" ["cljsbuild" "once" "min"]]
+            "minify" ^{:doc "Compile sources minified for production."} ["cljsbuild" "once" "min"]
+            "minify*" ^{:doc "Clean and compile sources minified for production."} ["do" "clean" ["cljsbuild" "once" "min"]]
             "deploy" ^{:doc "Clean, compile (minified) sources, test and then deploy."} ["do" "clean" ["test" ":integration"] ["deploy" "clojars"]]
             "test-phantom" ^{:doc "Execute once unit tests with PhantomJS (must be installed)."} ["doo" "phantom" "test" "once"]
             "test-phantom*" ^{:doc "Clean and execute once unit tests with PhantomJS (must be installed)."} ["do" "clean" ["doo" "phantom" "test" "once"]]
