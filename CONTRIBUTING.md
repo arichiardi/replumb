@@ -27,7 +27,7 @@ Wait a bit, then browse to [http://localhost:3449](http://localhost:3449). Figwh
 
 ## Production Build
 
-Reserved for maintainers, but useful for seeing warnings in ```{:optimizations :advanced}``` mode: ```lein minify```.
+Useful for seeing warnings in ```{:optimizations :advanced}``` mode: ```lein minify```.
 
 ## Testing
 
