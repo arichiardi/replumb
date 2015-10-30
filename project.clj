@@ -1,12 +1,10 @@
-(defproject replumb "0.1.0-SNAPSHOT"
+(defproject replumb/replumb "0.1.0-SNAPSHOT"
   :description "ClojureScript plumbing for your bootstrapped REPLs."
   :url "https://github.com/clojurex/replumb"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.7.0"]
-                 [org.clojure/clojurescript "1.7.145"]
-                 [cljsjs/jqconsole "2.12.0-0"]
-                 [reagent "0.5.1"]]
+                 [org.clojure/clojurescript "1.7.145"]]
 
   :plugins [[lein-cljsbuild "1.1.0"]
             [lein-codox "0.9.0"]]
@@ -59,6 +57,8 @@
             "tests*" ^{:doc "Clean and execute once unit tests with PhantomJS and SlimerJS (must be installed)."} ["do" "clean" ["doo" "headless" "test" "once"]]}
 
   :profiles {:dev {:dependencies [[com.cemerick/piggieback "0.1.5"]
-                                  [org.clojure/tools.nrepl "0.2.11"]]
+                                  [org.clojure/tools.nrepl "0.2.11"]
+                                  [cljsjs/jqconsole "2.12.0-0"]
+                                  [reagent "0.5.1"]]
                    :plugins [[lein-doo "0.1.6-SNAPSHOT"]
                              [lein-figwheel "0.4.1" :exclusions [cider/cider-nrepl]]]}})
