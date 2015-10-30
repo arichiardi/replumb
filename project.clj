@@ -11,6 +11,7 @@
 
   :clean-targets ^{:protect false} ["resources/public/js/compiled" "resources/private/test/compiled" :target-path]
   :source-paths ["src/cljs"]
+  :hooks [leiningen.cljsbuild]
 
   :cljsbuild {:builds [{:id "dev"
                         :source-paths ["src/cljs" "repl-demo/cljs" "test/cljs"]
@@ -23,6 +24,11 @@
                                    :optimizations :none
                                    :source-map-timestamp true}}
                        {:id "test"
+                        :source-paths ["src/cljs" "repl-demo/cljs" "test/cljs"]
+                        :compiler {:output-to "dev-resources/private/test/compiled/replumb-repl.js"
+                                   :optimizations :whitespace
+                                   :pretty-print false}}
+                       {:id "doo-test"
                         :source-paths ["src/cljs" "test/cljs" "test/doo"]
                         :compiler {:main launcher.runner
                                    :output-to "dev-resources/private/test/compiled/replumb-repl.js"
@@ -49,14 +55,14 @@
             "minify" ^{:doc "Compile sources minified for production."} ["cljsbuild" "once" "min"]
             "minify*" ^{:doc "Clean and compile sources minified for production."} ["do" "clean" ["cljsbuild" "once" "min"]]
             "deploy" ^{:doc "Clean, compile (minified) sources, test and then deploy."} ["do" "clean" ["test" ":integration"] ["deploy" "clojars"]]
-            "test-phantom" ^{:doc "Execute once unit tests with PhantomJS (must be installed)."} ["doo" "phantom" "test" "once"]
-            "test-phantom*" ^{:doc "Clean and execute once unit tests with PhantomJS (must be installed)."} ["do" "clean" ["doo" "phantom" "test" "once"]]
-            "auto-phantom" ^{:doc "Clean and execute automatic unit tests with PhantomJS (must be installed)."} ["do" "clean" ["doo" "phantom" "test" "auto"]]
-            "test-slimer" ^{:doc "Execute once unit tests with SlimerJS (must be installed)."} ["doo" "slimer" "test" "once"]
-            "test-slimer*" ^{:doc "Clean and execute once unit tests with SlimerJS (must be installed)."} ["do" "clean" ["doo" "slimer" "test" "once"]]
-            "auto-slimer" ^{:doc "Clean and execute automatic unit tests with SlimerJS (must be installed)."} ["do" "clean" ["doo" "slimer" "test" "auto"]]
-            "tests" ^{:doc "Execute once unit tests with PhantomJS and SlimerJS (must be installed)."} ["doo" "headless" "test" "once"]
-            "tests*" ^{:doc "Clean and execute once unit tests with PhantomJS and SlimerJS (must be installed)."} ["do" "clean" ["doo" "headless" "test" "once"]]}
+            "test-phantom" ^{:doc "Execute once unit tests with PhantomJS (must be installed)."} ["doo" "phantom" "doo-test" "once"]
+            "test-phantom*" ^{:doc "Clean and execute once unit tests with PhantomJS (must be installed)."} ["do" "clean" ["doo" "phantom" "doo-test" "once"]]
+            "auto-phantom" ^{:doc "Clean and execute automatic unit tests with PhantomJS (must be installed)."} ["do" "clean" ["doo" "phantom" "doo-test" "auto"]]
+            "test-slimer" ^{:doc "Execute once unit tests with SlimerJS (must be installed)."} ["doo" "slimer" "doo-test" "once"]
+            "test-slimer*" ^{:doc "Clean and execute once unit tests with SlimerJS (must be installed)."} ["do" "clean" ["doo" "slimer" "doo-test" "once"]]
+            "auto-slimer" ^{:doc "Clean and execute automatic unit tests with SlimerJS (must be installed)."} ["do" "clean" ["doo" "slimer" "doo-test" "auto"]]
+            "tests" ^{:doc "Execute once unit tests with PhantomJS and SlimerJS (must be installed)."} ["doo" "headless" "doo-test" "once"]
+            "tests*" ^{:doc "Clean and execute once unit tests with PhantomJS and SlimerJS (must be installed)."} ["do" "clean" ["doo" "headless" "doo-test" "once"]]}
 
   :profiles {:dev {:dependencies [[com.cemerick/piggieback "0.1.5"]
                                   [org.clojure/tools.nrepl "0.2.11"]
