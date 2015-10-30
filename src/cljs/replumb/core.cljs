@@ -15,12 +15,13 @@
   The second parameter `cb`, should be a 1-arity function which receives
   the result map.
 
-  Therefore, given a callback `(fn [result] ...)`, the result keys are:
+  Therefore, given a callback `(fn [result-map] ...)`, the result keys are:
 
   ```
-  { :success? ;; a boolean indicating if everything went right
-    :value    ;; (if (success? result)) will contain the actual yield of the evaluation
-    :error    ;; (if (not (success? result)) will contain a js/Error }
+  :success? ;; a boolean indicating if everything went right
+  :value    ;; (if (success? result)) will contain the actual yield of the evaluation
+  :error    ;; (if (not (success? result)) will contain a js/Error
+  :form     ;; the evaluated form as data structure (not a string)
   ```
 
   It initializes the repl harness if necessary."
