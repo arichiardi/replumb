@@ -61,4 +61,4 @@
   ([result-map print-stack?]
    (if (:success? result-map)
      (:value result-map)
-     (common/extract-message (:error result-map) print-stack?))))
+     (error->str (:error result-map) print-stack?))))
