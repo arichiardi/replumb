@@ -79,20 +79,29 @@
 (defn resolve
   "From cljs.analizer.api.clj. Given an analysis environment resolve a
   var. Analogous to clojure.core/resolve"
-  [env sym]
+  [opts env sym]
   {:pre [(map? env) (symbol? sym)]}
   (try
-    (ana/resolve-var env sym
-      (ana/confirm-var-exists-throw))
-    (catch :default _
-      (ana/resolve-macro-var env sym))))
+    (when (:verbose opts)
+      (debug-prn "Calling cljs.analyzer/resolve-var..."))
+    (ana/resolve-var env sym ana/confirm-var-exist-warning)
+    (catch :default e
+      (when (:verbose opts)
+        (debug-prn "Exception caught in resolve: " e))
+      (try
+        (when (:verbose opts)
+          (debug-prn "Calling cljs.analyzer/resolve-macro-var..."))
+        (ana/resolve-macro-var env sym)
+        (catch :default e
+          (when (:verbose opts)
+            (debug-prn "Exception caught in resolve: " e)))))))
 
 (defn get-var
-  [env sym]
-  (let [var (with-compiler-env st (resolve env sym))
+  [opts env sym]
+  (let [var (with-compiler-env st (resolve opts env sym))
         var (or var
               (if-let [macro-var (with-compiler-env st
-                                   (resolve env (symbol "cljs.core$macros" (name sym))))]
+                                   (resolve opts env (symbol "cljs.core$macros" (name sym))))]
                 (update (assoc macro-var :ns 'cljs.core)
                   :name #(symbol "cljs.core" (name %)))))]
     (if (= (namespace (:name var)) (str (:ns var)))
@@ -332,7 +341,7 @@
                  (cond
                    (docs/special-doc-map sym) (repl/print-doc (docs/special-doc sym))
                    (docs/repl-special-doc-map sym) (repl/print-doc (docs/repl-special-doc sym))
-                   :else (repl/print-doc (get-var env sym)))))))
+                   :else (repl/print-doc (get-var opts env sym)))))))
 
 (defn process-pst
   [opts cb data expr]
