@@ -11,17 +11,36 @@
   supporting:
 
   * `:verbose` will enable the the evaluation logging, defaults to false.
+  * `:load-fn!` will override ClojureScript's default \\*load-fn\\*.
+    It is a two-arity (fn [map cb] ...) were map will contain:
 
-  The second parameter `cb`, should be a 1-arity function which receives
-  the result map.
+      ```
+      :name    ;; the name of the library (a symbol)
+      :macros  ;; modifier signaling a macros namespace load
+      :path    ;; munged relative library path (a string)
+      ```
+    Upon resolution the callback should be invoked with a map
+    containing the following keys:
 
-  Therefore, given a callback `(fn [result-map] ...)`, the result keys are:
+      ```
+      :lang       ;; the language, :clj or :js
+      :source     ;; the source of the library (a string)
+      :cache      ;; optional, if a :clj namespace has been precompiled to :js, can
+                     give an analysis cache for faster loads.
+      :source-map ;; optional, if a :clj namespace has been precompiled to :js, can
+                     give a V3 source map JSON
+      ```
+    If the resource could not be resolved, the callback should be invoked with
+    nil. See ClojureScript's `cljs.js` namespace for further details.
+
+  The second parameter, `callback`, should be a 1-arity function which receives
+  the result map, whose result keys will be:
 
   ```
-  :success? ;; a boolean indicating if everything went right
-  :value    ;; (if (success? result)) will contain the actual yield of the evaluation
-  :error    ;; (if (not (success? result)) will contain a js/Error
-  :form     ;; the evaluated form as data structure (not a string)
+  :success?  ;; a boolean indicating if everything went right
+  :value     ;; (if (success? result)) will contain the actual yield of the evaluation
+  :error     ;; (if (not (success? result)) will contain a js/Error
+  :form      ;; the evaluated form as data structure (not a string)
   ```
 
   It initializes the repl harness if necessary."

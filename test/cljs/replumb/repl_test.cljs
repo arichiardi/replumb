@@ -150,7 +150,6 @@
     (repl/reset-env! ['c.ns 'd.ns])))
 
 (deftest warnings
-
   (let [results (atom [])
         swapping-callback (partial repl/validated-call-back! (fn [r] (swap! results conj r)))]
     (let [rs (repl/read-eval-call {} swapping-callback "_arsenununpa42")]
@@ -194,7 +193,7 @@
     (is (success? res) "Executing (foo.core/hello ..) as function should succeed")
     (is (valid-eval-result? out) "Executing (foo.core/hello ..) hello ..) as function should have a valid result")
     (is (= "6" out) "Executing (foo.core/hello ..) hello ..) as function shoud return 6")
-    (repl/reset-env!))
+    (repl/reset-env! ["foo.core$macros"]))
 
   (let [res (do (repl/read-eval-call {} echo-callback "(ns foo.core$macros)")
                 (repl/read-eval-call {} echo-callback "(defmacro hello [x] (prn &form) `(inc ~x))")
@@ -205,4 +204,14 @@
     (is (success? res) "Executing (foo.core/hello ..) as function should succeed")
     (is (valid-eval-result? out) "Executing (foo.core/hello ..) hello ..) as function should have a valid result")
     (is (= "6" out) "Executing (foo.core/hello ..) hello ..) as function shoud return 6")
-    (repl/reset-env!)))
+    (repl/reset-env! ["foo.core$macros"])))
+
+(deftest load-fn
+  (let [load-map-atom (atom {})
+        custom-load-fn (fn [load-map cb] (reset! load-map-atom load-map) (cb {:lang :js}))]
+    (let [rs (repl/read-eval-call {:load-fn! custom-load-fn :verbose true} echo-callback "(require 'bar.core)")]
+      (is (= 'bar.core (:name @load-map-atom)) "Loading map with custom function should have correct :name")
+      (is (not (:macros @load-map-atom)) "Loading map with custom function should have correct :macros")
+      (is (= "bar/core" (:path @load-map-atom)) "Loading map with custom function should have correct :path")
+      (reset! load-map-atom {})
+      (repl/reset-env! ["bar.core"]))))

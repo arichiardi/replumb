@@ -3,13 +3,27 @@
 <p>The first parameter is a map of configuration options, currently supporting:</p>
 <ul>
   <li><code>:verbose</code> will enable the the evaluation logging, defaults to false.</li>
+  <li><code>:load-fn!</code> will override ClojureScript&rsquo;s default *load-fn*.  It is a two-arity (fn [map cb] &hellip;) were map will contain:
+    <pre><code>:name    ;; the name of the library (a symbol)
+:macros  ;; modifier signaling a macros namespace load
+:path    ;; munged relative library path (a string)
+</code></pre>
+    <p>Upon resolution the callback should be invoked with a map  containing the following keys:</p>
+    <pre><code>:lang       ;; the language, :clj or :js
+:source     ;; the source of the library (a string)
+:cache      ;; optional, if a :clj namespace has been precompiled to :js, can
+               give an analysis cache for faster loads.
+:source-map ;; optional, if a :clj namespace has been precompiled to :js, can
+               give a V3 source map JSON
+</code></pre>
+    <p>If the resource could not be resolved, the callback should be invoked with  nil. See ClojureScript&rsquo;s <code>cljs.js</code> namespace for further details.</p>
+  </li>
 </ul>
-<p>The second parameter <code>cb</code>, should be a 1-arity function which receives the result map.</p>
-<p>Therefore, given a callback <code>(fn [result-map] ...)</code>, the result keys are:</p>
-<pre><code>:success? ;; a boolean indicating if everything went right
-:value    ;; (if (success? result)) will contain the actual yield of the evaluation
-:error    ;; (if (not (success? result)) will contain a js/Error
-:form     ;; the evaluated form as data structure (not a string)
+<p>The second parameter, <code>callback</code>, should be a 1-arity function which receives the result map, whose result keys will be:</p>
+<pre><code>:success?  ;; a boolean indicating if everything went right
+:value     ;; (if (success? result)) will contain the actual yield of the evaluation
+:error     ;; (if (not (success? result)) will contain a js/Error
+:form      ;; the evaluated form as data structure (not a string)
 </code></pre>
 <p>It initializes the repl harness if necessary.</p></div></div></div><div class="public anchor" id="var-result-.3Estring"><h3>result-&gt;string</h3><div class="usage"><code>(result-&gt;string result-map)</code><code>(result-&gt;string result-map print-stack?)</code></div><div class="doc"><div class="markdown"><p>Given a <code>result-map</code>, returns the result of an evaluation as string.</p></div></div></div><div class="public anchor" id="var-success.3F"><h3>success?</h3><div class="usage"><code>(success? result-map)</code></div><div class="doc"><div class="markdown"><p>Given a <code>result-map</code>, tells whether the evaluation was successful.</p></div></div></div><div class="public anchor" id="var-unwrap-result"><h3>unwrap-result</h3><div class="usage"><code>(unwrap-result result-map)</code></div><div class="doc"><div class="markdown"><p>Unwraps the result of an evaluation.</p>
 <p>It returns the content of <code>:value</code> in case of success and the content of <code>:error</code> (a <code>js/Error</code>) in case of failure.</p></div></div></div></div></body></html>
