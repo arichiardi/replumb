@@ -106,7 +106,7 @@
   "Set of valid option for external input validation:
 
   * :verbose If true, enables more traces."
-  #{:verbose :load-fn!})
+  #{:verbose :load-fn! :no-warning-error})
 
 (defn valid-opts
   "Extract options according to the valid-opts-set."
@@ -240,9 +240,11 @@
 (defn warning-error-map!
   "Checks if there has been a warning and if so will return the correct
   error map instead of the input one. Note that if the input map was
-  already an :error, the warning will be ignored."
+  already an :error, the warning will be ignored.
+  If :no-warning-error is true in opts the warning remains a warning,
+  not emitting errors."
   [opts {:keys [value error] :as original-res}]
-  (if error
+  (if (or error (:no-warning-error opts))
     original-res
     (if-let [warning-msg (:last-eval-warning @app-env)]
       (let [warning-error (ex-info warning-msg ex-info-data)]
@@ -265,13 +267,14 @@
     both success and error, effectively disabling the individual
     on-success!  and on-error!
 
-  Call-back! also supports the following opts:
+  Call-back! supports the following opts:
 
   * :verbose will enable the the evaluation logging, defaults to false.
   * :no-pr-str-on-value avoids wrapping successful value in a pr-str
+  * :no-warning-error will consider a warning like a warning, not
+  emitting errors
 
-  Notes
-
+  Notes:
   1. The opts map passed here overrides the environment options.
   2. This function will also clear the :last-eval-warning flag in
   app-env.
@@ -325,7 +328,9 @@
 
 (defn process-doc
   [opts cb data env sym]
-  (call-back! {:no-pr-str-on-value true} cb data
+  (call-back! (merge opts {:no-pr-str-on-value true})
+              cb
+              data
               (common/wrap-success
                (with-out-str
                  (cond

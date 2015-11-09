@@ -157,8 +157,17 @@
       (is (= 1 (count @results)) "Evaluating an undefined symbol should return one message only")
       (is (not (success? (first @results))) "Evaluating an undefined symbol should not succeed")
       (is (valid-eval-error? (unwrap-result (first @results))) "Evaluating an undefined symbol should result in an js/Error")
-      (is (re-find #"undeclared Var.*_arsenununpa42" (extract-message (unwrap-result (first @results)))) "Evaluating an undefined symbol should")
+      (is (re-find #"undeclared Var.*_arsenununpa42" (extract-message (unwrap-result (first @results)))) "Evaluating an undefined symbol should return undeclared Var")
       (reset! results [])
+      (repl/reset-env!))
+    (let [rs (repl/read-eval-call {:no-warning-error true} swapping-callback "!asdasd43")]
+      (is (= 1 (count @results)) "Evaluating an undefined symbol should return one message only")
+      (is (success? (first @results)) "Evaluating an undefined symbol with :no-warning-error should succeed")
+      (is (valid-eval-result? (unwrap-result (first @results))) "Evaluating an undefined symbol with :no-warning-error should result in an js/Error")
+      (is (=  "nil" (unwrap-result (first @results))) "Evaluating an undefined with :no-warning-error symbol should return nil")
+      (reset! results [])
+
+
       (repl/reset-env!))))
 
 (deftest options
