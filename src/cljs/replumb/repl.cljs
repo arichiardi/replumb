@@ -101,6 +101,13 @@
       (update var :name #(symbol (name %)))
       var)))
 
+(def replumb-repl-special-set
+  '#{in-ns require require-macros import load-file doc source pst})
+
+(defn repl-special?
+  [form]
+  (and (seq? form) (replumb-repl-special-set (first form))))
+
 (def valid-opts-set
   "Set of valid option for external input validation:
 
@@ -461,7 +468,7 @@
       (when (:verbose opts)
         (debug-prn "Evaluating " expression-form " with options " opts))
       (binding [ana/*cljs-warning-handlers* [(partial custom-warning-handler opts cb)]]
-        (if (docs/repl-special? expression-form)
+        (if (repl-special? expression-form)
           (process-repl-special opts cb data expression-form)
           (cljs/eval-str st
                          source
