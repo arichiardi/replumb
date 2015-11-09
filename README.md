@@ -1,4 +1,6 @@
-# replumb 
+[![Build Status](https://travis-ci.org/ScalaConsultants/replumb.svg?branch=travis)](https://travis-ci.org/ScalaConsultants/replumb)
+
+# replumb
 
 
 Replum (*'rɛplʌm*) is a plumbing library for your [bootstrapped](https://en.m.wikipedia.org/wiki/Bootstrapping_%28compilers%29) ClojureScript Read-Eval-Print-Loops.
