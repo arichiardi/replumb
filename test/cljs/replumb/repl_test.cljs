@@ -174,6 +174,7 @@
   ;; always check valid-opts-set for supported options
   (is (= (get :verbose (repl/valid-opts {:verbose :true :load-fn! :true}))))
   (is (= (get :load-fn! (repl/valid-opts {:verbose :true :load-fn! :true}))))
+  (is (= (get :no-warning-error (repl/valid-opts {:verbose :true :load-fn! :true :no-warning-error true}))))
   (is (= {} (repl/valid-opts {:asdasdasd :kk}))))
 
 (deftest macros
