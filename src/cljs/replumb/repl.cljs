@@ -12,12 +12,6 @@
             [replumb.doc-maps :as docs]
             [replumb.common :as common]))
 
-(def ^:dynamic  *replumb-eval-fn* "See cljs.js/*eval-fn* in ClojureScript core."
-  cljs/js-eval)
-
-(def ^:dynamic *replumb-load-fn* "See cljs.js/*load-fn* in ClojureScript core."
-  load/js-load)
-
 ;;;;;;;;;;;;;
 ;;; State ;;;
 ;;;;;;;;;;;;;
@@ -112,19 +106,12 @@
   "Set of valid option for external input validation:
 
   * :verbose If true, enables more traces."
-  #{:verbose})
+  #{:verbose :load-fn!})
 
 (defn valid-opts
   "Extract options according to the valid-opts-set."
   [opts]
   (into {} (filter (comp valid-opts-set first) opts)))
-
-(defn env-opts!
-  "Reads the map of environment options. Usually these are set when the
-  repl is initialized. The function works like merge, the mapping from
-  the latter (left-to-right) will be the mapping in the result. Extracts
-  the options in the valid-options set."
-  [& maps] (apply merge @app-env maps))
 
 (defn make-base-eval-opts!
   "Gets the base set of evaluation options. The variadic arity function
@@ -132,12 +119,15 @@
   the mapping in the result. Extracts the options in the valid-options
   set."
   ([]
-   (env-opts! {:ns      (:current-ns @app-env)
-               :context :expr
-               :load    *replumb-load-fn*
-               :eval    *replumb-eval-fn*}))
-  ([& maps]
-   (apply merge (make-base-eval-opts!) maps)))
+   (make-base-eval-opts! {}))
+  ([dynamic-opts]
+   {:ns (:current-ns @app-env)
+    :context :expr
+    :source-map false
+    :def-emits-var true
+    :load (or (:load-fn! dynamic-opts) load/js-default-load)
+    :eval cljs/js-eval
+    :verbose (or (:verbose dynamic-opts) false)}))
 
 (defn self-require?
   [specs]
@@ -448,7 +438,8 @@
   The first parameter is a map of configuration options, currently
   supporting:
 
-  * :verbose will enable the the evaluation logging, defaults to false.
+  * :verbose  will enable the the evaluation logging, defaults to false.
+  * :load-fn! overrides the ClojureScript's *load-fn*
 
   The second parameter cb, should be a 1-arity function which receives
   the result map.
@@ -476,10 +467,7 @@
                          source
                          source
                          ;; opts (map)
-                         (merge (make-base-eval-opts!)
-                                {:source-map false
-                                 :def-emits-var true}
-                                opts)
+                         (make-base-eval-opts! opts)
                          (fn [res]
                            (when (:verbose opts)
                              (debug-prn "Evaluation returned: " res))

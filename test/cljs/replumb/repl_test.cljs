@@ -1,6 +1,7 @@
 (ns ^:figwheel-load replumb.repl-test
   (:require [cljs.test :refer-macros [deftest is]]
             [replumb.repl :as repl]
+            [replumb.load :as load]
             [replumb.core :as core :refer [success? unwrap-result]]
             [replumb.common :as common :refer [echo-callback valid-eval-result?
                                                extract-message valid-eval-error?]]))
@@ -108,19 +109,19 @@
     (repl/reset-env! ['my.namespace])))
 
 (deftest process-require
-  (let [res (repl/read-eval-call {} validated-echo-cb "(require something)")
+  (let [res (repl/read-eval-call {:load-fn! load/js-fake-load} validated-echo-cb "(require something)")
         error (unwrap-result res)]
     (is (not (success? res)) "(require something) should NOT succeed")
     (is (valid-eval-error? error) "(require something) should result in an js/Error")
     (is (re-find #"is not ISeqable" (extract-message error)) "(require something) should have correct error")
     (repl/reset-env!))
-  (let [res (repl/read-eval-call {} validated-echo-cb "(require \"something\")")
+  (let [res (repl/read-eval-call {:load-fn! load/js-fake-load} validated-echo-cb "(require \"something\")")
         error (unwrap-result res)]
     (is (not (success? res)) "(require \"something\") should NOT succeed")
     (is (valid-eval-error? error) "(require \"something\") should result in an js/Error")
     (is (re-find #"Argument to require must be a symbol" (extract-message error)) "(require \"something\") should have correct error")
     (repl/reset-env!))
-  (let [res (repl/read-eval-call {} validated-echo-cb "(require 'something.ns)")
+  (let [res (repl/read-eval-call {:load-fn! load/js-fake-load} validated-echo-cb "(require 'something.ns)")
         out (unwrap-result res)]
     (is (success? res) "(require 'something.ns) should succeed")
     (is (valid-eval-result? out) "(require 'something.ns) should be a valid result")
@@ -130,7 +131,7 @@
   (let [res (do (repl/read-eval-call {} validated-echo-cb "(ns a.ns)")
                 (repl/read-eval-call {} validated-echo-cb "(def a 3)")
                 (repl/read-eval-call {} validated-echo-cb "(ns b.ns)")
-                (repl/read-eval-call {} validated-echo-cb "(require 'a.ns)"))
+                (repl/read-eval-call {:load-fn! load/js-fake-load} validated-echo-cb "(require 'a.ns)"))
         out (unwrap-result res)]
     (is (success? res) "(require 'a.ns) from b.ns should succeed")
     (is (valid-eval-result? out) "(require 'a.ns) from b.ns should be a valid result")
@@ -140,7 +141,7 @@
   (let [res (do (repl/read-eval-call {} validated-echo-cb "(ns c.ns)")
                 (repl/read-eval-call {} validated-echo-cb "(def referred-a 3)")
                 (repl/read-eval-call {} validated-echo-cb "(ns d.ns)")
-                (repl/read-eval-call {} validated-echo-cb "(require '[c.ns :refer [referred-a]])")
+                (repl/read-eval-call {:load-fn! load/js-fake-load} validated-echo-cb "(require '[c.ns :refer [referred-a]])")
                 (repl/read-eval-call {} validated-echo-cb "referred-a"))
         out (unwrap-result res)]
     (is (success? res) "(require '[c.ns :refer [referred-a]]) should succeed")
@@ -150,7 +151,6 @@
     (repl/reset-env! ['c.ns 'd.ns])))
 
 (deftest warnings
-
   (let [results (atom [])
         swapping-callback (partial repl/validated-call-back! (fn [r] (swap! results conj r)))]
     (let [rs (repl/read-eval-call {} swapping-callback "_arsenununpa42")]
@@ -163,7 +163,8 @@
 
 (deftest options
   ;; always check valid-opts-set for supported options
-  (is (= {:verbose :true} (repl/valid-opts {:verbose :true})))
+  (is (= (get :verbose (repl/valid-opts {:verbose :true :load-fn! :true}))))
+  (is (= (get :load-fn! (repl/valid-opts {:verbose :true :load-fn! :true}))))
   (is (= {} (repl/valid-opts {:asdasdasd :kk}))))
 
 (deftest macros
@@ -194,7 +195,7 @@
     (is (success? res) "Executing (foo.core/hello ..) as function should succeed")
     (is (valid-eval-result? out) "Executing (foo.core/hello ..) hello ..) as function should have a valid result")
     (is (= "6" out) "Executing (foo.core/hello ..) hello ..) as function shoud return 6")
-    (repl/reset-env!))
+    (repl/reset-env! ["foo.core$macros"]))
 
   (let [res (do (repl/read-eval-call {} echo-callback "(ns foo.core$macros)")
                 (repl/read-eval-call {} echo-callback "(defmacro hello [x] (prn &form) `(inc ~x))")
@@ -205,4 +206,14 @@
     (is (success? res) "Executing (foo.core/hello ..) as function should succeed")
     (is (valid-eval-result? out) "Executing (foo.core/hello ..) hello ..) as function should have a valid result")
     (is (= "6" out) "Executing (foo.core/hello ..) hello ..) as function shoud return 6")
-    (repl/reset-env!)))
+    (repl/reset-env! ["foo.core$macros"])))
+
+(deftest load-fn
+  (let [load-map-atom (atom {})
+        custom-load-fn (fn [load-map cb] (reset! load-map-atom load-map) (cb nil))]
+    (let [rs (repl/read-eval-call {:load-fn! custom-load-fn :verbose true} echo-callback "(require 'bar.core)")]
+      (is (= 'bar.core (:name @load-map-atom)) "Loading map with custom function should have correct :name")
+      (is (not (:macros @load-map-atom)) "Loading map with custom function should have correct :macros")
+      (is (= "bar/core" (:path @load-map-atom)) "Loading map with custom function should have correct :path")
+      (reset! load-map-atom {})
+      (repl/reset-env! ["bar.core"]))))
