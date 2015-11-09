@@ -63,11 +63,12 @@
             "tests" ^{:doc "Execute once unit tests with PhantomJS and SlimerJS (must be installed)."} ["doo" "headless" "doo-test" "once"]
             "tests*" ^{:doc "Clean and execute once unit tests with PhantomJS and SlimerJS (must be installed)."} ["do" "clean" ["doo" "headless" "doo-test" "once"]]}
 
+  :deploy-repositories [["releases" :clojars]]
   :signing {:gpg-key "clojars@scalac.io"}
 
   :profiles {:dev {:dependencies [[com.cemerick/piggieback "0.1.5"]
                                   [org.clojure/tools.nrepl "0.2.11"]
-                                  [cljsjs/jqconsole "2.12.0-0"]
+                                  [cljsjs/jqconsole "2.13.1-0"]
                                   [reagent "0.5.1"]]
                    :plugins [[lein-doo "0.1.6-SNAPSHOT"]
                              [lein-figwheel "0.4.1" :exclusions [cider/cider-nrepl]]]}})
