@@ -63,8 +63,9 @@
             "tests" ^{:doc "Execute once unit tests with PhantomJS and SlimerJS (must be installed)."} ["doo" "headless" "doo-test" "once"]
             "tests*" ^{:doc "Clean and execute once unit tests with PhantomJS and SlimerJS (must be installed)."} ["do" "clean" ["doo" "headless" "doo-test" "once"]]}
 
-  :deploy-repositories [["releases" :clojars]]
-  :signing {:gpg-key "clojars@scalac.io"}
+  :deploy-repositories [["releases" {:url "https://clojars.org/repo"
+                                     :signing {:gpg-key "clojars@scalac.io"}
+                                     :creds :gpg}]]
 
   :profiles {:dev {:dependencies [[com.cemerick/piggieback "0.1.5"]
                                   [org.clojure/tools.nrepl "0.2.11"]
