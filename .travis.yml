@@ -1,5 +1,6 @@
 language: clojure
 lein: lein2
-script: lein2 with-profile dev test-phantom
+script: "lein2 with-profile dev test-phantom"
 jdk:
     - oraclejdk8
+sudo: false
