@@ -4,16 +4,6 @@
 
 A very simple reagent app has been included in ```repl-demo``` and its generated code will reside in ```dev-resources/public```.
 
-In order to contribute and take full advantage of the Figwheel workflow, you first need to build a local copy of ```cljsjs/jqconsole``` (the patch has not been yet merged to ```cljsjs``` master).
-
-The steps to generate it are:
-
-* ```git clone -b cljsjs-jqconsole https://github.com/arichiardi/packages```
-* ```cd packages/jqconsole```
-* ```boot package build-jar```
-
-[Boot](https://github.com/boot-clj/boot#install) must be installed on the machine.
-
 #### Figwheel:
 
 This project uses Figwheel, as many do. After the step above you can use the classic ```lein figwheel dev``` or use the local alias ```lein fig-dev```
