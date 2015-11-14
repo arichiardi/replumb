@@ -32,7 +32,7 @@ See ```repl-demo``` for an actual implementation using [```jq-console```](https:
 
 ## Design
 
-The implementation was designed not to conceal ClojureScript's ```cljs.js/eval``` quirks and idiosyncrasies. Therefore tricks like Mike Fikes' ["Messing with macros at the REPL"](http://blog.fikesfarm.com/posts/2015-09-07-messing-with-macros-at-the-repl.html) are still part of the game and actually implemented as tests.
+The implementation was designed not to conceal ClojureScript's ```cljs.js/eval``` quirks and idiosyncrasies. Therefore tricks like Mike Fikes' ["Messing with macros at the REPL"](http://blog.fikesfarm.com/posts/2015-09-07-messing-with-macros-at-the-repl.html) are still part of the game and actually [implemented as tests](https://github.com/ScalaConsultants/replumb/blob/master/test/cljs/replumb/repl_test.cljs#L187).
 
 This will in the long run be useful for both ```replumb``` and the ```ClojureScript``` community as it will help in finding and fix issues.
 
