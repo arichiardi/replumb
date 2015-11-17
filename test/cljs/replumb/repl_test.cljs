@@ -234,3 +234,26 @@
       (is (= "bar/core" (:path @load-map-atom)) "Loading map with custom function should have correct :path")
       (reset! load-map-atom {})
       (repl/reset-env! ["bar.core"]))))
+
+(deftest tagged-literals
+  ;; AR - Don't need to test more as ClojureScript already has extensive tests on this
+  (let [res (repl/read-eval-call {} echo-callback "#js [1 2]")
+        out (unwrap-result res)]
+    (is (success? res) "Reading #js literal should succeed")
+    (is (valid-eval-result? out) "Reading #js literal should have a valid result")
+    (is (= "#js [1 2]" out) "Reading #js literal should return the object"))
+  (let [res (repl/read-eval-call {} echo-callback "#queue [1 2]")
+        out (unwrap-result res)]
+    (is (success? res) "Reading #queue should succeed")
+    (is (valid-eval-result? out) "Reading #queue should have a valid result")
+    (is (= "#queue [1 2]" out) "Reading #queue should return the object"))
+  (let [res (repl/read-eval-call {} echo-callback "#inst \"2010-11-12T13:14:15.666-05:00\"")
+        out (unwrap-result res)]
+    (is (success? res) "Reading #inst should succeed")
+    (is (valid-eval-result? out) "Reading #inst should have a valid result")
+    (is (= "#inst \"2010-11-12T18:14:15.666-00:00\"" out) "Reading #inst shoud return the object"))
+  (let [res (repl/read-eval-call {} echo-callback "#uuid \"550e8400-e29b-41d4-a716-446655440000\"")
+        out (unwrap-result res)]
+    (is (success? res) "Reading #uuid should succeed")
+    (is (valid-eval-result? out) "Reading #uuid should have a valid result")
+    (is (= "#uuid \"550e8400-e29b-41d4-a716-446655440000\"" out) "Reading #uuid should return the object")))
