@@ -5,13 +5,13 @@
 
 (defn js-default-load
   "This load function just calls: (cb nil)"
-  [{:keys [name macros path file] :as full} cb]
+  [_ cb]
   (cb nil))
 
 (defn js-fake-load
   "This load function just calls:
   (cb {:lang   :js
        :source \"\"})"
-  [{:keys [name macros path file] :as full} cb]
+  [_ cb]
   (cb {:lang   :js
        :source ""}))
