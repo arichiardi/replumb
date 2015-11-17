@@ -57,7 +57,8 @@
 
 (defn repl-read-string
   [line]
-  (r/read-string {:read-cond :allow :features #{:cljs}} line))
+  (binding [r/*data-readers* tags/*cljs-data-readers*]
+    (r/read-string {:read-cond :allow :features #{:cljs}} line)))
 
 (defn ns-form?
   [form]
