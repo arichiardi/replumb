@@ -4,10 +4,10 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.7.0"]
-                 [org.clojure/clojurescript "1.7.145"]
+                 [org.clojure/clojurescript "1.7.170"]
                  [org.clojure/tools.reader "1.0.0-alpha1"]]
 
-  :plugins [[lein-cljsbuild "1.1.0"]
+  :plugins [[lein-cljsbuild "1.1.1"]
             [lein-codox "0.9.0"]]
 
   :clean-targets ^{:protect false} ["dev-resources/public/js/compiled" "dev-resources/private/test/compiled"
@@ -84,4 +84,4 @@
                                   [cljsjs/jqconsole "2.13.1-0"]
                                   [reagent "0.5.1"]]
                    :plugins [[lein-doo "0.1.6-SNAPSHOT"]
-                             [lein-figwheel "0.4.1" :exclusions [cider/cider-nrepl]]]}})
+                             [lein-figwheel "0.5.0-1" :exclusions [cider/cider-nrepl]]]}})
