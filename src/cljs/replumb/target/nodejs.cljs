@@ -1,21 +1,9 @@
-(ns replumb.load
+(ns replumb.target.nodejs
   (:require [clojure.string :as string]))
 
-;; From mfikes/planck
-;; For now there is no load from file
-
-(defn js-default-load
-  "This load function just calls: (cb nil)"
-  [_ cb]
-  (cb nil))
-
-(defn js-fake-load
-  "This load function just calls:
-  (cb {:lang   :js
-       :source \"\"})"
-  [_ cb]
-  (cb {:lang   :js
-       :source ""}))
+(defn init-fn!
+  []
+  (set! (.. js/global -cljs -user) #js {}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; File-based load-fn infrastructure ;;;
@@ -36,12 +24,12 @@
   [[filename & more-filenames] read-file-fn cb]
   (if filename
     (read-file-fn
-      filename
-      (fn [source]
-        (if source
-          (cb {:lang   (filename->lang filename)
-               :source source})
-          (read-some more-filenames read-file-fn cb))))
+     filename
+     (fn [source]
+       (if source
+         (cb {:lang (filename->lang filename)
+              :source source})
+         (read-some more-filenames read-file-fn cb))))
     (cb nil)))
 
 (defn- filenames-to-try
@@ -57,7 +45,12 @@
 
 (defn make-load-fn
   "Makes a load function that will read from a sequence of src-paths
-  using a supplied read-file-fn."
+  using a supplied read-file-fn. It returns a cljs.js-compatible
+  *load-fn*.
+
+  Read-file-fn is a 2-arity function (fn [filename source-cb] ...) where
+  source-cb is itself a function (fn [source] ...) that needs to be called
+  with the source of the library (as string)."
   [src-paths read-file-fn]
   (fn [{:keys [macros path]} cb]
     (read-some (filenames-to-try src-paths macros path) read-file-fn cb)))
