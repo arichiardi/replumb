@@ -90,7 +90,7 @@
   ([result-map print-stack?]
    (if (:success? result-map)
      (:value result-map)
-     (common/extract-message (:error result-map) print-stack?))))
+     (common/extract-message (:error result-map) false print-stack?))))
 
 (defn ^:export nodejs-options
   "Creates a Node.js option map for read-eval-call.
