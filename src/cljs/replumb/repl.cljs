@@ -418,7 +418,6 @@
   (when (:verbose opts)
     (debug-prn "Initializing REPL environment..." ))
   (assert (= cljs.analyzer/*cljs-ns* 'cljs.user))
-  (set! *target* "default")
   (set! (.. js/window -cljs -user) #js {}))
 
 (defn update-to-initializing
