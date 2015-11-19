@@ -11,7 +11,7 @@
             [lein-codox "0.9.0"]]
 
   :clean-targets ^{:protect false} ["dev-resources/public/js/compiled" "dev-resources/private/test/compiled"
-                                    "dev-resources/private/node/compiled" :target-path]
+                                    "dev-resources/private/node/compiled" "doc" :target-path]
   :source-paths ["src/cljs"]
   :hooks [leiningen.cljsbuild]
 
