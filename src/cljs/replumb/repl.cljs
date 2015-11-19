@@ -8,8 +8,8 @@
             [cljs.env :as env]
             [cljs.repl :as cljs-repl]
             [cljs.pprint :refer [pprint]]
-            [replumb.load :as load]
-            [replumb.common :as common]))
+            [replumb.common :as common]
+            [replumb.target :as target]))
 
 ;;;;;;;;;;;;;
 ;;; State ;;;
@@ -110,31 +110,36 @@
   (and (seq? form) (replumb-repl-special-set (first form))))
 
 (def valid-opts-set
-  "Set of valid option for external input validation:
-
-  * :verbose If true, enables more traces."
-  #{:verbose :load-fn! :no-warning-error})
+  "Set of valid option used for external input validation."
+  #{:verbose :load-fn! :no-warning-error :target :init-fn!})
 
 (defn valid-opts
   "Extract options according to the valid-opts-set."
   [opts]
   (into {} (filter (comp valid-opts-set first) opts)))
 
+(defn normalize-opts
+  [user-opts]
+  (let [vld-opts (valid-opts user-opts)
+        target (or (:target vld-opts) :default)
+        dflt-opts (target/default-opts target)]
+    (merge vld-opts {:init-fns (remove nil? (conj (:init-fns dflt-opts)
+                                                  (:init-fn! vld-opts)))})))
+
 (defn make-base-eval-opts!
-  "Gets the base set of evaluation options. The variadic arity function
-  works like merge, the mapping from the latter (left-to-right) will be
-  the mapping in the result. Extracts the options in the valid-options
-  set."
+  "Gets the base set of evaluation options. The 1-arity function
+  specifies opts that override default. No check here if opts are
+  valid."
   ([]
    (make-base-eval-opts! {}))
-  ([dynamic-opts]
+  ([opts]
    {:ns (:current-ns @app-env)
     :context :expr
     :source-map false
     :def-emits-var true
-    :load (or (:load-fn! dynamic-opts) load/js-default-load)
+    :load (:load-fn! opts)
     :eval cljs/js-eval
-    :verbose (or (:verbose dynamic-opts) false)}))
+    :verbose (or (:verbose opts) false)}))
 
 (defn self-require?
   [specs]
@@ -233,6 +238,14 @@
          (or (and (find res :value) (string? (get res :value)))
              (and (find res :error) (instance? js/Error (get res :error))))]}
   (call-back! res))
+
+(defn validated-init-fn!
+  [init-fn! res]
+  {:pre [(map? res)
+         (find res :form)
+         (find res :ns)
+         (= *target*  (get res :target))]}
+  (init-fn! res))
 
 (defn call-side-effect!
   "Execute the correct side effecting function from data.
@@ -413,12 +426,22 @@
 ;;;;;;;;;;;;;;;;;;;;
 
 (defn init-repl!
-  "The init-repl function."
-  [opts]
+  "The init-repl function. It uses the following opts keys:
+
+  * :init-fns initialization function vector, it will be executed in
+  order
+
+  Data is passed from outside and will be forwarded to :init-fn!."
+  [opts data]
   (when (:verbose opts)
-    (debug-prn "Initializing REPL environment..." ))
+    (debug-prn "Initializing REPL environment with data" (with-out-str (pprint data))))
   (assert (= cljs.analyzer/*cljs-ns* 'cljs.user))
-  (set! (.. js/window -cljs -user) #js {}))
+
+  ;; Initializing, we need at least one init-fn, the default init function
+  (let [init-fns (:init-fns opts)]
+    (assert (> (count init-fns) 0))
+    (doseq [init-fn! init-fns]
+      (init-fn! data))))
 
 (defn update-to-initializing
   [old-app-env]
@@ -434,9 +457,9 @@
                       :needs-init? false}))
 
 (defn init-repl-if-necessary!
-  [opts cb]
+  [opts data]
   (when (:needs-init? (swap! app-env update-to-initializing))
-    (do (init-repl! opts)
+    (do (init-repl! opts data)
         (swap! app-env update-to-initialized))))
 
 (defn read-eval-call
@@ -447,9 +470,17 @@
 
   * :verbose  will enable the the evaluation logging, defaults to false.
   * :load-fn! overrides the ClojureScript's *load-fn*
+  * :target   keyword or string that sets the *target* (:default if not
+  found).
+  * :init-fn! user provided initialization function, it will be passed a
+  map of data currently containing:
 
-  The second parameter cb, should be a 1-arity function which receives
-  the result map.
+      :form   ;; the form to evaluate, as data, past the reader step
+      :ns     ;; the current namespace, as symbol
+      :target ;; *target* as keyword, :default is the default
+
+  The second parameter cb, is a 1-arity function which receives the
+  result map.
 
   Therefore, given cb (fn [result-map] ...), the main map keys are:
 
@@ -462,9 +493,11 @@
   [opts cb source]
   (try
     (let [expression-form (repl-read-string source)
-          opts (valid-opts opts)
-          data {:form expression-form}]
-      (init-repl-if-necessary! opts cb)
+          opts (normalize-opts opts)
+          data {:form expression-form
+                :ns (:current-ns @app-env)
+                :target (keyword *target*)}]
+      (init-repl-if-necessary! opts data)
       (when (:verbose opts)
         (debug-prn "Evaluating " expression-form " with options " opts))
       (binding [ana/*cljs-warning-handlers* [(partial custom-warning-handler opts cb)]]

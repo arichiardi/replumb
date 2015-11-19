@@ -1,12 +1,15 @@
 (ns ^:figwheel-load replumb.repl-test
   (:require [cljs.test :refer-macros [deftest is]]
             [replumb.repl :as repl]
-            [replumb.load :as load]
+            [replumb.target :as target]
             [replumb.core :as core :refer [success? unwrap-result]]
             [replumb.common :as common :refer [echo-callback valid-eval-result?
                                                extract-message valid-eval-error?]]))
 
 (def validated-echo-cb (partial repl/validated-call-back! echo-callback))
+
+(def target-opts (merge (target/default-opts)
+                        {:load-fn! target/fake-load-fn!}))
 
 (deftest init
   ;; This test heavily relies on repl execution order. If the repl is already
@@ -15,10 +18,20 @@
   ;; order if this happens. At the moment it is disabled
   ;; (is (not (:initializing? @repl/app-env)) "Flag :initializing? should be false before init")
   ;; (is (:needs-init? @repl/app-env) "Flag :needs-init? should be true before init")
-  (let [res (repl/read-eval-call {} validated-echo-cb "(def c 4)")]
+  (let [init-map-atom (atom {})
+        custom-init-fn (fn [init-map] (reset! init-map-atom init-map))
+        _ (swap! repl/app-env merge {:initializing? false
+                                     :needs-init? true})
+        res (repl/read-eval-call {:init-fn! custom-init-fn
+                                  :verbose false} validated-echo-cb "(def c 4)")]
     (is (success? res) "Init should return successfully")
     (is (not (:initializing? @repl/app-env)) "Flag :initializing? should be false when the init exits")
     (is (not (:needs-init? @repl/app-env)) "Flag :needs-init? should be false when the init exits")
+    (is (= '(def c 4) (:form @init-map-atom)) "Init map should have correct :form")
+    (is (not (string? (:form @init-map-atom))) "Init map :form should not be a string")
+    (is (= (repl/current-ns) (:ns @init-map-atom)) "Init map should have correct :ns")
+    (is (symbol? (:ns @init-map-atom)) "Init map :ns should be a symbol")
+    (is (= :default (:target @init-map-atom)) "Init map with custom init-fn! should have correct :target")
     (repl/reset-env!)))
 
 (deftest current-ns
@@ -116,19 +129,19 @@
     (repl/reset-env! ['my.namespace])))
 
 (deftest process-require
-  (let [res (repl/read-eval-call {:load-fn! load/js-fake-load} validated-echo-cb "(require something)")
+  (let [res (repl/read-eval-call target-opts validated-echo-cb "(require something)")
         error (unwrap-result res)]
     (is (not (success? res)) "(require something) should NOT succeed")
     (is (valid-eval-error? error) "(require something) should result in an js/Error")
     (is (re-find #"is not ISeqable" (extract-message error)) "(require something) should have correct error")
     (repl/reset-env!))
-  (let [res (repl/read-eval-call {:load-fn! load/js-fake-load} validated-echo-cb "(require \"something\")")
+  (let [res (repl/read-eval-call target-opts validated-echo-cb "(require \"something\")")
         error (unwrap-result res)]
     (is (not (success? res)) "(require \"something\") should NOT succeed")
     (is (valid-eval-error? error) "(require \"something\") should result in an js/Error")
     (is (re-find #"Argument to require must be a symbol" (extract-message error)) "(require \"something\") should have correct error")
     (repl/reset-env!))
-  (let [res (repl/read-eval-call {:load-fn! load/js-fake-load} validated-echo-cb "(require 'something.ns)")
+  (let [res (repl/read-eval-call target-opts validated-echo-cb "(require 'something.ns)")
         out (unwrap-result res)]
     (is (success? res) "(require 'something.ns) should succeed")
     (is (valid-eval-result? out) "(require 'something.ns) should be a valid result")
@@ -138,7 +151,7 @@
   (let [res (do (repl/read-eval-call {} validated-echo-cb "(ns a.ns)")
                 (repl/read-eval-call {} validated-echo-cb "(def a 3)")
                 (repl/read-eval-call {} validated-echo-cb "(ns b.ns)")
-                (repl/read-eval-call {:load-fn! load/js-fake-load} validated-echo-cb "(require 'a.ns)"))
+                (repl/read-eval-call target-opts validated-echo-cb "(require 'a.ns)"))
         out (unwrap-result res)]
     (is (success? res) "(require 'a.ns) from b.ns should succeed")
     (is (valid-eval-result? out) "(require 'a.ns) from b.ns should be a valid result")
@@ -148,7 +161,7 @@
   (let [res (do (repl/read-eval-call {} validated-echo-cb "(ns c.ns)")
                 (repl/read-eval-call {} validated-echo-cb "(def referred-a 3)")
                 (repl/read-eval-call {} validated-echo-cb "(ns d.ns)")
-                (repl/read-eval-call {:load-fn! load/js-fake-load} validated-echo-cb "(require '[c.ns :refer [referred-a]])")
+                (repl/read-eval-call target-opts validated-echo-cb "(require '[c.ns :refer [referred-a]])")
                 (repl/read-eval-call {} validated-echo-cb "referred-a"))
         out (unwrap-result res)]
     (is (success? res) "(require '[c.ns :refer [referred-a]]) should succeed")
@@ -173,16 +186,16 @@
       (is (valid-eval-result? (unwrap-result (first @results))) "Evaluating an undefined symbol with :no-warning-error should result in an js/Error")
       (is (=  "nil" (unwrap-result (first @results))) "Evaluating an undefined with :no-warning-error symbol should return nil")
       (reset! results [])
-
-
       (repl/reset-env!))))
 
 (deftest options
-  ;; always check valid-opts-set for supported options
-  (is (= (get :verbose (repl/valid-opts {:verbose :true :load-fn! :true}))))
-  (is (= (get :load-fn! (repl/valid-opts {:verbose :true :load-fn! :true}))))
-  (is (= (get :no-warning-error (repl/valid-opts {:verbose :true :load-fn! :true :no-warning-error true}))))
-  (is (= {} (repl/valid-opts {:asdasdasd :kk}))))
+  ;; AR - just not to forget adding them in valid-opts-set
+  (let [opts {:verbose :true
+              :load-fn! "fn"
+              :no-warning-error true
+              :target "default"
+              :init-fn! "fn"}]
+    (is (every? repl/valid-opts-set (keys (repl/valid-opts opts))) "Always add valid options to valid-opts-set")))
 
 (deftest macros
   ;;;;;;;;;;;;;;;;
