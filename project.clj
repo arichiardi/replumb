@@ -38,9 +38,11 @@
                        {:id "node-repl"
                         :source-paths ["src/cljs" "repl-demo/node/cljs"]
                         :compiler {:target :nodejs
+                                   :main nodejs-repl.core
                                    :output-to "dev-resources/private/node/compiled/nodejs-repl.js"
-                                   ;; :output-dir "dev-resources/private/node/compiled/out"
-                                   :optimizations :simple}}
+                                   :output-dir "dev-resources/private/node/compiled/out"
+                                   :asset-path "dev-resources/private/node/compiled/out"
+                                   :optimizations :none}}
                        {:id "min"
                         :source-paths ["src/cljs"]
                         :compiler { ;; :main cljs-browser-repl.core ;; https://github.com/emezeske/lein-cljsbuild/issues/420
