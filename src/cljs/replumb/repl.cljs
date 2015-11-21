@@ -6,9 +6,10 @@
             [cljs.tools.reader :as r]
             [cljs.analyzer :as ana]
             [cljs.env :as env]
-            [cljs.repl :as cljs-repl]
+            [cljs.repl :as repl]
             [cljs.pprint :refer [pprint]]
             [replumb.common :as common]
+            [replumb.doc-maps :as docs]
             [replumb.target :as target]))
 
 ;;;;;;;;;;;;;
@@ -354,7 +355,11 @@
               cb
               data
               (common/wrap-success
-               (with-out-str (cljs-repl/print-doc (get-var opts env sym))))))
+               (with-out-str
+                 (cond
+                   (docs/special-doc-map sym) (repl/print-doc (docs/special-doc sym))
+                   (docs/repl-special-doc-map sym) (repl/print-doc (docs/repl-special-doc sym))
+                   :else (repl/print-doc (get-var opts env sym)))))))
 
 (defn process-pst
   [opts cb data expr]
