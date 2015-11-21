@@ -150,19 +150,37 @@ itself (not its value) is returned. The reader macro #'x expands to (var x)."}})
   constructor named by closure-namespace to the current namespace. Use :import in the ns
   macro in preference to calling this directly."}
     load-file      {:arglists ([name])
-                    :doc      "Sequentially read and evaluate the set of forms contained in the file."}
-    doc            {:arglists ([name])
-                    :doc      "Prints documentation for a var or special form given its name"}
-    source         {:arglists ([name])
-                    :doc      "Prints the source code for the given symbol, if it can find it.\n  This requires that the symbol resolve to a Var defined in a\n  namespace for which the source is available.\n\n  Example: (source filter)"}
-    pst            {:arglists ([] [e])
-                    :doc      "Prints a stack trace of the exception.\n  If none supplied, uses the root cause of the most recent repl exception (*e)"}})
+                    :doc "Sequentially read and evaluate the set of forms
+                          contained in the file." }
+
+    ;; AR - from here they have been manually added as they are cljs.repl macros.
+    doc {:arglists ([name])
+         :doc "Prints documentation for a var or special form given its name"}
+    source {:arglists ([name])
+            :doc "Prints the source code for the given symbol, if it can find it.
+  This requires that the symbol resolve to a Var defined in a
+  namespace for which the source is available.
+
+  Example: (source filter)"}
+    pst {:arglists ([] [e])
+         :doc "Prints a stack trace of the exception.
+
+  If none supplied, uses the root cause of the most recent repl exception (*e)"}
+    apropos {:arglists ([str-or-pattern])
+             :doc "Given a regular expression or stringable thing, return a seq of all
+  public definitions in all currently-loaded namespaces that match the
+  str-or-pattern." }
+    find-doc {:arglists ([re-string-or-pattern])
+              :doc "Prints documentation for any var whose documentation or name
+  contains a match for re-string-or-pattern"}
+    dir {:arglists ([ns])
+         :doc "Prints a sorted directory of public vars in a namespace"}})
 
 (defn special-doc
   [name-symbol]
   (assoc (special-doc-map name-symbol)
-    :name name-symbol
-    :special-form true))
+         :name name-symbol
+         :special-form true))
 
 (defn repl-special-doc
   [name-symbol]

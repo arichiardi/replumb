@@ -9,6 +9,7 @@
             [cljs.repl :as repl]
             [cljs.pprint :refer [pprint]]
             [replumb.common :as common]
+            [replumb.doc-maps :as docs]
             [replumb.target :as target]))
 
 ;;;;;;;;;;;;;
