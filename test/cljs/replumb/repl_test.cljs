@@ -8,8 +8,9 @@
 
 (def validated-echo-cb (partial repl/validated-call-back! echo-callback))
 
-(def target-opts (merge (target/default-opts)
-                        {:load-fn! target/fake-load-fn!}))
+;; AR - until we provide a load function for browesers
+(def target-opts-fake-load (merge (target/default-opts :default)
+                                  {:load-fn! target/fake-load-fn!}))
 
 (deftest init
   ;; This test heavily relies on repl execution order. If the repl is already
@@ -111,7 +112,7 @@
                 (repl/read-eval-call {} validated-echo-cb "first.namespace/a"))
         out (unwrap-result res)]
     (is (success? res) "Defining variable in namespace and querying it should succeed")
-    (is (= "3" out) "Defining variable in namespace and querying should intern persistent var")
+    (is (= "3" out) "Defining variable in namespace and querying should interned var value")
     (repl/reset-env! ['first.namespace 'second.namespace])))
 
 (deftest process-ns
@@ -129,19 +130,22 @@
     (repl/reset-env! ['my.namespace])))
 
 (deftest process-require
-  (let [res (repl/read-eval-call target-opts validated-echo-cb "(require something)")
+  ;; AR - with fake load, until we provide a mechanism to load files
+  ;; this will be needed in order to test require independently from the file
+  ;; system.
+  (let [res (repl/read-eval-call target-opts-fake-load validated-echo-cb "(require something)")
         error (unwrap-result res)]
     (is (not (success? res)) "(require something) should NOT succeed")
     (is (valid-eval-error? error) "(require something) should result in an js/Error")
     (is (re-find #"is not ISeqable" (extract-message error)) "(require something) should have correct error")
     (repl/reset-env!))
-  (let [res (repl/read-eval-call target-opts validated-echo-cb "(require \"something\")")
+  (let [res (repl/read-eval-call target-opts-fake-load validated-echo-cb "(require \"something\")")
         error (unwrap-result res)]
     (is (not (success? res)) "(require \"something\") should NOT succeed")
     (is (valid-eval-error? error) "(require \"something\") should result in an js/Error")
     (is (re-find #"Argument to require must be a symbol" (extract-message error)) "(require \"something\") should have correct error")
     (repl/reset-env!))
-  (let [res (repl/read-eval-call target-opts validated-echo-cb "(require 'something.ns)")
+  (let [res (repl/read-eval-call target-opts-fake-load validated-echo-cb "(require 'something.ns)")
         out (unwrap-result res)]
     (is (success? res) "(require 'something.ns) should succeed")
     (is (valid-eval-result? out) "(require 'something.ns) should be a valid result")
@@ -151,7 +155,7 @@
   (let [res (do (repl/read-eval-call {} validated-echo-cb "(ns a.ns)")
                 (repl/read-eval-call {} validated-echo-cb "(def a 3)")
                 (repl/read-eval-call {} validated-echo-cb "(ns b.ns)")
-                (repl/read-eval-call target-opts validated-echo-cb "(require 'a.ns)"))
+                (repl/read-eval-call target-opts-fake-load validated-echo-cb "(require 'a.ns)"))
         out (unwrap-result res)]
     (is (success? res) "(require 'a.ns) from b.ns should succeed")
     (is (valid-eval-result? out) "(require 'a.ns) from b.ns should be a valid result")
@@ -161,14 +165,26 @@
   (let [res (do (repl/read-eval-call {} validated-echo-cb "(ns c.ns)")
                 (repl/read-eval-call {} validated-echo-cb "(def referred-a 3)")
                 (repl/read-eval-call {} validated-echo-cb "(ns d.ns)")
-                (repl/read-eval-call target-opts validated-echo-cb "(require '[c.ns :refer [referred-a]])")
+                (repl/read-eval-call target-opts-fake-load validated-echo-cb "(require '[c.ns :refer [referred-a]])")
                 (repl/read-eval-call {} validated-echo-cb "referred-a"))
         out (unwrap-result res)]
-    (is (success? res) "(require '[c.ns :refer [referred-a]]) should succeed")
-    (is (valid-eval-result? out) "(require '[c.ns :refer [referred-a]]) should have a valid result")
+    (is (success? res) )
+    (is (valid-eval-result? out) )
     (is (= 'd.ns (repl/current-ns)) "(require '[c.ns :refer [referred-a]]) should not change namespace")
-    (is (= "3" out) "(require '[c.ns :refer [referred-a]]) should intern persistent var")
-    (repl/reset-env! ['c.ns 'd.ns])))
+    (is (= "3" out) "(require '[c.ns :refer [referred-a]]) should interned var value")
+    (repl/reset-env! ['c.ns 'd.ns]))
+
+  ;; AR - Test for "No *load-fn* when requiring a namespace in browser #35"
+  ;; Note there are no target opts here
+  (let [res (do (repl/read-eval-call {} validated-echo-cb "(ns e.ns)")
+                (repl/read-eval-call {} validated-echo-cb "(ns f.ns)")
+                (repl/read-eval-call {} validated-echo-cb "(require 'e.ns)"))
+        error (unwrap-result res)]
+    (is (not (success? res)) "(require 'e.ns) should NOT succeed")
+    (is (valid-eval-error? error) "(require 'e.ns) should result in an js/Error")
+    (is (= 'f.ns (repl/current-ns)) "(require 'e.ns) from f.ns should not change namespace")
+    (is (re-find #"No such namespace" (extract-message error)) "(require 'e.ns) should have correct error")
+    (repl/reset-env! ['e.ns 'f.ns])))
 
 (deftest warnings
   (let [results (atom [])
