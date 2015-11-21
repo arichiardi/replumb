@@ -72,13 +72,6 @@
     (is (valid-eval-result? docstring) "(doc symbol) should be a valid result")
     ;; Cannot test #"cljs.core\/println" because of a compilation bug?
     (is (re-find #"cljs\.core.{1}println" docstring) "(doc symbol) should return valid docstring")
-    (repl/reset-env!))
-  (let [res (do (repl/read-eval-call {} validated-echo-cb "(defn my-function \"This is my documentation\" [param] (param))")
-                (repl/read-eval-call {} validated-echo-cb "(doc my-function)"))
-        docstring (unwrap-result res)]
-    (is (success? res) "(doc my-function) should succeed")
-    (is (valid-eval-result? docstring) "(doc my-function) should be a valid result")
-    (is (re-find #"This is my documentation" docstring) "(doc my-function) should return valid docstring")
     (repl/reset-env!)))
 
 (deftest process-in-ns
@@ -257,7 +250,7 @@
 (deftest load-fn
   (let [load-map-atom (atom {})
         custom-load-fn (fn [load-map cb] (reset! load-map-atom load-map) (cb nil))]
-    (let [rs (repl/read-eval-call {:load-fn! custom-load-fn} echo-callback "(require 'bar.core)")]
+    (let [rs (repl/read-eval-call {:load-fn! custom-load-fn :verbose true} echo-callback "(require 'bar.core)")]
       (is (= 'bar.core (:name @load-map-atom)) "Loading map with custom function should have correct :name")
       (is (not (:macros @load-map-atom)) "Loading map with custom function should have correct :macros")
       (is (= "bar/core" (:path @load-map-atom)) "Loading map with custom function should have correct :path")
