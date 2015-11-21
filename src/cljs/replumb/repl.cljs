@@ -123,8 +123,10 @@
   (let [vld-opts (valid-opts user-opts)
         target (or (:target vld-opts) :default)
         dflt-opts (target/default-opts target)]
-    (merge vld-opts {:init-fns (remove nil? (conj (:init-fns dflt-opts)
-                                                  (:init-fn! vld-opts)))})))
+    (merge dflt-opts
+           vld-opts
+           {:init-fns (remove nil? (conj (:init-fns dflt-opts)
+                                         (:init-fn! vld-opts)))})))
 
 (defn make-base-eval-opts!
   "Gets the base set of evaluation options. The 1-arity function
