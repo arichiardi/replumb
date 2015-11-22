@@ -1,6 +1,7 @@
 (ns replumb-repl.console.cljs
   (:require [reagent.core :as reagent]
             [replumb.core :as replumb]
+            [replumb.target :as target]
             [replumb-repl.app :as app]
             [replumb-repl.console :as console]))
 
@@ -12,7 +13,7 @@
 (defn cljs-read-eval-print!
   [console line]
   (try
-    (replumb/read-eval-call (partial handle-result! console) line)
+    (replumb/read-eval-call {:load-fn! target/fake-load-fn!} (partial handle-result! console) line)
     (catch js/Error err
       (println "Caught js/Error during read-eval-print: " err)
       (console/write-exception! console err))))
