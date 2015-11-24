@@ -61,6 +61,8 @@
   (reduce-kv (fn [r k v] (assoc r (f k) v)) {} m))
 
 (defn repl-read-string
+  "Try to read a string binding all the standard data readers. This
+  function throws if a valid form cannot be found."
   [line]
   (binding [r/*data-readers* tags/*cljs-data-readers*]
     (r/read-string {:read-cond :allow :features #{:cljs}} line)))
@@ -116,7 +118,8 @@
 
 (def valid-opts-set
   "Set of valid option used for external input validation."
-  #{:verbose :load-fn! :no-warning-error :target :init-fn!})
+  #{:verbose :no-warning-error :target :init-fn!
+    :load-fn! :read-file-fn! :src-paths})
 
 (defn valid-opts
   "Extract options according to the valid-opts-set."
@@ -125,13 +128,8 @@
 
 (defn normalize-opts
   [user-opts]
-  (let [vld-opts (valid-opts user-opts)
-        target (or (:target vld-opts) :default)
-        dflt-opts (target/default-opts target)]
-    (merge dflt-opts
-           vld-opts
-           {:init-fns (remove nil? (conj (:init-fns dflt-opts)
-                                         (:init-fn! vld-opts)))})))
+  (let [vld-opts (valid-opts user-opts)]
+    (merge vld-opts (target/default-opts vld-opts))))
 
 (defn make-base-eval-opts!
   "Gets the base set of evaluation options. The 1-arity function
@@ -480,16 +478,24 @@
   The first parameter is a map of configuration options, currently
   supporting:
 
-  * :verbose  will enable the the evaluation logging, defaults to false.
-  * :load-fn! overrides the ClojureScript's *load-fn*
+  * :verbose   will enable the the evaluation logging, defaults to false.
+  * :load-fn!  overrides the replumb's *load-fn*
   * :target   keyword or string that sets the *target* (:default if not
   found).
-  * :init-fn! user provided initialization function, it will be passed a
-  map of data currently containing:
+
+  * :init-fn!  user provided initialization function, it will be passed
+  a map of data currently containing:
 
       :form   ;; the form to evaluate, as data, past the reader step
       :ns     ;; the current namespace, as symbol
       :target ;; *target* as keyword, :default is the default
+
+  * :read-file-fn!  an asyncronous 2-arity function (fn [filename
+  source-cb] ...) where source-cb is itself a function (fn [source] ...)
+  that needs to be called when ready with the found file source as
+  string (nil if no file is found).
+
+  * :src-paths  a vector of paths containing source files.
 
   The second parameter cb, is a 1-arity function which receives the
   result map.
@@ -505,7 +511,7 @@
   [opts cb source]
   (try
     (let [expression-form (repl-read-string source)
-          opts (normalize-opts opts)
+          opts (normalize-opts opts) ;; AR - does the whole user option processing
           data {:form expression-form
                 :ns (:current-ns @app-env)
                 :target (keyword *target*)}]

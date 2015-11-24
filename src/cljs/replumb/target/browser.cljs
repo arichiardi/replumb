@@ -4,7 +4,7 @@
   []
   (set! (.. js/window -cljs -user) #js {}))
 
-(defn load-fn!
-  "This load function just calls: (cb nil)"
-  [_ cb]
-  (cb nil))
+(def default-opts
+  "Browser default set of options for read-eval-call."
+  {:target :default
+   :init-fns [init-fn!]})
