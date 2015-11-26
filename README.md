@@ -33,7 +33,7 @@ See ```repl-demo``` for an actual implementation using [```jq-console```](https:
 
 ## Node.js
 
-Support is provided, but only `:optimization :none` works fine at the moment:
+Support is provided, but only `:optimizations :none` works fine at the moment:
 
 ```clojure
 (replumb/read-eval-call
