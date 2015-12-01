@@ -79,7 +79,14 @@
     (is (success? res) "(doc my-function) should succeed")
     (is (valid-eval-result? docstring) "(doc my-function) should be a valid result")
     (is (re-find #"This is my documentation" docstring) "(doc my-function) should return valid docstring")
-    (repl/reset-env!)))
+    (repl/reset-env!))
+  (let [res (do (repl/read-eval-call {} validated-echo-cb "(ns myns.testns \"Docstring for namespace\")")
+                (repl/read-eval-call {} validated-echo-cb "(doc myns.testns)"))
+        docstring (unwrap-result res)]
+    (is (success? res) "(doc myns.testns) should succeed.")
+    (is (valid-eval-result? docstring) "(doc myns.testns) should be a valid result")
+    (is (re-find #"Docstring for namespace" docstring) "(doc myns.testns) should return valid docstring")
+    (repl/reset-env! ["myns.testns"])))
 
 (deftest process-in-ns
   (let [res (repl/read-eval-call {} validated-echo-cb "(in-ns \"first.namespace\")")

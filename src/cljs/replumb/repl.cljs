@@ -44,6 +44,10 @@
   []
   (keys (:cljs.analyzer/namespaces @st)))
 
+(defn get-namespace
+  [sym]
+  (get-in @st [:cljs.analyzer/namespaces sym]))
+
 (defn remove-ns
   "Removes the namespace named by the symbol."
   ([ns]
@@ -359,6 +363,7 @@
                  (cond
                    (docs/special-doc-map sym) (repl/print-doc (docs/special-doc sym))
                    (docs/repl-special-doc-map sym) (repl/print-doc (docs/repl-special-doc sym))
+                   (get-namespace sym) (repl/print-doc (select-keys (get-namespace sym) [:name :doc]))
                    :else (repl/print-doc (get-var opts env sym)))))))
 
 (defn process-pst
