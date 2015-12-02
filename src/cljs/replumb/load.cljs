@@ -1,5 +1,6 @@
 (ns replumb.load
-  (:require [clojure.string :as string]))
+  (:require [clojure.string :as string]
+            [replumb.common :as common]))
 
 (defn fake-load-fn!
   "This load function just calls:
@@ -22,18 +23,21 @@
     :js
     :clj))
 
-(defn read-files!
-  "Reads the first filename in a sequence of supplied filenames,
-  using a supplied read-file-fn (fn [file-name src-cb] ...), calling
-  back cb upon first successful read, otherwise calling back with nil."
-  [file-names read-file-fn! cb]
-  (loop [file-name (first file-names)]
-    (if file-name
-      (read-file-fn! file-name (fn [source]
-                                 (if source
-                                   (cb {:lang (filename->lang file-name)
-                                        :source source})
-                                   (recur (rest file-names)))))
+(defn read-files-and-callback!
+  "Loop on the file-names using a supplied read-file-fn (fn [file-name
+  src-cb] ...), calling back cb upon first successful read, otherwise
+  calling back with nil."
+  [verbose? file-names read-file-fn cb]
+  (loop [names file-names]
+    (if (seq names)
+      (let [name (first names)]
+        (when verbose?
+          (common/debug-prn "Reading" name "..."))
+        (read-file-fn name (fn [source]
+                             (if source
+                               (cb {:lang (filename->lang name)
+                                    :source source})
+                               (recur (rest names))))))
       (cb nil))))
 
 (defn filenames-to-try
@@ -104,9 +108,12 @@
   Read-file-fn is an async 2-arity function (fn [filename src-cb] ...)
   where src-cb is itself a function (fn [source] ...) that needs to be
   called with the full source of the library (as string)."
-  [src-paths read-file-fn]
+  [verbose? src-paths read-file-fn]
   (fn [{:keys [name macros path] :as load-map} cb]
     (cond
       (skip-load? load-map) (fake-load-fn! load-map cb)
       ;; (re-matches #"^goog/.*" path) (do-load-goog name cb) ;; AR - handle goog
-      :else (read-files! (filenames-to-try src-paths macros path) read-file-fn cb))))
+      :else (read-files-and-callback! verbose?
+                                      (filenames-to-try src-paths macros path)
+                                      read-file-fn
+                                      cb))))

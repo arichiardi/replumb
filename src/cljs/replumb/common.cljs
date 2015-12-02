@@ -83,3 +83,8 @@
   symbol/fn name printed in the message and ex-info data."
   [symbol ex-info-data]
   (wrap-error (ex-info (str "Argument to " symbol " must be a symbol") ex-info-data)))
+
+(defn debug-prn
+  [& args]
+  (binding [cljs.core/*print-fn* cljs.core/*print-err-fn*]
+    (apply println args)))

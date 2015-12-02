@@ -10,7 +10,8 @@
             [cljs.pprint :refer [pprint]]
             [replumb.common :as common]
             [replumb.doc-maps :as docs]
-            [replumb.target :as target]))
+            [replumb.target :as target]
+            [replumb.load :as load]))
 
 ;;;;;;;;;;;;;
 ;;; State ;;;
@@ -29,11 +30,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (def ex-info-data "The ex-info data for this file" {:tag ::error})
-
-(defn debug-prn
-  [& args]
-  (binding [cljs.core/*print-fn* cljs.core/*print-err-fn*]
-    (apply println args)))
 
 (defn current-ns
   "Return the current namespace, as a symbol."
@@ -84,18 +80,18 @@
   {:pre [(map? env) (symbol? sym)]}
   (try
     (when (:verbose opts)
-      (debug-prn "Calling cljs.analyzer/resolve-var..."))
+      (common/debug-prn "Calling cljs.analyzer/resolve-var..."))
     (ana/resolve-var env sym ana/confirm-var-exist-warning)
     (catch :default e
       (when (:verbose opts)
-        (debug-prn "Exception caught in resolve: " e))
+        (common/debug-prn "Exception caught in resolve: " e))
       (try
         (when (:verbose opts)
-          (debug-prn "Calling cljs.analyzer/resolve-macro-var..."))
+          (common/debug-prn "Calling cljs.analyzer/resolve-macro-var..."))
         (ana/resolve-macro-var env sym)
         (catch :default e
           (when (:verbose opts)
-            (debug-prn "Exception caught in resolve: " e)))))))
+            (common/debug-prn "Exception caught in resolve: " e)))))))
 
 (defn get-var
   [opts env sym]
@@ -126,10 +122,36 @@
   [opts]
   (into {} (filter (comp valid-opts-set first) opts)))
 
+(defn opts->load-fn
+  "If :load-fn! is present in opts, return it. Try to create one
+  from :src-paths and :read-file-fn! otherwise. Return nil if it
+  cannot."
+  [opts]
+  (or (:load-fn! opts)
+      (let [read-file-fn (:read-file-fn! opts)
+            src-paths (:src-paths opts)]
+        (if (and read-file-fn (sequential? src-paths))
+          (load/make-load-fn (:verbose opts)
+                             (into [] src-paths)
+                             read-file-fn)
+          (do (when (:verbose opts)
+                (common/debug-prn "Invalid :read-file-fn! or :src-paths (is it a valid sequence?).
+                                   Cannot create *load-fn*."))
+              nil)))))
+
 (defn normalize-opts
+  "Process the user options. Does not
+  They be validated beforehand according to
+  replumb.repl/valid-opts-set."
   [user-opts]
-  (let [vld-opts (valid-opts user-opts)]
-    (merge vld-opts (target/default-opts vld-opts))))
+  (let [vld-opts (valid-opts user-opts)
+        def-opts (target/default-opts vld-opts)]
+    ;; AR - note the order here, the last always overrides
+    (merge vld-opts
+           def-opts
+           {:init-fns (conj (:init-fns def-opts)
+                            (:init-fn! vld-opts))
+            :load-fn! (opts->load-fn vld-opts)})))
 
 (defn make-base-eval-opts!
   "Gets the base set of evaluation options. The 1-arity function
@@ -226,9 +248,9 @@
   treats warnings as errors."
   [opts cb warning-type env extra]
   (when (:verbose opts)
-    (debug-prn (str "Handling warning:\n" (with-out-str (pprint {:warning-type warning-type
-                                                                 :env env
-                                                                 :extra extra})))))
+    (common/debug-prn (str "Handling warning:\n" (with-out-str (pprint {:warning-type warning-type
+                                                                        :env env
+                                                                        :extra extra})))))
   (when (warning-type ana/*cljs-warnings*)
     (when-let [s (ana/error-message warning-type extra)]
       (swap! app-env assoc :last-eval-warning (ana/message env s)))))
@@ -274,7 +296,7 @@
     (if-let [warning-msg (:last-eval-warning @app-env)]
       (let [warning-error (ex-info warning-msg ex-info-data)]
         (when (:verbose opts)
-          (debug-prn "Erroring on last warning: " warning-msg))
+          (common/debug-prn "Erroring on last warning: " warning-msg))
         (common/wrap-error warning-error))
       original-res)))
 
@@ -312,7 +334,7 @@
    (call-back! opts cb {} res))
   ([opts cb data res]
    (when (:verbose opts)
-     (debug-prn "Calling back!\n" (with-out-str (pprint {:opts opts :data data :res res}))))
+     (common/debug-prn "Calling back!\n" (with-out-str (pprint {:opts opts :data data :res res}))))
    (let [new-map (warning-error-map! opts res)]
      (let [{:keys [value error]} new-map]
        (call-side-effect! data new-map)
@@ -338,7 +360,7 @@
                                    ['cljs.user (:current-ns @app-env)])
           ns-form (make-ns-form kind specs target-ns)]
       (when (:verbose opts)
-        (debug-prn "Processing" kind "via" (pr-str ns-form)))
+        (common/debug-prn "Processing" kind "via" (pr-str ns-form)))
       (cljs/eval st
                  ns-form
                  (make-base-eval-opts! opts)
@@ -388,7 +410,7 @@
        (call-back! opts cb data result)
        (let [ns-symbol result]
          (when (:verbose opts)
-           (debug-prn "in-ns argument is symbol? " (symbol? ns-symbol)))
+           (common/debug-prn "in-ns argument is symbol? " (symbol? ns-symbol)))
          (if-not (symbol? ns-symbol)
            (call-back! opts cb data (common/error-argument-must-be-symbol "in-ns" ex-info-data))
            (if (some (partial = ns-symbol) (known-namespaces))
@@ -444,7 +466,7 @@
   Data is passed from outside and will be forwarded to :init-fn!."
   [opts data]
   (when (:verbose opts)
-    (debug-prn "Initializing REPL environment with data" (with-out-str (pprint data))))
+    (common/debug-prn "Initializing REPL environment with data" (with-out-str (pprint data))))
   (assert (= cljs.analyzer/*cljs-ns* 'cljs.user))
 
   ;; Initializing, we need at least one init-fn, the default init function
@@ -517,7 +539,7 @@
                 :target (keyword *target*)}]
       (init-repl-if-necessary! opts data)
       (when (:verbose opts)
-        (debug-prn "Evaluating " expression-form " with options " opts))
+        (common/debug-prn "Evaluating " expression-form " with options " opts))
       (binding [ana/*cljs-warning-handlers* [(partial custom-warning-handler opts cb)]]
         (if (repl-special? expression-form)
           (process-repl-special opts cb data expression-form)
@@ -528,7 +550,7 @@
                          (make-base-eval-opts! opts)
                          (fn [res]
                            (when (:verbose opts)
-                             (debug-prn "Evaluation returned: " res))
+                             (common/debug-prn "Evaluation returned: " res))
                            (call-back! opts cb
                                        (merge data
                                               {:on-success! #(do (process-1-2-3 data expression-form (:value res))
@@ -536,7 +558,7 @@
                                        res))))))
     (catch :default e
       (when (:verbose opts)
-        (debug-prn "Exception caught in read-eval-call: " e))
+        (common/debug-prn "Exception caught in read-eval-call: " e))
       (call-back! opts cb {} (common/wrap-error e)))))
 
 (defn reset-env!
