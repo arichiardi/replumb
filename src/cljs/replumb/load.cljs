@@ -47,7 +47,7 @@
           src-path src-paths]
       ;; AR - will there be a need for
       ;; https://nodejs.org/docs/latest/api/path.html ?
-      (str src-path "/" path extension))))
+      (str src-path (when-not (= "/" (last src-path)) "/") path extension))))
 
 ;; AR - just for reference
 ;; (defn load-and-callback!
