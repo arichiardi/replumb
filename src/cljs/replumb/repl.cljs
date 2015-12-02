@@ -500,11 +500,8 @@
   The first parameter is a map of configuration options, currently
   supporting:
 
-  * :verbose   will enable the the evaluation logging, defaults to false.
-  * :load-fn!  overrides the replumb's *load-fn*
-  * :target   keyword or string that sets the *target* (:default if not
-  found).
-
+  * :verbose   will enable the the evaluation logging, defaults to false
+  * :target  :nodejs and :browser supported, the latter used if missing
   * :init-fn!  user provided initialization function, it will be passed
   a map of data currently containing:
 
@@ -512,10 +509,15 @@
       :ns     ;; the current namespace, as symbol
       :target ;; *target* as keyword, :default is the default
 
-  * :read-file-fn!  an asyncronous 2-arity function (fn [filename
-  source-cb] ...) where source-cb is itself a function (fn [source] ...)
-  that needs to be called when ready with the found file source as
-  string (nil if no file is found).
+  * :load-fn! will override replumb's default cljs.js/*load-fn*.
+  It rules out `:read-file-fn!`, losing any perk of using replumb.load
+  helpers. Use it if you know what you are doing.
+
+  * :read-file-fn!  an asynchronous 2-arity function (fn [filename
+  src-cb] ...) where src-cb is itself a function (fn [source] ...)  that
+  needs to be called when ready with the found file source as
+  string (nil if no file is found). It is mutually exclusive with
+  :load-fn! and will be ignored in case both are present.
 
   * :src-paths  a vector of paths containing source files.
 
@@ -528,6 +530,8 @@
   :value    ;; (if (success? result)) will contain the actual yield of the evaluation
   :error    ;; (if (not (success? result)) will contain a js/Error
   :form     ;; the evaluated form as data structure (not a string)
+
+  The third parameter is the source string to be read and evaluated.
 
   It initializes the repl harness if necessary."
   [opts cb source]

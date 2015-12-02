@@ -11,7 +11,7 @@
   supporting:
 
   * `:verbose` will enable the the evaluation logging, defaults to false
-  * `:target` `:nodejs` and `:default` supported, the latter used if missing
+  * `:target` `:nodejs` and `:browser` supported, the latter used if missing
   * `:init-fn!` user provided initialization function, it will be passed a
   map:
 
@@ -19,34 +19,40 @@
           :ns     ;; the current namespace, as symbol
           :target ;; the current target
 
-  * `:load-fn!` will override replumb's default `cljs.js/*load-fn*`:
+  * `:load-fn!` will override replumb's default `cljs.js/*load-fn*`.
+  It rules out `:read-file-fn!`, losing any perk of using `replumb.load`
+  helpers. Use it if you know what you are doing and follow this
+  protocol:
 
-      > Each runtime environment provides a different way to load a library.
-      > Whatever function `*load-fn*` is bound to will be passed two arguments
-      > - a map and a callback function: The map will have the following keys:
-      >
-      >     :name   - the name of the library (a symbol)
-      >     :macros - modifier signaling a macros namespace load
-      >     :path   - munged relative library path (a string)
-      >
-      > The callback cb, upon resolution, will need to pass the same map:
-      >
-      >     :lang       - the language, :clj or :js
-      >     :source     - the source of the library (a string)
-      >     :cache      - optional, if a :clj namespace has been precompiled to
-      >                   :js, can give an analysis cache for faster loads.
-      >     :source-map - optional, if a :clj namespace has been precompiled
-      >                   to :js, can give a V3 source map JSON
-      >
-      > If the resource could not be resolved, the callback should be invoked with
-      > nil.
-  * `:read-file-fn!` an async 2-arity function `(fn [filename source-cb]
-  ...)` where source-cb is itself a function `(fn [source] ...)` that
-  needs to be called with the string file source (`nil` if it cannot
-  resolve it).
-  * `:src-paths` a vector of paths containing source files.
+      ```
+      Each runtime environment provides a different way to load a library.
+      Whatever function `*load-fn*` is bound to will be passed two arguments
+      - a map and a callback function: The map will have the following keys:
 
-  * `:read-file-fn!` TODO
+          :name   - the name of the library (a symbol)
+          :macros - modifier signaling a macros namespace load
+          :path   - munged relative library path (a string)
+
+      The callback cb, upon resolution, will need to pass the same map:
+
+          :lang       - the language, :clj or :js
+          :source     - the source of the library (a string)
+          :cache      - optional, if a :clj namespace has been precompiled to
+                        :js, can give an analysis cache for faster loads.
+          :source-map - optional, if a :clj namespace has been precompiled
+                        to :js, can give a V3 source map JSON
+
+      If the resource could not be resolved, the callback should be invoked with
+      nil.
+      ```
+
+  * `:read-file-fn!` an asynchronous 2-arity function `(fn [filename
+  src-cb] ...)` where src-cb is itself a function `(fn [source] ...)`
+  that needs to be called when ready with the found file source as
+  string (nil if no file is found). It is mutually exclusive with
+  `:load-fn!` and will be ignored in case both are present.
+
+  * `:src-paths`  a vector of paths containing source files.
 
   The second parameter, `callback`, should be a 1-arity function which receives
   the result map, whose result keys will be:
@@ -57,6 +63,8 @@
   :error     ;; (if (not (success? result)) will contain a js/Error
   :form      ;; the evaluated form as data structure (not a string)
   ```
+
+  The third parameter is the source string to be read and evaluated.
 
   It initializes the repl harness if necessary."
   ([callback source] (repl/read-eval-call {} callback source))
@@ -101,30 +109,34 @@
   "Creates the browser option map for read-eval-call.
 
   The 1-arity function requires a `load-fn!` compatible with
-  ClojureScript `cljs.js/*load-fn*`:
+  ClojureScript `cljs.js/*load-fn*`. Use it if you know what you are
+  doing and follow this protocol:
 
-      > Each runtime environment provides a different way to load a library.
-      > Whatever function `*load-fn*` is bound to will be passed two arguments
-      > - a map and a callback function: The map will have the following keys:
-      >
-      >     :name   - the name of the library (a symbol)
-      >     :macros - modifier signaling a macros namespace load
-      >     :path   - munged relative library path (a string)
-      >
-      > The callback cb, upon resolution, will need to pass the same map:
-      >
-      >     :lang       - the language, :clj or :js
-      >     :source     - the source of the library (a string)
-      >     :cache      - optional, if a :clj namespace has been precompiled to
-      >                   :js, can give an analysis cache for faster loads.
-      >     :source-map - optional, if a :clj namespace has been precompiled
-      >                   to :js, can give a V3 source map JSON
-      >
-      > If the resource could not be resolved, the callback should be invoked with
-      > nil.
+      Each runtime environment provides a different way to load a library.
+      Whatever function `*load-fn*` is bound to will be passed two arguments
+      - a map and a callback function: The map will have the following keys:
+
+          :name   - the name of the library (a symbol)
+          :macros - modifier signaling a macros namespace load
+          :path   - munged relative library path (a string)
+
+      The callback cb, upon resolution, will need to pass the same map:
+
+          :lang       - the language, :clj or :js
+          :source     - the source of the library (a string)
+          :cache      - optional, if a :clj namespace has been precompiled to
+                        :js, can give an analysis cache for faster loads.
+          :source-map - optional, if a :clj namespace has been precompiled
+                        to :js, can give a V3 source map JSON
+
+      If the resource could not be resolved, the callback should be invoked with
+      nil.
 
   The 2-arity function accepts a sequence of source paths where files
-  can be found and the read-file-fn that will perform the reading."
+  can be found and the read-file-fn, an asynchronous 2-arity
+  function (fn [filename src-cb] ...) where src-cb is itself a
+  function (fn [source] ...) that needs to be called when ready with the
+  found file source as string (nil if no file is found)."
   ([load-fn]
    {:target :default
     :load-fn! load-fn})
@@ -137,30 +149,34 @@
   "Creates the Node.js option map for read-eval-call.
 
   The 1-arity function requires a `load-fn!` compatible with
-  ClojureScript `cljs.js/*load-fn*`:
+  ClojureScript `cljs.js/*load-fn*`. Use it if you know what you are
+  doing and follow this protocol:
 
-      > Each runtime environment provides a different way to load a library.
-      > Whatever function `*load-fn*` is bound to will be passed two arguments
-      > - a map and a callback function: The map will have the following keys:
-      >
-      >     :name   - the name of the library (a symbol)
-      >     :macros - modifier signaling a macros namespace load
-      >     :path   - munged relative library path (a string)
-      >
-      > The callback cb, upon resolution, will need to pass the same map:
-      >
-      >     :lang       - the language, :clj or :js
-      >     :source     - the source of the library (a string)
-      >     :cache      - optional, if a :clj namespace has been precompiled to
-      >                   :js, can give an analysis cache for faster loads.
-      >     :source-map - optional, if a :clj namespace has been precompiled
-      >                   to :js, can give a V3 source map JSON
-      >
-      > If the resource could not be resolved, the callback should be invoked with
-      > nil.
+      Each runtime environment provides a different way to load a library.
+      Whatever function `*load-fn*` is bound to will be passed two arguments
+      - a map and a callback function: The map will have the following keys:
+
+          :name   - the name of the library (a symbol)
+          :macros - modifier signaling a macros namespace load
+          :path   - munged relative library path (a string)
+
+      The callback cb, upon resolution, will need to pass the same map:
+
+          :lang       - the language, :clj or :js
+          :source     - the source of the library (a string)
+          :cache      - optional, if a :clj namespace has been precompiled to
+                        :js, can give an analysis cache for faster loads.
+          :source-map - optional, if a :clj namespace has been precompiled
+                        to :js, can give a V3 source map JSON
+
+      If the resource could not be resolved, the callback should be invoked with
+      nil.
 
   The 2-arity function accepts a sequence of source paths where files
-  can be found and the read-file-fn that will perform it the reading."
+  can be found and the read-file-fn, an asynchronous 2-arity
+  function (fn [filename src-cb] ...) where src-cb is itself a
+  function (fn [source] ...) that needs to be called when ready with the
+  found file source as string (nil if no file is found)."
   ([load-fn]
    {:target :nodejs
     :load-fn! load-fn})
