@@ -1,4 +1,4 @@
-(ns replumb.target.browser)
+(ns replumb.browser)
 
 (defn init-fn!
   []

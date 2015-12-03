@@ -9,11 +9,8 @@
 
 (def validated-echo-cb (partial repl/validated-call-back! echo-callback))
 
-;; AR - until we provide a load function for browsers, fake-load-fn! is
-;; necessary
-(def target-opts (if (doo/node?)
-                   (core/nodejs-options load/fake-load-fn!)
-                   (core/browser-options load/fake-load-fn!)))
+(def test-paths ["dev-resources/private/test/src/cljs"
+                 "dev-resources/private/test/src/clj"])
 
 (deftest init
   ;; This test heavily relies on repl execution order. If the repl is already
@@ -22,7 +19,10 @@
   ;; order if this happens. At the moment it is disabled.
   ;; (is (not (:initializing? @repl/app-env)) "Flag :initializing? should be false before init")
   ;; (is (:needs-init? @repl/app-env) "Flag :needs-init? should be true before init")
-  (let [init-map-atom (atom {})
+  (let [target-opts (if (doo/node?)
+                      (core/nodejs-options load/fake-load-fn!)
+                      (core/browser-options load/fake-load-fn!))
+        init-map-atom (atom {})
         custom-init-fn (fn [init-map] (reset! init-map-atom init-map))
         _ (swap! repl/app-env merge {:initializing? false
                                      :needs-init? true})
@@ -143,66 +143,57 @@
     (is (= "nil" out) "(ns something) should return \"nil\"")
     (repl/reset-env! ['my.namespace])))
 
-(deftest process-require
+;; AR - with fake load, we want to test functionality that don't depend on
+;; source reading. This will stay until we will provide a mechanism to inject
+;; *load-fn* that actuall read files.
+(deftest process-require-fake-load
   ;; Damian - Add COMPILED flag to cljs eval to turn off namespace already declared errors
   ;; AR - COMPILED goes here not in the runner otherwise node does not execute doo tests
   (set! js/COMPILED true)
-  ;; AR - with fake load, until we provide a mechanism to load files
-  ;; this will be needed in order to test require independently from the file
-  ;; system.
-  (let [res (repl/read-eval-call target-opts validated-echo-cb "(require something)")
-        error (unwrap-result res)]
-    (is (not (success? res)) "(require something) should NOT succeed")
-    (is (valid-eval-error? error) "(require something) should result in an js/Error")
-    (is (re-find #"is not ISeqable" (extract-message error)) "(require something) should have correct error")
-    (repl/reset-env!))
-  (let [res (repl/read-eval-call target-opts validated-echo-cb "(require \"something\")")
-        error (unwrap-result res)]
-    (is (not (success? res)) "(require \"something\") should NOT succeed")
-    (is (valid-eval-error? error) "(require \"something\") should result in an js/Error")
-    (is (re-find #"Argument to require must be a symbol" (extract-message error)) "(require \"something\") should have correct error")
-    (repl/reset-env!))
-  (let [res (repl/read-eval-call target-opts validated-echo-cb "(require 'something.ns)")
-        out (unwrap-result res)]
-    (is (success? res) "(require 'something.ns) should succeed")
-    (is (valid-eval-result? out) "(require 'something.ns) should be a valid result")
-    (is (= "nil" out) "(require 'something.ns) should return nil")
-    (repl/reset-env!))
 
-  (let [res (do (repl/read-eval-call {} validated-echo-cb "(ns a.ns)")
-                (repl/read-eval-call {} validated-echo-cb "(def a 3)")
-                (repl/read-eval-call {} validated-echo-cb "(ns b.ns)")
-                (repl/read-eval-call target-opts validated-echo-cb "(require 'a.ns)"))
-        out (unwrap-result res)]
-    (is (success? res) "(require 'a.ns) from b.ns should succeed")
-    (is (valid-eval-result? out) "(require 'a.ns) from b.ns should be a valid result")
-    (is (= 'b.ns (repl/current-ns)) "(require 'a.ns) from b.ns should not change namespace")
-    (repl/reset-env! ['a.ns 'b.ns]))
+  (let [target-opts (if (doo/node?)
+                      (core/nodejs-options load/fake-load-fn!)
+                      (core/browser-options load/fake-load-fn!))]
+    (let [res (repl/read-eval-call target-opts validated-echo-cb "(require something)")
+          error (unwrap-result res)]
+      (is (not (success? res)) "(require something) should NOT succeed")
+      (is (valid-eval-error? error) "(require something) should result in an js/Error")
+      (is (re-find #"is not ISeqable" (extract-message error)) "(require something) should have correct error")
+      (repl/reset-env!))
+    (let [res (repl/read-eval-call target-opts validated-echo-cb "(require \"something\")")
+          error (unwrap-result res)]
+      (is (not (success? res)) "(require \"something\") should NOT succeed")
+      (is (valid-eval-error? error) "(require \"something\") should result in an js/Error")
+      (is (re-find #"Argument to require must be a symbol" (extract-message error)) "(require \"something\") should have correct error")
+      (repl/reset-env!))
+    (let [res (repl/read-eval-call target-opts validated-echo-cb "(require 'something.ns)")
+          out (unwrap-result res)]
+      (is (success? res) "(require 'something.ns) should succeed")
+      (is (valid-eval-result? out) "(require 'something.ns) should be a valid result")
+      (is (= "nil" out) "(require 'something.ns) should return nil")
+      (repl/reset-env!))
 
-  (let [res (do (repl/read-eval-call {} validated-echo-cb "(ns c.ns)")
-                (repl/read-eval-call {} validated-echo-cb "(def referred-a 3)")
-                (repl/read-eval-call {} validated-echo-cb "(ns d.ns)")
-                (repl/read-eval-call target-opts validated-echo-cb "(require '[c.ns :refer [referred-a]])")
-                (repl/read-eval-call {} validated-echo-cb "referred-a"))
-        out (unwrap-result res)]
-    (is (success? res) )
-    (is (valid-eval-result? out) )
-    (is (= 'd.ns (repl/current-ns)) "(require '[c.ns :refer [referred-a]]) should not change namespace")
-    (is (= "3" out) "(require '[c.ns :refer [referred-a]]) should interned var value")
-    (repl/reset-env! ['c.ns 'd.ns]))
+    (let [res (do (repl/read-eval-call {} validated-echo-cb "(ns a.ns)")
+                  (repl/read-eval-call {} validated-echo-cb "(def a 3)")
+                  (repl/read-eval-call {} validated-echo-cb "(ns b.ns)")
+                  (repl/read-eval-call target-opts validated-echo-cb "(require 'a.ns)"))
+          out (unwrap-result res)]
+      (is (success? res) "(require 'a.ns) from b.ns should succeed")
+      (is (valid-eval-result? out) "(require 'a.ns) from b.ns should be a valid result")
+      (is (= 'b.ns (repl/current-ns)) "(require 'a.ns) from b.ns should not change namespace")
+      (repl/reset-env! ['a.ns 'b.ns]))
 
-  ;; AR - Test for "No *load-fn* when requiring a namespace in browser #35"
-  ;; Note there are no target opts here
-  (let [res (do (repl/read-eval-call {} validated-echo-cb "(ns e.ns)")
-                (repl/read-eval-call {} validated-echo-cb "(ns f.ns)")
-                (repl/read-eval-call {:target :default
-                                      :load-fn! load/no-resource-load-fn!} validated-echo-cb "(require 'e.ns)"))
-        error (unwrap-result res)]
-    (is (not (success? res)) "(require 'e.ns) should NOT succeed")
-    (is (valid-eval-error? error) "(require 'e.ns) should result in an js/Error")
-    (is (= 'f.ns (repl/current-ns)) "(require 'e.ns) from f.ns should not change namespace")
-    (is (re-find #"No such namespace" (extract-message error)) "(require 'e.ns) should have correct error")
-    (repl/reset-env! ['e.ns 'f.ns]))
+    (let [res (do (repl/read-eval-call {} validated-echo-cb "(ns c.ns)")
+                  (repl/read-eval-call {} validated-echo-cb "(def referred-a 3)")
+                  (repl/read-eval-call {} validated-echo-cb "(ns d.ns)")
+                  (repl/read-eval-call target-opts validated-echo-cb "(require '[c.ns :refer [referred-a]])")
+                  (repl/read-eval-call {} validated-echo-cb "referred-a"))
+          out (unwrap-result res)]
+      (is (success? res) )
+      (is (valid-eval-result? out) )
+      (is (= 'd.ns (repl/current-ns)) "(require '[c.ns :refer [referred-a]]) should not change namespace")
+      (is (= "3" out) "(require '[c.ns :refer [referred-a]]) should interned var value")
+      (repl/reset-env! ['c.ns 'd.ns])))
   (set! js/COMPILED false))
 
 (deftest warnings
@@ -222,17 +213,6 @@
       (is (=  "nil" (unwrap-result (first @results))) "Evaluating an undefined with :no-warning-error symbol should return nil")
       (reset! results [])
       (repl/reset-env!))))
-
-(deftest options
-  ;; AR - just not to forget adding them in valid-opts-set
-  (let [opts {:verbose :true
-              :load-fn! "fn"
-              :no-warning-error true
-              :target "default"
-              :init-fn! "fn"
-              :read-file-fn! "fn"
-              :src-paths ["src/one" "src/two"]}]
-    (is (every? repl/valid-opts-set (keys (repl/valid-opts opts))) "Always add valid options to valid-opts-set")))
 
 (deftest macros
   ;;;;;;;;;;;;;;;;
@@ -277,11 +257,14 @@
 
 (deftest load-fn
   (let [load-map-atom (atom {})
-        custom-load-fn (fn [load-map cb] (reset! load-map-atom load-map) (cb nil))]
-    (let [rs (repl/read-eval-call {:load-fn! custom-load-fn} echo-callback "(require 'bar.core)")]
-      (is (= 'bar.core (:name @load-map-atom)) "Loading map with custom function should have correct :name")
-      (is (not (:macros @load-map-atom)) "Loading map with custom function should have correct :macros")
-      (is (= "bar/core" (:path @load-map-atom)) "Loading map with custom function should have correct :path")
+        custom-load-fn (fn [load-map cb] (reset! load-map-atom load-map) (cb nil))
+        target-opts (if (doo/node?)
+                      (core/nodejs-options custom-load-fn)
+                      (core/browser-options custom-load-fn))]
+    (let [rs (repl/read-eval-call target-opts echo-callback "(require 'bar.core)")]
+      (is (= 'bar.core (:name @load-map-atom)) "Loading map with custom load-fn should have correct :name")
+      (is (not (:macros @load-map-atom)) "Loading map with custom load-fn should have correct :macros")
+      (is (= "bar/core" (:path @load-map-atom)) "Loading map with custom load-fn should have correct :path")
       (reset! load-map-atom {})
       (repl/reset-env! ["bar.core"]))))
 

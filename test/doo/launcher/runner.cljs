@@ -3,7 +3,8 @@
             [replumb.core-test]
             [replumb.repl-test]
             [replumb.common-test]
-            [replumb.load-test]))
+            [replumb.load-test]
+            [replumb.options-test]))
 
 (enable-console-print!)
 

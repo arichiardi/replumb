@@ -1,4 +1,4 @@
-(ns replumb.target.nodejs.io
+(ns replumb.nodejs.io
   (:require [cljs.nodejs :as nodejs]
             [replumb.load :as load]))
 
@@ -24,6 +24,6 @@
    (read-file! (force require-fs) encoding-or-opts file-name src-cb))
   ([fs-module encoding-or-opts file-name src-cb]
    (.readFile fs-module file-name encoding-or-opts
-              (fn [err source]
+              (fn [err data]
                 (src-cb (when-not err
-                          source))))))
+                          data))))))

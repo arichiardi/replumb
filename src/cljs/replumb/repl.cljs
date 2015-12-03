@@ -10,7 +10,7 @@
             [cljs.pprint :refer [pprint]]
             [replumb.common :as common]
             [replumb.doc-maps :as docs]
-            [replumb.target :as target]
+            [replumb.options :as options]
             [replumb.load :as load]))
 
 ;;;;;;;;;;;;;
@@ -97,10 +97,10 @@
   [opts env sym]
   (let [var (with-compiler-env st (resolve opts env sym))
         var (or var
-              (if-let [macro-var (with-compiler-env st
-                                   (resolve opts env (symbol "cljs.core$macros" (name sym))))]
-                (update (assoc macro-var :ns 'cljs.core)
-                  :name #(symbol "cljs.core" (name %)))))]
+                (if-let [macro-var (with-compiler-env st
+                                     (resolve opts env (symbol "cljs.core$macros" (name sym))))]
+                  (update (assoc macro-var :ns 'cljs.core)
+                          :name #(symbol "cljs.core" (name %)))))]
     (if (= (namespace (:name var)) (str (:ns var)))
       (update var :name #(symbol (name %)))
       var)))
@@ -111,47 +111,6 @@
 (defn repl-special?
   [form]
   (and (seq? form) (replumb-repl-special-set (first form))))
-
-(def valid-opts-set
-  "Set of valid option used for external input validation."
-  #{:verbose :no-warning-error :target :init-fn!
-    :load-fn! :read-file-fn! :src-paths})
-
-(defn valid-opts
-  "Extract options according to the valid-opts-set."
-  [opts]
-  (into {} (filter (comp valid-opts-set first) opts)))
-
-(defn opts->load-fn
-  "If :load-fn! is present in opts, return it. Try to create one
-  from :src-paths and :read-file-fn! otherwise. Return nil if it
-  cannot."
-  [opts]
-  (or (:load-fn! opts)
-      (let [read-file-fn (:read-file-fn! opts)
-            src-paths (:src-paths opts)]
-        (if (and read-file-fn (sequential? src-paths))
-          (load/make-load-fn (:verbose opts)
-                             (into [] src-paths)
-                             read-file-fn)
-          (do (when (:verbose opts)
-                (common/debug-prn "Invalid :read-file-fn! or :src-paths (is it a valid sequence?).
-                                   Cannot create *load-fn*."))
-              nil)))))
-
-(defn normalize-opts
-  "Process the user options. Does not
-  They be validated beforehand according to
-  replumb.repl/valid-opts-set."
-  [user-opts]
-  (let [vld-opts (valid-opts user-opts)
-        def-opts (target/default-opts vld-opts)]
-    ;; AR - note the order here, the last always overrides
-    (merge vld-opts
-           def-opts
-           {:init-fns (conj (:init-fns def-opts)
-                            (:init-fn! vld-opts))
-            :load-fn! (opts->load-fn vld-opts)})))
 
 (defn make-base-eval-opts!
   "Gets the base set of evaluation options. The 1-arity function
@@ -171,14 +130,14 @@
 (defn self-require?
   [specs]
   (some
-    (fn [quoted-spec-or-kw]
-      (and (not (keyword? quoted-spec-or-kw))
-        (let [spec (second quoted-spec-or-kw)
-              ns (if (sequential? spec)
-                   (first spec)
-                   spec)]
-          (= ns @current-ns))))
-    specs))
+   (fn [quoted-spec-or-kw]
+     (and (not (keyword? quoted-spec-or-kw))
+          (let [spec (second quoted-spec-or-kw)
+                ns (if (sequential? spec)
+                     (first spec)
+                     spec)]
+            (= ns @current-ns))))
+   specs))
 
 (defn canonicalize-specs
   [specs]
@@ -204,15 +163,15 @@
   (if (= kind :import)
     (with-meta `(~'ns ~target-ns
                   (~kind
-                    ~@(map (fn [quoted-spec-or-kw]
-                             (if (keyword? quoted-spec-or-kw)
-                               quoted-spec-or-kw
-                               (second quoted-spec-or-kw)))
-                        specs)))
+                   ~@(map (fn [quoted-spec-or-kw]
+                            (if (keyword? quoted-spec-or-kw)
+                              quoted-spec-or-kw
+                              (second quoted-spec-or-kw)))
+                          specs)))
       {:merge true :line 1 :column 1})
     (with-meta `(~'ns ~target-ns
                   (~kind
-                    ~@(-> specs canonicalize-specs process-reloads!)))
+                   ~@(-> specs canonicalize-specs process-reloads!)))
       {:merge true :line 1 :column 1})))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -537,7 +496,7 @@
   [opts cb source]
   (try
     (let [expression-form (repl-read-string source)
-          opts (normalize-opts opts) ;; AR - does the whole user option processing
+          opts (options/normalize-opts opts) ;; AR - does the whole user option processing
           data {:form expression-form
                 :ns (:current-ns @app-env)
                 :target (keyword *target*)}]
@@ -562,7 +521,7 @@
                                        res))))))
     (catch :default e
       (when (:verbose opts)
-        (common/debug-prn "Exception caught in read-eval-call: " e))
+        (common/debug-prn "Exception caught in read-eval-call: " (.-stack e)))
       (call-back! opts cb {} (common/wrap-error e)))))
 
 (defn reset-env!

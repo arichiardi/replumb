@@ -1,4 +1,4 @@
-(ns replumb.target.nodejs)
+(ns replumb.nodejs)
 
 (defn init-fn!
   []

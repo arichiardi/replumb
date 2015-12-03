@@ -3,7 +3,7 @@
   (:require [cljs.nodejs :as nodejs]
             [clojure.string :as string]
             [replumb.core :as replumb]
-            [replumb.target.nodejs.io :as io]))
+            [replumb.nodejs.io :as io]))
 
 (nodejs/enable-util-print!)
 
