@@ -4,7 +4,8 @@
             [replumb.repl-test]
             [replumb.common-test]
             [replumb.load-test]
-            [replumb.options-test]))
+            [replumb.options-test]
+            [replumb.require-test]))
 
 (enable-console-print!)
 

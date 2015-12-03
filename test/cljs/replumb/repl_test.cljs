@@ -9,9 +9,6 @@
 
 (def validated-echo-cb (partial repl/validated-call-back! echo-callback))
 
-(def test-paths ["dev-resources/private/test/src/cljs"
-                 "dev-resources/private/test/src/clj"])
-
 (deftest init
   ;; This test heavily relies on repl execution order. If the repl is already
   ;; initialized before this point this test will fail. It is a good idea not

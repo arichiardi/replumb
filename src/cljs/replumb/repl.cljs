@@ -323,7 +323,7 @@
       (cljs/eval st
                  ns-form
                  (make-base-eval-opts! opts)
-                 (fn [error]
+                 (fn [{error :error}]
                    (call-back! opts cb
                                (merge data
                                       {:side-effect! #(when is-self-require?
