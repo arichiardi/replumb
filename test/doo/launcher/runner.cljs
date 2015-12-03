@@ -1,11 +1,11 @@
-(ns  ^:figwheel-always launcher.runner
-  (:require [doo.runner :refer-macros [doo-all-tests]]
+(ns launcher.runner
+  (:require [doo.runner :as doo :refer-macros [doo-all-tests]]
             [replumb.core-test]
             [replumb.repl-test]
-            [replumb.common-test]))
-
-;; Add COMPILED flag to cljs eval to turn off namespace already declared errors
-(set! js/COMPILED true)
+            [replumb.common-test]
+            [replumb.load-test]
+            [replumb.options-test]
+            [replumb.require-test]))
 
 (enable-console-print!)
 

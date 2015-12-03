@@ -2,24 +2,10 @@
   "Utilities for operating within Node.js"
   (:require [cljs.nodejs :as nodejs]
             [clojure.string :as string]
-            [replumb.core :as replumb]))
+            [replumb.core :as replumb]
+            [replumb.nodejs.io :as io]))
 
 (nodejs/enable-util-print!)
-
-;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; File system stuff ;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;
-
-(def require-fs #(nodejs/require "fs"))
-
-(defn- node-read-file
-  "Accepts a filename to read and a callback. Upon success, invokes
-  callback with the source. Otherwise invokes the callback with nil."
-  [filename source-cb]
-  (.readFile (require-fs) filename "utf-8"
-             (fn [err source]
-               (source-cb (when-not err
-                            source)))))
 
 ;;;;;;;;;;;;;;;;;;;
 ;;; Simple REPL ;;;
@@ -36,7 +22,7 @@
       (.on "line"
            (fn [cmd]
              (replumb/read-eval-call
-              (replumb/nodejs-options src-paths node-read-file)
+              (replumb/nodejs-options src-paths io/read-file!)
               (fn [res]
                 (-> res
                     replumb/result->string
@@ -45,8 +31,6 @@
                 (.prompt rl))
               cmd)))
       (.prompt))))
-
-
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Main, from mfikes/elbow ;;;
