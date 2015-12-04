@@ -148,7 +148,7 @@ This project adheres to the [SemVer](http://semver.org/) specification.
 
 ### Documentation
 
-The documentation referring to the latest version can always be found in the ```doc``` folder.
+The documentation referring to the latest version (`SNAPSHOT` or release) can always be found in the ```doc``` folder of this repo or generated through `lein codox`.
 
 ### Contributions
 
