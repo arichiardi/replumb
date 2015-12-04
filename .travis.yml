@@ -1,6 +1,6 @@
 language: clojure
 lein: lein2
-script: "lein2 test-phantom*"
+script: "lein2 test-phantom* test-node*"
 jdk:
     - oraclejdk8
 sudo: false
