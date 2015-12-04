@@ -44,14 +44,6 @@
   [sym]
   (get-in @st [:cljs.analyzer/namespaces sym]))
 
-(defn remove-ns
-  "Removes the namespace named by the symbol."
-  ([ns]
-   (remove-ns env/*compiler* ns))
-  ([state ns]
-   {:pre [(symbol? ns)]}
-   (swap! state update-in [:cljs.analyzer/namespaces] dissoc ns)))
-
 (defn map-keys
   [f m]
   (reduce-kv (fn [r k v] (assoc r (f k) v)) {} m))
@@ -147,6 +139,16 @@
               (as-> (second quoted-spec-or-kw) spec
                 (if (vector? spec) spec [spec]))))]
     (map canonicalize specs)))
+
+;; from https://github.com/mfikes/planck/commit/fe9e7b3ee055930523af1ea3ec9b53407ed2b8c8
+(defn purge-ns-analysis-cache!
+  [st ns]
+  (swap! st update-in [::ana/namespaces] dissoc ns))
+
+(defn purge-ns!
+  [st ns]
+  (purge-ns-analysis-cache! st ns)
+  (swap! cljs.js/*loaded* disj ns))
 
 (defn process-reloads!
   [specs]
@@ -537,7 +539,7 @@
    (reset-env! nil))
   ([namespaces]
    (doseq [ns namespaces]
-     (remove-ns st (symbol ns)))
+     (purge-ns! st (symbol ns)))
    (reset-last-warning!)
    (read-eval-call {} identity "(set! *e nil)")
    (read-eval-call {} identity "(in-ns 'cljs.user)")))

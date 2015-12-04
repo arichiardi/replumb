@@ -127,17 +127,17 @@
   (set! js/COMPILED false))
 
 (deftest process-ns
-  (let [res (repl/read-eval-call {} validated-echo-cb "(ns 'first.namespace)")
+  (let [res (repl/read-eval-call {} validated-echo-cb "(ns 'something.ns)")
         error (unwrap-result res)]
-    (is (not (success? res)) "(ns 'something) should NOT succeed")
-    (is (valid-eval-error? error) "(ns 'something) should result in an js/Error")
-    (is (re-find #"Namespaces must be named by a symbol" (extract-message error)) "(ns 'something) should have correct error")
+    (is (not (success? res)) "(ns 'something.ns) should NOT succeed")
+    (is (valid-eval-error? error) "(ns 'something.ns) should result in an js/Error")
+    (is (re-find #"Namespaces must be named by a symbol" (extract-message error)) "(ns 'something.ns) should have correct error")
     (repl/reset-env!))
   (let [res (repl/read-eval-call {} validated-echo-cb "(ns my.namespace)")
         out (unwrap-result res)]
-    (is (success? res) "(ns something) should succeed")
-    (is (valid-eval-result? out) "(ns something) should be a valid result")
-    (is (= "nil" out) "(ns something) should return \"nil\"")
+    (is (success? res) "(ns my.namespace) should succeed")
+    (is (valid-eval-result? out) "(ns my.namespace) should be a valid result")
+    (is (= "nil" out) "(ns my.namespace) should return \"nil\"")
     (repl/reset-env! ['my.namespace])))
 
 ;; AR - with fake load, we want to test functionality that don't depend on
@@ -168,7 +168,7 @@
       (is (success? res) "(require 'something.ns) should succeed")
       (is (valid-eval-result? out) "(require 'something.ns) should be a valid result")
       (is (= "nil" out) "(require 'something.ns) should return nil")
-      (repl/reset-env!))
+      (repl/reset-env! ['something.ns]))
 
     (let [res (do (repl/read-eval-call {} validated-echo-cb "(ns a.ns)")
                   (repl/read-eval-call {} validated-echo-cb "(def a 3)")
