@@ -462,7 +462,8 @@
 
   * :verbose  will enable the the evaluation logging, defaults to false
   * :warning-as-error  will consider a compiler warning as error
-  * :target  :nodejs and :browser supported, the latter used if missing
+  * :target :nodejs and :browser supported, the latter is used if
+  missing
   * :init-fn!  user provided initialization function, it will be passed
   a map of data currently containing:
 
@@ -527,7 +528,7 @@
       (call-back! opts cb {} (common/wrap-error e)))))
 
 (defn reset-env!
-  "It dons the following (in order):
+  "It does the following (in order):
 
   1. remove the input namespaces from the compiler environment
   2. set *e to nil
