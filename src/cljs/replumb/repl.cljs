@@ -249,10 +249,10 @@
   "Checks if there has been a warning and if so will return the correct
   error map instead of the input one. Note that if the input map was
   already an :error, the warning will be ignored.
-  If :no-warning-error is true in opts the warning remains a warning,
-  not emitting errors."
-  [opts {:keys [value error] :as original-res}]
-  (if (or error (:no-warning-error opts))
+  If (:warning-as-error opts) is truey, in case of warning it will
+  return a with :error."
+  [opts {:keys [error] :as original-res}]
+  (if (or error (not (:warning-as-error opts)))
     original-res
     (if-let [warning-msg (:last-eval-warning @app-env)]
       (let [warning-error (ex-info warning-msg ex-info-data)]
@@ -279,8 +279,7 @@
 
   * :verbose will enable the the evaluation logging, defaults to false.
   * :no-pr-str-on-value avoids wrapping successful value in a pr-str
-  * :no-warning-error will consider a warning like a warning, not
-  emitting errors
+  * :warning-as-error will consider a warning like an error
 
   Notes:
   1. The opts map passed here overrides the environment options.
@@ -461,7 +460,8 @@
   The first parameter is a map of configuration options, currently
   supporting:
 
-  * :verbose   will enable the the evaluation logging, defaults to false
+  * :verbose  will enable the the evaluation logging, defaults to false
+  * :warning-as-error  will consider a compiler warning as error
   * :target  :nodejs and :browser supported, the latter used if missing
   * :init-fn!  user provided initialization function, it will be passed
   a map of data currently containing:
