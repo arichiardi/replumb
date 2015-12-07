@@ -294,7 +294,9 @@
    (call-back! opts cb {} res))
   ([opts cb data res]
    (when (:verbose opts)
-     (common/debug-prn "Calling back!\n" (with-out-str (pprint {:opts opts :data data :res res}))))
+     (common/debug-prn "Calling back!\n" (with-out-str (pprint {:opts (common/filter-fn-keys opts)
+                                                                :data data
+                                                                :res res}))))
    (let [new-map (warning-error-map! opts res)]
      (let [{:keys [value error]} new-map]
        (call-side-effect! data new-map)
@@ -505,7 +507,7 @@
                 :target (keyword *target*)}]
       (init-repl-if-necessary! opts data)
       (when (:verbose opts)
-        (common/debug-prn "Evaluating " expression-form " with options " opts))
+        (common/debug-prn "Evaluating " expression-form " with options " (common/filter-fn-keys opts)))
       (binding [ana/*cljs-warning-handlers* [(partial custom-warning-handler opts cb)]]
         (if (repl-special? expression-form)
           (process-repl-special opts cb data expression-form)

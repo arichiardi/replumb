@@ -84,6 +84,12 @@
   [symbol ex-info-data]
   (wrap-error (ex-info (str "Argument to " symbol " must be a symbol") ex-info-data)))
 
+(defn filter-fn-keys
+  "Filter out the option map keys that have -fn in it."
+  [opts]
+  {:pre [(map? opts)]}
+  (into {} (filter #(not (re-find #"-fn" (name (first %)))) opts)))
+
 (defn debug-prn
   [& args]
   (binding [cljs.core/*print-fn* cljs.core/*print-err-fn*]
