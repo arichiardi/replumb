@@ -122,10 +122,10 @@ Support is provided, but only `:optimizations :none` works fine at the moment:
 Where `node-read-file!` is typically a client-provided asynchronous 2-arity
 function `(fn [filename src-cb] ...)` where `src-cb` is itself a function `(fn
 [source] ...)` that needs to be called with the found file source as
-string (nil if no file is found).
+string (`nil` if no file is found).
 
 See `replumb.core/nodejs-options` documentation and feel free to steal
-`src/node/replumb/target/nodejs/io.cljs` implementation. Moreover
+`src/node/replumb/nodejs/io.cljs` implementation. Moreover
 `repl-demo/node` contains a working example that can be built with ```lein
 node-repl*``` and launched with:
 
