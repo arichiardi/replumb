@@ -8,6 +8,10 @@ Replum (*'rɛplʌm*) is a plumbing library for your [bootstrapped](https://en.m.
 
 This library tries to ease the burden of talking direcly to ClojureScript ```cljs.js``` and puts together [pieces](https://github.com/kanaka/cljs-bootstrap) [of](https://github.com/mfikes/planck) [work](https://github.com/mfikes/replete) contributed by the ClojureScript community at disparate points in time on the [`cljs-in-cljs`](https://github.com/clojure/clojurescript/wiki/Bootstrapping-the-Compiler#cljs-in-cljs-from-2012) subject. It aspires to be a common starting point for custom REPLs and/or REPL-ish apps (educational interactive environments for instance).
 
+### Thanks
+
+As [current maintainer](https://github.com/arichiardi) of the project I would like to thank each and every present and future contributor, [Scalac](https://scalac.io) for actively supporting the (Clojure) open source community and [Mikes Fikes](https://github.com/mfikes) for having answered to my incessant questions on Slack and aided in brainstorming the project name. 
+
 ## Usage
 
 __Leiningen__ ([via Clojars](https://clojars.org/replumb))
@@ -154,12 +158,12 @@ The documentation referring to the latest version (`SNAPSHOT` or release) can al
 
 Contributions are welcome, any of them. Have a look at ```CONTRIBUTING.md``` for details.
 
-### Thanks
-
-As [current maintainer](https://github.com/arichiardi) of the project I would like to thank each and every present and future contributor, [Scalac](https://scalac.io) for actively supporting the (Clojure) open source community and [Mikes Fikes](https://github.com/mfikes) for having answered to my incessant questions on Slack and aided in brainstorming the project name. 
-
 ### License
+
+Distributed under the Eclipse Public License, the same as Clojure.
 
 Copyright (C) 2015 Scalac Sp. z o.o.
 
-Distributed under the Eclipse Public License, the same as Clojure.
+Scalac [scalac.io](http://scalac.io/?utm_source=scalac_github&utm_campaign=scalac1&utm_medium=web) is a full-stack team of great functional developers focused around Scala/Clojure backed by great frontend and mobile developers.
+
+On our [blog](http://blog.scalac.io/?utm_source=scalac_github&utm_campaign=scalac1&utm_medium=web) we share our knowledge with community on how to write great, clean code, how to work remotely and about our culture.
