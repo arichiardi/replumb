@@ -58,14 +58,14 @@ supporting:
   helpers. Use it if you know what you are doing and follow this protocol:
 
     > Each runtime environment provides a different way to load a library.
-    > Whatever function `*load-fn*` is bound to will be passed two arguments
-    > - a map and a callback function: The map will have the following keys:
+    > Whatever function `*load-fn*` is bound to will be passed two arguments,
+    > a map and a callback function. The map will have the following keys:
     >
     >     :name   - the name of the library (a symbol)
     >     :macros - modifier signaling a macros namespace load
     >     :path   - munged relative library path (a string)
     >
-    > The callback cb, upon resolution, will need to pass the same map:
+    > The callback cb, upon resolution, will need to pass the map:
     >
     >     :lang       - the language, :clj or :js
     >     :source     - the source of the library (a string)
