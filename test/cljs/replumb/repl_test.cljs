@@ -127,17 +127,17 @@
   (set! js/COMPILED false))
 
 (deftest process-ns
-  (let [res (repl/read-eval-call {} validated-echo-cb "(ns 'first.namespace)")
+  (let [res (repl/read-eval-call {} validated-echo-cb "(ns 'something.ns)")
         error (unwrap-result res)]
-    (is (not (success? res)) "(ns 'something) should NOT succeed")
-    (is (valid-eval-error? error) "(ns 'something) should result in an js/Error")
-    (is (re-find #"Namespaces must be named by a symbol" (extract-message error)) "(ns 'something) should have correct error")
+    (is (not (success? res)) "(ns 'something.ns) should NOT succeed")
+    (is (valid-eval-error? error) "(ns 'something.ns) should result in an js/Error")
+    (is (re-find #"Namespaces must be named by a symbol" (extract-message error)) "(ns 'something.ns) should have correct error")
     (repl/reset-env!))
   (let [res (repl/read-eval-call {} validated-echo-cb "(ns my.namespace)")
         out (unwrap-result res)]
-    (is (success? res) "(ns something) should succeed")
-    (is (valid-eval-result? out) "(ns something) should be a valid result")
-    (is (= "nil" out) "(ns something) should return \"nil\"")
+    (is (success? res) "(ns my.namespace) should succeed")
+    (is (valid-eval-result? out) "(ns my.namespace) should be a valid result")
+    (is (= "nil" out) "(ns my.namespace) should return \"nil\"")
     (repl/reset-env! ['my.namespace])))
 
 ;; AR - with fake load, we want to test functionality that don't depend on
@@ -168,7 +168,7 @@
       (is (success? res) "(require 'something.ns) should succeed")
       (is (valid-eval-result? out) "(require 'something.ns) should be a valid result")
       (is (= "nil" out) "(require 'something.ns) should return nil")
-      (repl/reset-env!))
+      (repl/reset-env! ['something.ns]))
 
     (let [res (do (repl/read-eval-call {} validated-echo-cb "(ns a.ns)")
                   (repl/read-eval-call {} validated-echo-cb "(def a 3)")
@@ -196,18 +196,55 @@
 (deftest warnings
   (let [results (atom [])
         swapping-callback (partial repl/validated-call-back! (fn [r] (swap! results conj r)))]
-    (let [rs (repl/read-eval-call {} swapping-callback "_arsenununpa42")]
-      (is (= 1 (count @results)) "Evaluating an undefined symbol should return one message only")
-      (is (not (success? (first @results))) "Evaluating an undefined symbol should not succeed")
-      (is (valid-eval-error? (unwrap-result (first @results))) "Evaluating an undefined symbol should result in an js/Error")
-      (is (re-find #"undeclared Var.*_arsenununpa42" (extract-message (unwrap-result (first @results)))) "Evaluating an undefined symbol should return undeclared Var")
+    ;; AR - The only missing is because you can't have an error and a warning at the same time.
+    ;; Response is :error and warning-as-error is true
+    (let [_ (repl/read-eval-call {:warning-as-error true} swapping-callback "(def a \"6\"")]
+      (is (= 1 (count @results)) "Response is :error and warning-as-error is true should return one message only")
+      (is (not (success? (first @results))) "Response is :error and warning-as-error is true should not succeed")
+      (is (valid-eval-error? (unwrap-result (first @results))) "Response is :error and warning-as-error is true should result in an js/Error")
+      (is (re-find #"EOF" (extract-message (unwrap-result (first @results)))) "Response is :error and warning-as-error is true should return EOF")
       (reset! results [])
       (repl/reset-env!))
-    (let [rs (repl/read-eval-call {:no-warning-error true} swapping-callback "!asdasd43")]
-      (is (= 1 (count @results)) "Evaluating an undefined symbol should return one message only")
-      (is (success? (first @results)) "Evaluating an undefined symbol with :no-warning-error should succeed")
-      (is (valid-eval-result? (unwrap-result (first @results))) "Evaluating an undefined symbol with :no-warning-error should result in an js/Error")
-      (is (=  "nil" (unwrap-result (first @results))) "Evaluating an undefined with :no-warning-error symbol should return nil")
+    ;; Response is :error and warning-as-error is false
+    (let [_ (repl/read-eval-call {} swapping-callback "(def a \"6\"")]
+      (is (= 1 (count @results)) "Response is :error and warning-as-error is false should return one message only")
+      (is (not (success? (first @results))) "Response is :error and warning-as-error is false should not succeed")
+      (is (valid-eval-error? (unwrap-result (first @results))) "Response is :error and warning-as-error is false should result in an js/Error")
+      (is (re-find #"EOF" (extract-message (unwrap-result (first @results)))) "Response is :error and warning-as-error is false should return EOF")
+      (reset! results [])
+      (repl/reset-env!))
+    ;; Response is :value with warning and warning-as-error is true
+    (let [_ (repl/read-eval-call {:warning-as-error true} swapping-callback "_arsenununpa42")]
+      (is (= 1 (count @results)) "Response is :value with warning and warning-as-error is true return one message only")
+      (is (not (success? (first @results))) "Response is :value with warning and warning-as-error is true should not succeed")
+      (is (valid-eval-error? (unwrap-result (first @results))) "Response is :value with warning and warning-as-error is true should result in an js/Error")
+      (is (re-find #"undeclared.*_arsenununpa42" (extract-message (unwrap-result (first @results)))) "Response is :value with warning and warning-as-error is true should have the right error msg")
+      (reset! results [])
+      (repl/reset-env!))
+    ;; Response is :value, with warning and warning-as-error is false
+    (let [_ (repl/read-eval-call {} swapping-callback "_arsenununpa42")]
+      (is (= 1 (count @results)) "Response is :value with warning and warning-as-error is false return one message only")
+      (is (success? (first @results)) "Response is :value with warning and warning-as-error is false should succeed")
+      (is (valid-eval-result? (unwrap-result (first @results))) "Response is :value with warning and warning-as-error is false should be a valid result")
+      (is (= "nil" (unwrap-result (first @results))) "Response is :value with warning and warning-as-error is false should return nil")
+      (reset! results [])
+      (repl/reset-env!))
+    ;; Response is :value no warning and warning-as-error is false
+    (let [_ (do (repl/read-eval-call {} validated-echo-cb "(def a 2)")
+                (repl/read-eval-call {} swapping-callback "a"))]
+      (is (= 1 (count @results)) "Response is :value no warning and warning-as-error is false should return one message only")
+      (is (success? (first @results)) "Response is :value no warning and warning-as-error is false should succeed")
+      (is (valid-eval-result? (unwrap-result (first @results))) "Response is :value no warning and warning-as-error is false should be a valid result")
+      (is (= "2" (unwrap-result (first @results))) "Response is :value no warning and warning-as-error is false symbol should return 2")
+      (reset! results [])
+      (repl/reset-env!))
+    ;; Response is :value no warning and warning-as-error is true
+    (let [_ (do (repl/read-eval-call {:warning-as-error true} validated-echo-cb "(def a 2)")
+                (repl/read-eval-call {:warning-as-error true} swapping-callback "a"))]
+      (is (= 1 (count @results)) "Response is :value no warning and warning-as-error is true should return one message only")
+      (is (success? (first @results)) "Response is :value no warning and warning-as-error is true should succeed")
+      (is (valid-eval-result? (unwrap-result (first @results))) "Response is :value no warning and warning-as-error is true should be a valid result")
+      (is (= "2" (unwrap-result (first @results))) "Response is :value no warning and warning-as-error is true symbol should return 2")
       (reset! results [])
       (repl/reset-env!))))
 

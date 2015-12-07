@@ -47,7 +47,8 @@ nil.
 <p>The first parameter is a map of configuration options, currently supporting:</p>
 <ul>
   <li><code>:verbose</code> will enable the the evaluation logging, defaults to false</li>
-  <li><code>:target</code> <code>:nodejs</code> and <code>:browser</code> supported, the latter used if missing</li>
+  <li><code>:warning-as-error</code> will consider a compiler warning as error</li>
+  <li><code>:target</code> <code>:nodejs</code> and <code>:browser</code> supported, the latter is used if missing</li>
   <li><code>:init-fn!</code> user provided initialization function, it will be passed a map:
     <pre><code>:form   ;; the form to evaluate, as data
 :ns     ;; the current namespace, as symbol

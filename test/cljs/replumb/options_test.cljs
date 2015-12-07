@@ -6,7 +6,7 @@
   ;; AR - just not to forget adding them in valid-opts-set
   (let [opts {:verbose :true
               :load-fn! "fn"
-              :no-warning-error true
+              :warning-as-error true
               :target "default"
               :init-fn! "fn"
               :read-file-fn! "fn"
@@ -37,3 +37,6 @@
   (is (nil? (:load-fn! (normalize-opts {:src-paths {} :read-file-fn! #()}))) "Must create :load-fn! only when :src-paths is sequential")
   (is (nil? (:read-file-fn! (normalize-opts {:src-paths ["src"] :read-file-fn! #()}))) "Must elide :read-file-fn! after having created :load-fn!")
   (is (not (nil? (:load-fn! (normalize-opts {:src-paths ["src"] :read-file-fn! #()})))) "Must create a brand new :load-fn! when :read-file-fn! is present"))
+
+(deftest options-warning
+  (is (= true (:warning-as-error (normalize-opts {:warning-as-error true}))) "Option :warning-as-error should be carried over"))

@@ -11,7 +11,9 @@
   supporting:
 
   * `:verbose` will enable the the evaluation logging, defaults to false
-  * `:target` `:nodejs` and `:browser` supported, the latter used if missing
+  * `:warning-as-error` will consider a compiler warning as error
+  * `:target` `:nodejs` and `:browser` supported, the latter is used if
+  missing
   * `:init-fn!` user provided initialization function, it will be passed a
   map:
 

@@ -6,7 +6,7 @@
 
 (def valid-opts-set
   "Set of valid option used for external input validation."
-  #{:verbose :no-warning-error :target :init-fn!
+  #{:verbose :warning-as-error :target :init-fn!
     :load-fn! :read-file-fn! :src-paths})
 
 (defn valid-opts
