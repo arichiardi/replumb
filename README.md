@@ -10,7 +10,7 @@ This library tries to ease the burden of talking direcly to ClojureScript ```clj
 
 ### Thanks
 
-As [current maintainer](https://github.com/arichiardi) of the project I would like to thank each and every present and future contributor, [Scalac](https://scalac.io) for actively supporting the (Clojure) open source community and [Mikes Fikes](https://github.com/mfikes) for having answered to my incessant questions on Slack and aided in brainstorming the project name. 
+As [current maintainer](https://github.com/arichiardi) of the project I would like to thank each and every present and future contributor, [Scalac](https://scalac.io) for actively supporting the (Clojure) open source community and [Mikes Fikes](https://github.com/mfikes) for having answered to my incessant questions on Slack, for having aided in brainstorming the project name and of course for the symbiosis with [planck](https://github.com/mfikes/planck).
 
 ## Usage
 
