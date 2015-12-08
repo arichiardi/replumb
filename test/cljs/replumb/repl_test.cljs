@@ -120,15 +120,15 @@
   (let [target-opts (if (doo/node?)
                       (core/nodejs-options load/fake-load-fn!)
                       (core/browser-options load/fake-load-fn!))]
-    (let [res (do (repl/read-eval-call target-opts validated-echo-cb "(in-ns 'first.namespace)")
-                  (repl/read-eval-call target-opts validated-echo-cb "(def a 3)")
-                  (repl/read-eval-call target-opts validated-echo-cb "(in-ns 'second.namespace)")
+    (let [res (do (repl/read-eval-call {} validated-echo-cb "(in-ns 'first.namespace)")
+                  (repl/read-eval-call {} validated-echo-cb "(def a 3)")
+                  (repl/read-eval-call {} validated-echo-cb "(in-ns 'second.namespace)")
                   (repl/read-eval-call target-opts validated-echo-cb "(require 'first.namespace)")
-                  (repl/read-eval-call target-opts validated-echo-cb "first.namespace/a"))
+                  (repl/read-eval-call {} validated-echo-cb "first.namespace/a"))
           out (unwrap-result res)]
-      (is (success? res) "Defining variable in namespace and querying it should succeed")
-      (is (valid-eval-result? out) "Defining variable in namespace and querying should be a valid result")
-      (is (= "3" out) "Defining variable in namespace and querying should interned var value")
+      (is (success? res) "Deffing a var in an in-ns namespace and querying it should succeed")
+      (is (valid-eval-result? out) "Deffing a var in an in-ns namespace and querying it should be a valid result")
+      (is (= "3" out) "Deffing a var in an in-ns namespace and querying it should retrieve the interned var value")
       (repl/reset-env! ['first.namespace 'second.namespace]))))
 
 (deftest process-ns
@@ -194,7 +194,7 @@
       (is (success? res) )
       (is (valid-eval-result? out) )
       (is (= 'd.ns (repl/current-ns)) "(require '[c.ns :refer [referred-a]]) should not change namespace")
-      (is (= "3" out) "(require '[c.ns :refer [referred-a]]) should interned var value")
+      (is (= "3" out) "(require '[c.ns :refer [referred-a]]) should retrieve the interned var value")
       (repl/reset-env! ['c.ns 'd.ns]))))
 
 (deftest warnings
