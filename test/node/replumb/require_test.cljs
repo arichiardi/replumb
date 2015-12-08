@@ -17,11 +17,11 @@
 (nodejs/enable-util-print!)
 
 (deftest process-require
-  ;; Damian - Add COMPILED flag to cljs eval to turn off namespace already declared errors
-  ;; AR - COMPILED goes here not in the runner otherwise node does not execute doo tests
-  (set! js/COMPILED true)
-  (let [target-opts (merge (nodejs-options test-paths io/read-file!)
-                           {:verbose true})]
+  ;; Damian - Add js/COMPILED flag to cljs eval to turn off namespace already declared errors
+  ;; AR - js/COMPILED goes here not in the runner otherwise node does not execute doo tests
+  ;; AR - js/COMPILED is not needed after having correctly bootstrapped the
+  ;; nodejs environment, see PR #57
+  (let [target-opts (nodejs-options test-paths io/read-file!)]
     ;; AR - Test for "No *load-fn* when requiring a namespace in browser #35"
     ;; Note there these are tests with a real *load-fn*
     (let [res (repl/read-eval-call target-opts validated-echo-cb "(require 'foo.bar.baz)")
@@ -31,5 +31,4 @@
       (is (valid-eval-result? out) "(require 'foo.bar.baz) should be a valid result")
       (is (= 'cljs.user (repl/current-ns)) "(require 'foo.bar.baz) should not change namespace")
       (is (= "nil" out) "(require 'foo.bar.baz) should return \"nil\"")
-      (repl/reset-env! ['foo.bar.baz])))
-  (set! js/COMPILED false))
+      (repl/reset-env! ['foo.bar.baz]))))
