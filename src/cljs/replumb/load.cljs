@@ -27,18 +27,20 @@
   "Loop on the file-names using a supplied read-file-fn (fn [file-name
   src-cb] ...), calling back cb upon first successful read, otherwise
   calling back with nil."
-  [verbose? file-names read-file-fn cb]
-  (loop [names file-names]
-    (if (seq names)
-      (let [name (first names)]
-        (when verbose?
+  [verbose? file-names read-file-fn load-fn-cb]
+  ;; AR - Can't make this function tail recursive as it is now
+  (if-let [name (first file-names)]
+    (do (when verbose?
           (common/debug-prn "Reading" name "..."))
         (read-file-fn name (fn [source]
                              (if source
-                               (cb {:lang (filename->lang name)
-                                    :source source})
-                               (recur (rest names))))))
-      (cb nil))))
+                               (load-fn-cb {:lang (filename->lang name)
+                                            :source source})
+                               (do
+                                 (when verbose?
+                                   (common/debug-prn "No source found..."))
+                                 (read-files-and-callback! verbose? (rest file-names) read-file-fn load-fn-cb))))))
+    (load-fn-cb nil)))
 
 (defn filenames-to-try
   "Produces a sequence of filenames to try reading, in the
