@@ -91,7 +91,8 @@
 (deftest process-in-ns
   ;; Damian - Add COMPILED flag to cljs eval to turn off namespace already declared errors
   ;; AR - COMPILED goes here not in the runner otherwise node does not execute doo tests
-  (set! js/COMPILED true)
+  ;; AR - js/COMPILED is not needed after having correctly bootstrapped the
+  ;; browser environment, see PR #57
   (let [res (repl/read-eval-call {} validated-echo-cb "(in-ns \"first.namespace\")")
         error (unwrap-result res)]
     (is (not (success? res)) "(in-ns \"string\") should NOT succeed")
@@ -116,15 +117,19 @@
 
   ;; Note that (do (in-ns 'my.namespace) (def a 3) (in-ns 'cljs) my.namespace/a)
   ;; Does not work in ClojureScript!
-  (let [res (do (repl/read-eval-call {} validated-echo-cb "(in-ns 'first.namespace)")
-                (repl/read-eval-call {} validated-echo-cb "(def a 3)")
-                (repl/read-eval-call {} validated-echo-cb "(in-ns 'second.namespace)")
-                (repl/read-eval-call {} validated-echo-cb "first.namespace/a"))
-        out (unwrap-result res)]
-    (is (success? res) "Defining variable in namespace and querying it should succeed")
-    (is (= "3" out) "Defining variable in namespace and querying should interned var value")
-    (repl/reset-env! ['first.namespace 'second.namespace]))
-  (set! js/COMPILED false))
+  (let [target-opts (if (doo/node?)
+                      (core/nodejs-options load/fake-load-fn!)
+                      (core/browser-options load/fake-load-fn!))]
+    (let [res (do (repl/read-eval-call target-opts validated-echo-cb "(in-ns 'first.namespace)")
+                  (repl/read-eval-call target-opts validated-echo-cb "(def a 3)")
+                  (repl/read-eval-call target-opts validated-echo-cb "(in-ns 'second.namespace)")
+                  (repl/read-eval-call target-opts validated-echo-cb "(require 'first.namespace)")
+                  (repl/read-eval-call target-opts validated-echo-cb "first.namespace/a"))
+          out (unwrap-result res)]
+      (is (success? res) "Defining variable in namespace and querying it should succeed")
+      (is (valid-eval-result? out) "Defining variable in namespace and querying should be a valid result")
+      (is (= "3" out) "Defining variable in namespace and querying should interned var value")
+      (repl/reset-env! ['first.namespace 'second.namespace]))))
 
 (deftest process-ns
   (let [res (repl/read-eval-call {} validated-echo-cb "(ns 'something.ns)")
@@ -144,10 +149,10 @@
 ;; source reading. This will stay until we will provide a mechanism to inject
 ;; *load-fn* that actuall read files.
 (deftest process-require-fake-load
-  ;; Damian - Add COMPILED flag to cljs eval to turn off namespace already declared errors
-  ;; AR - COMPILED goes here not in the runner otherwise node does not execute doo tests
-  (set! js/COMPILED true)
-
+  ;; Damian - Add js/COMPILED flag to cljs eval to turn off namespace already declared errors
+  ;; AR - js/COMPILED goes here not in the runner otherwise node does not execute doo tests
+  ;; AR - js/COMPILED is not needed after having correctly bootstrapped the
+  ;; browser environment, see PR #57
   (let [target-opts (if (doo/node?)
                       (core/nodejs-options load/fake-load-fn!)
                       (core/browser-options load/fake-load-fn!))]
@@ -190,8 +195,7 @@
       (is (valid-eval-result? out) )
       (is (= 'd.ns (repl/current-ns)) "(require '[c.ns :refer [referred-a]]) should not change namespace")
       (is (= "3" out) "(require '[c.ns :refer [referred-a]]) should interned var value")
-      (repl/reset-env! ['c.ns 'd.ns])))
-  (set! js/COMPILED false))
+      (repl/reset-env! ['c.ns 'd.ns]))))
 
 (deftest warnings
   (let [results (atom [])
