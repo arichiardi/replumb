@@ -3,8 +3,8 @@
             [replumb.load :as load]))
 
 (def require-fs
-  "Delay containing the call to \"require fs\". It returns the Node.js
-  module object."
+  "Delay containing the call to \"require fs\". It returns the File
+  System Node.js module object."
   (delay (nodejs/require "fs")))
 
 (defn read-file!
@@ -23,7 +23,8 @@
   ([encoding-or-opts file-name src-cb]
    (read-file! (force require-fs) encoding-or-opts file-name src-cb))
   ([fs-module encoding-or-opts file-name src-cb]
-   (.readFile fs-module file-name encoding-or-opts
-              (fn [err data]
-                (src-cb (when-not err
-                          data))))))
+   (try
+     ;; AR the async readFile had weird behavior and was wrecking havoc
+     (src-cb (.readFileSync fs-module file-name encoding-or-opts))
+     (catch :default e
+       (src-cb nil)))))
