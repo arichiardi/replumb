@@ -237,13 +237,13 @@
 
 (defn call-side-effect!
   "Execute the correct side effecting function from data.
-  Handles :side-effect!, :on-error! and on-success!."
+  Handles :side-effect-fn!, :on-error-fn! and on-success-fn!."
   [data {:keys [value error]}]
-  (if-let [f! (:side-effect! data)]
+  (if-let [f! (:side-effect-fn! data)]
     (f!)
     (if-not error
-      (when-let [s! (:on-success! data)] (s!))
-      (when-let [e! (:on-error! data)] (e!)))))
+      (when-let [s! (:on-success-fn! data)] (s!))
+      (when-let [e! (:on-error-fn! data)] (e!)))))
 
 (defn warning-error-map!
   "Checks if there has been a warning and if so will return the correct
@@ -269,11 +269,11 @@
   additional stuff:
 
   * :form the source form that has been eval-ed
-  * :on-success! 0-arity function that will be executed on success
-  * :on-error! 0-arity function that will be executed on error
-  * :side-effect! 0-arity function that if present will be executed for
-    both success and error, effectively disabling the individual
-    on-success!  and on-error!
+  * :on-success-fn! 0-arity function that will be executed on success
+  * :on-error-fn! 0-arity function that will be executed on error
+  * :side-effect-fn! 0-arity function that if present will be executed
+  for both success and error, effectively disabling the individual
+  on-success-fn! and on-error-fn!
 
   Call-back! supports the following opts:
 
@@ -285,8 +285,8 @@
   1. The opts map passed here overrides the environment options.
   2. This function will also clear the :last-eval-warning flag in
   app-env.
-  3. It will execute (:side-effect!) or (on-success!)  and (on-error!)
-  *before* the callback is called.
+  3. It will execute (:side-effect-fn!) or (on-success-fn!)
+  and (on-error-fn!)  *before* the callback is called.
 
   ** Every function in this namespace should call call-back! as
   single point of exit. **"
@@ -295,7 +295,7 @@
   ([opts cb data res]
    (when (:verbose opts)
      (common/debug-prn "Calling back!\n" (with-out-str (pprint {:opts (common/filter-fn-keys opts)
-                                                                :data data
+                                                                :data (common/filter-fn-keys data)
                                                                 :res res}))))
    (let [new-map (warning-error-map! opts res)]
      (let [{:keys [value error]} new-map]
@@ -329,8 +329,8 @@
                  (fn [{error :error}]
                    (call-back! opts cb
                                (merge data
-                                      {:side-effect! #(when is-self-require?
-                                                        (swap! app-env assoc :current-ns restore-ns))})
+                                      {:side-effect-fn! #(when is-self-require?
+                                                           (swap! app-env assoc :current-ns restore-ns))})
                                (if error
                                  error
                                  (common/wrap-success nil))))))))
@@ -377,7 +377,7 @@
            (call-back! opts cb data (common/error-argument-must-be-symbol "in-ns" ex-info-data))
            (if (some (partial = ns-symbol) (known-namespaces))
              (call-back! opts cb
-                         (merge data {:side-effect! #(swap! app-env assoc :current-ns ns-symbol)})
+                         (merge data {:side-effect-fn! #(swap! app-env assoc :current-ns ns-symbol)})
                          (common/wrap-success nil))
              (let [ns-form `(~'ns ~ns-symbol)]
                (cljs/eval
@@ -387,7 +387,7 @@
                 (fn [error]
                   (call-back! opts
                               cb
-                              (merge data {:on-success! #(swap! app-env assoc :current-ns ns-symbol)})
+                              (merge data {:on-success-fn! #(swap! app-env assoc :current-ns ns-symbol)})
                               (if error
                                 (common/wrap-error error)
                                 (common/wrap-success nil)))))))))))))
@@ -521,8 +521,8 @@
                              (common/debug-prn "Evaluation returned: " res))
                            (call-back! opts cb
                                        (merge data
-                                              {:on-success! #(do (process-1-2-3 data expression-form (:value res))
-                                                                 (swap! app-env assoc :current-ns (:ns res)))})
+                                              {:on-success-fn! #(do (process-1-2-3 data expression-form (:value res))
+                                                                    (swap! app-env assoc :current-ns (:ns res)))})
                                        res))))))
     (catch :default e
       (when (:verbose opts)
