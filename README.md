@@ -129,13 +129,9 @@ function `(fn [filename src-cb] ...)` where `src-cb` is itself a function `(fn
 string (`nil` if no file is found).
 
 See `replumb.core/nodejs-options` documentation and feel free to steal
-`src/node/replumb/nodejs/io.cljs` implementation. Moreover
-`repl-demo/node` contains a working example that can be built with ```lein
-node-repl*``` and launched with:
-
-```
-node dev-resources/private/node/compiled/nodejs-repl.js <src-path1:src-path2:src-path3>
-```
+`src/node/replumb/nodejs/io.cljs` implementation. Moreover `repl-demo/node`
+contains a working example that can be built and executed with ```lein
+node-repl```.
 
 You can also watch [Mike Fikes](https://www.youtube.com/watch?v=VwARsqTRw7s)'
 demo or peek under the crook of his [elbow](https://github.com/mfikes/elbow).

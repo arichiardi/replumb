@@ -69,8 +69,7 @@
             "fig-dev*" ^{:doc "Clean and start figwheel with dev profile"} ["do" "clean" ["figwheel" "dev"]]
             "minify" ^{:doc "Compile sources minified for production."} ["cljsbuild" "once" "min"]
             "minify*" ^{:doc "Clean and compile sources minified for production."} ["do" "clean" ["cljsbuild" "once" "min"]]
-            "node-repl" ^{:doc "Build the node demo repl. Node.js (must be installed)."} ["cljsbuild" "once" "node-repl"]
-            "node-repl*" ^{:doc "Clean and build the node demo repl. Node.js (must be installed)."} ["do" "clean" ["cljsbuild" "once" "node-repl"]]
+            "node-repl" ^{:doc "Clean, build and launch the node demo repl. Node.js (must be installed)."} ["do" "clean" ["cljsbuild" "once" "node-repl"] ["shell" "scripts/node-repl.sh"]]
             "test-phantom" ^{:doc "Execute once unit tests with PhantomJS (must be installed)."} ["doo" "phantom" "browser-test" "once"]
             "test-phantom*" ^{:doc "Clean and execute once unit tests with PhantomJS (must be installed)."} ["do" "clean" ["doo" "phantom" "browser-test" "once"]]
             "auto-phantom" ^{:doc "Clean and execute automatic unit tests with PhantomJS (must be installed)."} ["do" "clean" ["doo" "phantom" "browser-test" "auto"]]
@@ -92,4 +91,5 @@
                                   [cljsjs/jqconsole "2.13.1-0"]
                                   [reagent "0.5.1"]]
                    :plugins [[lein-doo "0.1.6"]
-                             [lein-figwheel "0.5.0-2" :exclusions [cider/cider-nrepl]]]}})
+                             [lein-figwheel "0.5.0-2" :exclusions [cider/cider-nrepl]]
+                             [lein-shell "0.4.2"]]}})
