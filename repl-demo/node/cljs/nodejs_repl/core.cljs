@@ -12,7 +12,7 @@
 ;;;;;;;;;;;;;;;;;;;
 
 (defn read-eval-print-loop
-  [src-paths]
+  [opts]
   (let [node-readline (nodejs/require "readline")
         rl (.createInterface node-readline
                              #js {:input  (.-stdin js/process)
@@ -22,7 +22,7 @@
       (.on "line"
            (fn [cmd]
              (replumb/read-eval-call
-              (replumb/nodejs-options src-paths io/read-file!)
+              opts
               (fn [res]
                 (-> res
                     replumb/result->string
@@ -42,11 +42,22 @@
 
 (defn print-usage
   []
-  (println "Usage:\n\nnode dev-resources/private/node/compiled/nodejs-repl.js src-path1:src-path2:src-path3"))
+  (println "Usage:\n\nnode path-to/nodejs-repl.js [--verbose] src-path1:src-path2:src-path3"))
 
 (defn -main [& args]
-  (if (empty? args)
+  (println args)
+  (if (or (empty? args) (> (count args) 2))
     (print-usage)
-    (read-eval-print-loop (arg->src-paths (first args)))))
+    (let [verbose? (= "--verbose" (first args))
+          opts (merge (replumb/nodejs-options (arg->src-paths (if-not verbose?
+                                                                (first args)
+                                                                (second args)))
+                                              io/read-file!)
+                      {:verbose verbose?})]
+      (print "Starting Node.js sample repl:\n"
+             (find opts :target) "\n"
+             (find opts :src-paths) "\n"
+             (find opts :verbose))
+      (read-eval-print-loop opts))))
 
 (set! *main-cli-fn* -main)
