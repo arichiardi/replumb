@@ -1,6 +1,7 @@
 (ns replumb-repl.console.cljs
   (:require [reagent.core :as reagent]
             [replumb.core :as replumb]
+            [replumb.browser.io :as io]
             [replumb.load :as load]
             [replumb-repl.app :as app]
             [replumb-repl.console :as console]))
@@ -13,7 +14,9 @@
 (defn cljs-read-eval-print!
   [console line]
   (try
-    (replumb/read-eval-call (replumb/browser-options load/fake-load-fn!)
+    (replumb/read-eval-call (merge (replumb/browser-options ["/src/cljs" "/js/compiled/out"]
+                                                            io/fetch-file!)
+                                   {:warning-as-error true})
                             (partial handle-result! console)
                             line)
     (catch js/Error err

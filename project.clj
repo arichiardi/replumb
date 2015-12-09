@@ -17,7 +17,7 @@
   :hooks [leiningen.cljsbuild]
 
   :cljsbuild {:builds [{:id "dev"
-                        :source-paths ["src/cljs" "repl-demo/browser/cljs"]
+                        :source-paths ["src/cljs" "src/browser" "repl-demo/browser/cljs"]
                         :figwheel {:on-jsload "replumb-repl.core/main"
                                    :css-dirs ["dev-resources/public/styles"]}
                         :compiler {:main replumb-repl.core
