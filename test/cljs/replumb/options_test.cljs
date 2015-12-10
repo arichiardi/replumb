@@ -32,10 +32,9 @@
   ;; AR - No cljs.test/function? here
   (is (not (nil? (:load-fn! (normalize-opts {:load-fn! #()})))) "Must be able to attach :load-fn!")
   (is (= "precedence" (:load-fn! (normalize-opts {:load-fn! "precedence" :read-file-fn! #()}))) "Must be able to give precedence to :load-fn! when present")
-  (is (nil? (:read-file-fn! (normalize-opts {:load-fn! "precedence" :read-file-fn! #()}))) "Must :read-file-fn! if :load-fn! is present")
   (is (nil? (:load-fn! (normalize-opts {:read-file-fn! #()}))) "Must create :load-fn! only when both :read-file-fn! and :src-paths are present")
   (is (nil? (:load-fn! (normalize-opts {:src-paths {} :read-file-fn! #()}))) "Must create :load-fn! only when :src-paths is sequential")
-  (is (nil? (:read-file-fn! (normalize-opts {:src-paths ["src"] :read-file-fn! #()}))) "Must elide :read-file-fn! after having created :load-fn!")
+  (is (not (nil? (:read-file-fn! (normalize-opts {:src-paths ["src"] :read-file-fn! #()})))) "Must NOT elide :read-file-fn! after having created :load-fn!")
   (is (not (nil? (:load-fn! (normalize-opts {:src-paths ["src"] :read-file-fn! #()})))) "Must create a brand new :load-fn! when :read-file-fn! is present"))
 
 (deftest options-warning

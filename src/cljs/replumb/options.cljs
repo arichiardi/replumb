@@ -29,18 +29,16 @@
   conjoins it. Try to create and conjoin one from :src-paths
   and :read-file-fn! otherwise. Conjoins nil if it cannot."
   [opts user-opts]
-  (-> opts
-      (dissoc :read-file-fn!)
-      (assoc :load-fn!
-             (or (:load-fn! user-opts)
-                 (let [read-file-fn (:read-file-fn! user-opts)
-                       src-paths (:src-paths user-opts)]
-                   (if (and read-file-fn (sequential? src-paths))
-                     (load/make-load-fn (:verbose user-opts)
-                                        (into [] src-paths)
-                                        read-file-fn)
-                     (when (:verbose user-opts)
-                       (common/debug-prn "Invalid :read-file-fn! or :src-paths (is it a valid sequence?). Cannot create *load-fn*."))))))))
+  (assoc opts :load-fn!
+         (or (:load-fn! user-opts)
+             (let [read-file-fn (:read-file-fn! user-opts)
+                   src-paths (:src-paths user-opts)]
+               (if (and read-file-fn (sequential? src-paths))
+                 (load/make-load-fn (:verbose user-opts)
+                                    (into [] src-paths)
+                                    read-file-fn)
+                 (when (:verbose user-opts)
+                   (common/debug-prn "Invalid :read-file-fn! or :src-paths (is it a valid sequence?). Cannot create *load-fn*.")))))))
 
 (defn add-init-fns
   "Given current and user options, returns a map containing a
