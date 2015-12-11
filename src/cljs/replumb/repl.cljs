@@ -334,7 +334,7 @@
                                       {:side-effect-fn! #(when is-self-require?
                                                            (swap! app-env assoc :current-ns restore-ns))})
                                (if error
-                                 error
+                                 (common/wrap-error error)
                                  (common/wrap-success nil))))))))
 
 (defn process-doc
