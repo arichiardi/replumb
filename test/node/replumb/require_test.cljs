@@ -45,22 +45,43 @@
       (is (= 'cljs.user (repl/current-ns)) "(require 'foo.bar.baz) and foo.bar.baz/const-a should not change namespace")
       (is (= "1024" out) "(require 'foo.bar.baz) and foo.bar.baz/const-a should return \"1024\"")
       (repl/reset-env! ['foo.bar.baz]))
-    (let [res (do (read-eval-call "(require '[foo.bar.baz :refer [a]])")
-                  (read-eval-call "a"))
+    ;; AR - how to purge referred vars?
+    #_(let [res (do (read-eval-call "(require '[foo.bar.baz :refer [a]])")
+                    (read-eval-call "a"))
+            out (unwrap-result res)]
+        (is (success? res) "(require '[foo.bar.baz :refer [a]]) and a should succeed")
+        (is (valid-eval-result? out) "(require '[foo.bar.baz :refer [a]]) and a should be a valid result")
+        (is (= 'cljs.user (repl/current-ns)) "(require '[foo.bar.baz :refer [a]]) and a should not change namespace")
+        (is (= "\"whatever\"" out) "(require '[foo.bar.baz :refer [a]]) and a should return \"whatever\"")
+        (repl/reset-env! ['foo.bar.baz 'a]))
+    #_(let [res (do (read-eval-call "(require '[foo.bar.baz :refer [const-a]])")
+                    (read-eval-call "const-a"))
+            out (unwrap-result res)]
+        (is (success? res) "(require '[foo.bar.baz :refer [const-a]]) and const-a should succeed")
+        (is (valid-eval-result? out) "(require '[foo.bar.baz :refer [const-a]]) and const-a should be a valid result")
+        (is (= 'cljs.user (repl/current-ns)) "(require '[foo.bar.baz :refer [const-a]]) and const-a should not change namespace")
+        (is (= "1024" out) "(require '[foo.bar.baz :refer [const-a]]) and const-a should return 1024")
+        (repl/reset-env! ['foo.bar.baz 'const-a])))
+
+  (deftest process-goog-import
+    ;; AR - requiring clojure.string in turns imports goog.string
+    ;; Node that goog.string should be never required but imported
+    (let [res (read-eval-call "(require 'clojure.string)")
           out (unwrap-result res)]
-      (is (success? res) "(require '[foo.bar.baz :refer [a]]) and a should succeed")
-      (is (valid-eval-result? out) "(require '[foo.bar.baz :refer [a]]) and a should be a valid result")
-      (is (= 'cljs.user (repl/current-ns)) "(require '[foo.bar.baz :refer [a]]) and a should not change namespace")
-      (is (= "\"whatever\"" out) "(require '[foo.bar.baz :refer [a]]) and a should return \"whatever\"")
-      (repl/reset-env! ['foo.bar.baz]))
-    (let [res (do (read-eval-call "(require '[foo.bar.baz :refer [const-a]])")
-                  (read-eval-call "const-a"))
+      (is (success? res) "(require 'clojure.string) should succeed")
+      (is (valid-eval-result? out) "(require 'clojure.string) should be a valid result")
+      (is (= 'cljs.user (repl/current-ns)) "(require 'clojure.string) should not change namespace")
+      (is (= "nil" out) "(require 'clojure.string) should return \"nil\"")
+      (repl/reset-env! ['clojure.string]))
+
+    (let [res (do (read-eval-call "(require 'clojure.string)")
+                  (read-eval-call "(clojure.string/reverse \"clojurescript\")"))
           out (unwrap-result res)]
-      (is (success? res) "(require '[foo.bar.baz :refer [const-a]]) and const-a should succeed")
-      (is (valid-eval-result? out) "(require '[foo.bar.baz :refer [const-a]]) and const-a should be a valid result")
-      (is (= 'cljs.user (repl/current-ns)) "(require '[foo.bar.baz :refer [const-a]]) and const-a should not change namespace")
-      (is (= "1024" out) "(require '[foo.bar.baz :refer [const-a]]) and const-a should return 1024")
-      (repl/reset-env! ['foo.bar.baz])))
+      (is (success? res) "(require 'clojure.string) and clojure.string/reverse should succeed")
+      (is (valid-eval-result? out) "(require 'clojure.string) and clojure.string/reverse should be a valid result")
+      (is (= 'cljs.user (repl/current-ns)) "(require 'clojure.string) and clojure.string/reverse should not change namespace")
+      (is (= "\"tpircserujolc\"" out) "(require 'clojure.string) and clojure.string/reverse should return \"tpircserujolc\"")
+      (repl/reset-env! ['clojure.string])))
 
   (deftest process-reload
     (let [alterable-core-path "dev-resources/private/test/src/cljs/alterable/core.cljs"

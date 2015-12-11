@@ -1,6 +1,6 @@
 (ns ^:figwheel-load replumb.options-test
   (:require [cljs.test :refer-macros [deftest is]]
-            [replumb.options :as opts :refer [valid-opts-set valid-opts normalize-opts]]))
+            [replumb.repl :refer [valid-opts-set valid-opts normalize-opts]]))
 
 (deftest options-valid-set
   ;; AR - just not to forget adding them in valid-opts-set
