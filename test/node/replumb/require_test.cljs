@@ -18,6 +18,17 @@
       validated-echo-cb (partial repl/validated-call-back! echo-callback)
       target-opts (nodejs-options src-paths io/read-file!)
       read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)]
+
+  (deftest require+doc
+    ;; https://github.com/ScalaConsultants/replumb/issues/47
+    (let [res (do (read-eval-call "(require 'clojure.set)")
+                  (read-eval-call "(doc clojure.set)"))
+          docstring (unwrap-result res)]
+      (is (success? res) "(doc clojure.set) should succeed.")
+      (is (valid-eval-result? docstring) "(doc clojure.set) should be a valid result")
+      (is (re-find #"Set operations such as union/intersection" docstring) "(doc clojure.set) should return valid docstring")
+      (repl/reset-env! ['clojure.set])))
+
   (deftest process-require
     ;; AR - Test for "No *load-fn* when requiring a namespace in browser #35"
     ;; Note there these are tests with a real *load-fn*
