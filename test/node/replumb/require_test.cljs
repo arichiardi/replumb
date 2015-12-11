@@ -48,6 +48,7 @@
       (is (= 'cljs.user (repl/current-ns)) "(require 'foo.bar.baz) should not change namespace")
       (is (= "nil" out) "(require 'foo.bar.baz) should return \"nil\"")
       (repl/reset-env! ['foo.bar.baz]))
+
     (let [res (do (read-eval-call "(require 'foo.bar.baz)")
                   (read-eval-call "foo.bar.baz/a"))
           out (unwrap-result res)]
@@ -56,6 +57,7 @@
       (is (= 'cljs.user (repl/current-ns)) "(require 'foo.bar.baz) and foo.bar.baz/a should not change namespace")
       (is (= "\"whatever\"" out) "(require 'foo.bar.baz) and foo.bar.baz/a should return \"whatever\"")
       (repl/reset-env! ['foo.bar.baz]))
+
     ;; https://github.com/ScalaConsultants/replumb/issues/39
     (let [res (do (read-eval-call "(require 'foo.bar.baz)")
                   (read-eval-call "foo.bar.baz/const-a"))
@@ -65,7 +67,9 @@
       (is (= 'cljs.user (repl/current-ns)) "(require 'foo.bar.baz) and foo.bar.baz/const-a should not change namespace")
       (is (= "1024" out) "(require 'foo.bar.baz) and foo.bar.baz/const-a should return \"1024\"")
       (repl/reset-env! ['foo.bar.baz]))
-    ;; AR - how to purge referred vars?
+
+    ;; AR - Upstream problem (already solved)
+    ;; https://github.com/ScalaConsultants/replumb/issues/66
     #_(let [res (do (read-eval-call "(require '[foo.bar.baz :refer [a]])")
                     (read-eval-call "a"))
             out (unwrap-result res)]
@@ -101,7 +105,18 @@
       (is (valid-eval-result? out) "(require 'clojure.string) and clojure.string/reverse should be a valid result")
       (is (= 'cljs.user (repl/current-ns)) "(require 'clojure.string) and clojure.string/reverse should not change namespace")
       (is (= "\"tpircserujolc\"" out) "(require 'clojure.string) and clojure.string/reverse should return \"tpircserujolc\"")
-      (repl/reset-env! ['clojure.string])))
+      (repl/reset-env! ['clojure.string]))
+
+    (let [res (do (read-eval-call "(import 'goog.string.StringBuffer)")
+                  (read-eval-call "(let [sb (StringBuffer. \"clojure\")]
+                                     (.append sb \"script\")
+                                     (.toString sb))"))
+          out (unwrap-result res)]
+      (is (success? res) "(import 'goog.string.StringBuffer) and .toString should succeed")
+      (is (valid-eval-result? out) "(import 'goog.string.StringBuffer) and .toString should be a valid result")
+      (is (= 'cljs.user (repl/current-ns)) "(import 'goog.string.StringBuffer) and .toString should not change namespace")
+      (is (= "\"clojurescript\"" out) "(import 'goog.string.StringBuffer) and .toString should return \"clojurescript\"")
+      (repl/reset-env! ['goog.string.StringBuffer])))
 
   (deftest process-reload
     (let [alterable-core-path "dev-resources/private/test/src/cljs/alterable/core.cljs"
@@ -116,6 +131,7 @@
         (is (valid-eval-result? out) "(require 'alterable.core) and alterable.core/b should be a valid result")
         (is (= 'cljs.user (repl/current-ns)) "(require 'alterable.core) and alterable.core/b should not change namespace")
         (is (= "\"pre\"" out) "(require 'alterable.core) and alterable.core/b should return \"pre\""))
+
       ;; Writing "post" version of alterable.core
       (io/write-file! alterable-core-path post-content)
       (let [res (do (read-eval-call "(require 'alterable.core :reload)")
@@ -145,6 +161,7 @@
         (is (valid-eval-result? out) "(require 'alterable.core) and alterable.core/b should be a valid result")
         (is (= 'cljs.user (repl/current-ns)) "(require 'alterable.core) and alterable.core/b should not change namespace")
         (is (= "\"pre\"" out) "(require 'alterable.core) and alterable.core/b should return \"pre\""))
+
       (let [res (do (read-eval-call "(require 'alterable.utils)")
                     (read-eval-call "alterable.utils/c"))
             out (unwrap-result res)]
@@ -152,6 +169,7 @@
         (is (valid-eval-result? out) "(require 'alterable.utils) and alterable.utils/c should be a valid result")
         (is (= 'cljs.user (repl/current-ns)) "(require 'alterable.utils) and alterable.utils/c should not change namespace")
         (is (= "\"pre\"" out) "(require 'alterable.utils) and alterable.utils/c should return \"pre\""))
+
       ;; Writing "post" version of alterable.core & alterable.utils
       (io/write-file! alterable-utils-path utils-post-content)
       (let [res (do (read-eval-call "(require 'alterable.core :reload-all)")
