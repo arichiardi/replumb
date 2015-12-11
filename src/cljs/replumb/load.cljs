@@ -18,8 +18,8 @@
 (defn filename->lang
   "Converts a filename to a lang keyword by inspecting the file
   extension."
-  [filename]
-  (if (string/ends-with? filename ".js")
+  [file-name]
+  (if (string/ends-with? file-name ".js")
     :js
     :clj))
 
@@ -45,15 +45,14 @@
 (defn filenames-to-try
   "Produces a sequence of filenames to try reading, in the
   order they should be tried."
-  [src-paths macros path]
+  [src-paths macros file-path]
   (let [extensions (if macros
                      [".clj" ".cljc"]
                      [".cljs" ".cljc" ".js"])]
     (for [extension extensions
           src-path src-paths]
-      ;; AR - will there be a need for
-      ;; https://nodejs.org/docs/latest/api/path.html ?
-      (str src-path (when-not (= "/" (last src-path)) "/") path extension))))
+      ;; AR - will there be a need for https://nodejs.org/docs/latest/api/path.html ?
+      (str (common/normalize-path src-path) file-path extension))))
 
 ;; AR - just for reference
 ;; (defn load-and-callback!

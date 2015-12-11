@@ -94,3 +94,8 @@
   [& args]
   (binding [cljs.core/*print-fn* cljs.core/*print-err-fn*]
     (apply println args)))
+
+(defn normalize-path
+  "Adds a / if missing at the end of the path."
+  [path]
+  (str path (when-not (= "/" (last path)) "/")))
