@@ -24,9 +24,18 @@
     (let [res (do (read-eval-call "(require 'clojure.set)")
                   (read-eval-call "(doc clojure.set)"))
           docstring (unwrap-result res)]
-      (is (success? res) "(doc clojure.set) should succeed.")
-      (is (valid-eval-result? docstring) "(doc clojure.set) should be a valid result")
-      (is (re-find #"Set operations such as union/intersection" docstring) "(doc clojure.set) should return valid docstring")
+      (is (success? res) "(require ...) and (doc clojure.set) should succeed.")
+      (is (valid-eval-result? docstring) "(require ...) and (doc clojure.set) should be a valid result")
+      (is (re-find #"Set operations such as union/intersection" docstring) "(require ...) and (doc clojure.set) should return valid docstring")
+      (repl/reset-env! ['clojure.set]))
+
+    ;; https://github.com/ScalaConsultants/replumb/issues/59
+    (let [res (do (read-eval-call "(require 'clojure.string)")
+                  (read-eval-call "(doc clojure.string/trim)"))
+          docstring (unwrap-result res)]
+      (is (success? res) "(require ...) and (doc clojure.string/trim) should succeed.")
+      (is (valid-eval-result? docstring) "(require ...) and (doc clojure.string/trim) should be a valid result")
+      (is (re-find #"Removes whitespace from both ends of string" docstring) "(require ...) and (doc clojure.string/trim) should return valid docstring")
       (repl/reset-env! ['clojure.set])))
 
   (deftest process-require
