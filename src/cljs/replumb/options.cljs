@@ -39,10 +39,8 @@
                      (load/make-load-fn (:verbose user-opts)
                                         (into [] src-paths)
                                         read-file-fn)
-                     (do (when (:verbose user-opts)
-                           (common/debug-prn "Invalid :read-file-fn! or :src-paths (is it a valid sequence?).
-                                   Cannot create *load-fn*."))
-                         nil)))))))
+                     (when (:verbose user-opts)
+                       (common/debug-prn "Invalid :read-file-fn! or :src-paths (is it a valid sequence?). Cannot create *load-fn*."))))))))
 
 (defn add-init-fns
   "Given current and user options, returns a map containing a

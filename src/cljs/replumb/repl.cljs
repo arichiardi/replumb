@@ -153,10 +153,12 @@
 (defn process-reloads!
   [specs]
   (if-let [k (some #{:reload :reload-all} specs)]
-    (let [specs (->> specs (remove #{k}))]
+    (let [specs (remove #{k} specs)]
       (if (= k :reload-all)
-        (reset! cljs.js/*loaded* #{})
-        (apply swap! cljs.js/*loaded* disj (map first specs)))
+        (doseq [ns @cljs.js/*loaded*]
+          (purge-ns! st ns))
+        (doseq [ns (map first specs)]
+          (purge-ns! st ns)))
       specs)
     specs))
 
@@ -507,7 +509,7 @@
                 :target (keyword *target*)}]
       (init-repl-if-necessary! opts data)
       (when (:verbose opts)
-        (common/debug-prn "Evaluating " expression-form " with options " (common/filter-fn-keys opts)))
+        (common/debug-prn "Calling eval-str on" expression-form "with options" (common/filter-fn-keys opts)))
       (binding [ana/*cljs-warning-handlers* [(partial custom-warning-handler opts cb)]]
         (if (repl-special? expression-form)
           (process-repl-special opts cb data expression-form)

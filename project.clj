@@ -10,7 +10,7 @@
   :plugins [[lein-cljsbuild "1.1.1"]
             [lein-codox "0.9.0"]]
 
-  :clean-targets ^{:protect false} ["dev-resources/public/js/compiled" "dev-resources/private/test/compiled"
+  :clean-targets ^{:protect false} ["dev-resources/public/js/compiled" "dev-resources/private/test/browser/compiled"
                                     "dev-resources/private/test/node/compiled" "dev-resources/private/node"
                                     "out" :target-path]
   :source-paths ["src/cljs"]
@@ -32,15 +32,20 @@
                                    :optimizations :whitespace
                                    :pretty-print false}}
                        {:id "browser-test"
-                        :source-paths ["src/cljs" "test/cljs" "test/doo"]
+                        :source-paths ["src/cljs" "test/cljs" "test/browser" "test/doo"]
                         :compiler {:main launcher.runner
-                                   :output-to "dev-resources/private/test/compiled/replumb-repl.js"
-                                   :pretty-print false}}
+                                   :output-to "dev-resources/private/test/browser/compiled/browser-test.js"
+                                   :output-dir "dev-resources/private/test/browser/compiled/out"
+                                   :asset-path "dev-resources/private/test/browser/compiled/out"
+                                   :optimizations :none}}
                        {:id "node-test"
                         :source-paths ["src/cljs" "src/node" "test/cljs" "test/node" "test/doo"]
-                        :compiler {:main launcher.runner
+                        :compiler {:target :nodejs
+                                   :main launcher.runner
                                    :output-to "dev-resources/private/test/node/compiled/nodejs-test.js"
-                                   :target :nodejs}}
+                                   :output-dir "dev-resources/private/test/node/compiled/out"
+                                   :asset-path "dev-resources/private/test/node/compiled/out"
+                                   :optimizations :none}}
                        {:id "node-repl"
                         :source-paths ["src/cljs" "src/node" "repl-demo/node/cljs"]
                         :compiler {:target :nodejs
