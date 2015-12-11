@@ -10,8 +10,9 @@
             [cljs.pprint :refer [pprint]]
             [replumb.common :as common]
             [replumb.doc-maps :as docs]
-            [replumb.options :as options]
-            [replumb.load :as load]))
+            [replumb.load :as load]
+            [replumb.browser :as browser]
+            [replumb.nodejs :as nodejs]))
 
 ;;;;;;;;;;;;;
 ;;; State ;;;
@@ -43,6 +44,12 @@
 (defn get-namespace
   [sym]
   (get-in @st [:cljs.analyzer/namespaces sym]))
+
+(defn get-goog-path
+  "Given a Google Closure provide / Clojure require (e.g. goog.string),
+  returns the path to the actual file (without extension)."
+  [provide]
+  (get-in @app-env [:goog-provide->path provide]))
 
 (defn map-keys
   [f m]
@@ -177,6 +184,104 @@
                   (~kind
                    ~@(-> specs canonicalize-specs process-reloads!)))
       {:merge true :line 1 :column 1})))
+
+(defn goog-deps-map
+  "Given the content of goog/deps.js file, create a map
+  provide->path (without extension) of Google dependencies.
+
+  Adapted from planck:
+  https://github.com/mfikes/planck/blob/master/planck-cljs/src/planck/repl.cljs#L438-L451"
+  [deps-js-content]
+  (let [paths-to-provides (map (fn [[_ path provides]]
+                                 [path (map second (re-seq #"'(.*?)'" provides))])
+                               (re-seq #"\ngoog\.addDependency\('(.*)', \[(.*?)\].*"
+                                       deps-js-content))]
+    (into {} (for [[path provides] paths-to-provides
+                   provide provides]
+               [(symbol provide) (str "goog/" (second (re-find #"(.*)\.js$" path)))]))))
+
+(defn make-load-fn
+  "Makes a load function that will read from a sequence of src-paths
+  using a supplied read-file-fn. It returns a cljs.js-compatible
+  *load-fn*.
+
+  Read-file-fn is an async 2-arity function (fn [filename src-cb] ...)
+  where src-cb is itself a function (fn [source] ...) that needs to be
+  called with the full source of the library (as string)."
+  [verbose? src-paths read-file-fn]
+  (fn [{:keys [name macros path] :as load-map} cb]
+    (cond
+      (load/skip-load? load-map) (load/fake-load-fn! load-map cb)
+      (re-matches #"^goog/.*" path) (if-let [goog-path (get-goog-path name)]
+                                      (load/read-files-and-callback! verbose?
+                                                                     (load/goog-filenames-to-try src-paths goog-path)
+                                                                     read-file-fn
+                                                                     cb)
+                                      (cb nil))
+      :else (load/read-files-and-callback! verbose?
+                                           (load/filenames-to-try src-paths macros path)
+                                           read-file-fn
+                                           cb))))
+
+;;;;;;;;;;;;;;;;
+;;; Options ;;;;
+;;;;;;;;;;;;;;;;
+
+(def valid-opts-set
+  "Set of valid option used for external input validation."
+  #{:verbose :warning-as-error :target :init-fn!
+    :load-fn! :read-file-fn! :src-paths})
+
+(defn valid-opts
+  "Validate the input user options. Returns a new map without invalid
+  ones according to valid-opts-set."
+  [user-opts]
+  (into {} (filter (comp valid-opts-set first) user-opts)))
+
+(defn add-default-opts
+  "Given user provided options, conjoins the default option map for
+  its :target (string or keyword). Defaults to conjoining :default (browser,
+  aka :js target)."
+  [opts user-opts]
+  (merge opts (condp = (keyword (:target user-opts))
+                :nodejs nodejs/default-opts
+                browser/default-opts)))
+
+(defn add-load-fn
+  "Given current and user options, if :load-fn! is present in user-opts,
+  conjoins it. Try to create and conjoin one from :src-paths
+  and :read-file-fn! otherwise. Conjoins nil if it cannot."
+  [opts user-opts]
+  (assoc opts :load-fn!
+         (or (:load-fn! user-opts)
+             (let [read-file-fn (:read-file-fn! user-opts)
+                   src-paths (:src-paths user-opts)]
+               (if (and read-file-fn (sequential? src-paths))
+                 (make-load-fn (:verbose user-opts)
+                               (into [] src-paths)
+                               read-file-fn)
+                 (when (:verbose user-opts)
+                   (common/debug-prn "Invalid :read-file-fn! or :src-paths (is it a valid sequence?). Cannot create *load-fn*.")))))))
+
+(defn add-init-fns
+  "Given current and user options, returns a map containing a
+  valid :init-fns,conjoining with the one in current if necessary."
+  [opts user-opts]
+  (update-in opts [:init-fns] (fn [init-fns]
+                                (if-let [fn (:init-fn! user-opts)]
+                                  (conj init-fns fn)
+                                  init-fns))))
+
+(defn normalize-opts
+  "Process the user options. Returns the map that can be fed to
+  read-eval-call."
+  [user-opts]
+  (let [vld-opts (valid-opts user-opts)]
+    ;; AR - note the order here, the last always overrides
+    (-> vld-opts
+        (add-default-opts vld-opts)
+        (add-load-fn vld-opts)
+        (add-init-fns vld-opts))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Callback handling fns ;;;
@@ -334,7 +439,7 @@
                                       {:side-effect-fn! #(when is-self-require?
                                                            (swap! app-env assoc :current-ns restore-ns))})
                                (if error
-                                 error
+                                 (common/wrap-error error)
                                  (common/wrap-success nil))))))))
 
 (defn process-doc
@@ -417,9 +522,30 @@
     (set! *2 *1)
     (set! *1 value)))
 
-;;;;;;;;;;;;;;;;;;;;
-;;; External API ;;;
-;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;
+;;; Initialization ;;;
+;;;;;;;;;;;;;;;;;;;;;;
+
+(defn init-closure-index!
+  "Create and swap in app-env a map from Google Closure provide string
+  to their respective path (without extension).  It merges with the
+  current map if many deps.js are on the source path, precedence to the
+  last (as per merge)."
+  [opts]
+  (let [verbose? (:verbose opts)
+        read-file! (:read-file-fn! opts)]
+    (when verbose?
+      (common/debug-prn "Discovering goog/deps.js in" (:src-paths opts)))
+    (doseq [path (:src-paths opts)]
+      (let [goog-deps-path (str (common/normalize-path path) "goog/deps.js")]
+        (read-file! goog-deps-path
+                    (fn [content]
+                      (when content
+                        (do (when verbose?
+                              (common/debug-prn "Found valid" goog-deps-path))
+                            (swap! app-env
+                                   update :goog-provide->path
+                                   merge (goog-deps-map content))))))))))
 
 (defn init-repl!
   "The init-repl function. It uses the following opts keys:
@@ -430,14 +556,15 @@
   Data is passed from outside and will be forwarded to :init-fn!."
   [opts data]
   (when (:verbose opts)
-    (common/debug-prn "Initializing REPL environment with data" (with-out-str (pprint data))))
+    (common/debug-prn "Initializing REPL environment with data" (println data)))
   (assert (= cljs.analyzer/*cljs-ns* 'cljs.user))
-
-  ;; Initializing, we need at least one init-fn, the default init function
+  ;; Target/user init, we need at least one init-fn, the default init function
   (let [init-fns (:init-fns opts)]
     (assert (> (count init-fns) 0))
     (doseq [init-fn! init-fns]
-      (init-fn! data))))
+      (init-fn! data)))
+  ;; Building the closure index
+  (init-closure-index! opts))
 
 (defn update-to-initializing
   [old-app-env]
@@ -503,7 +630,7 @@
   [opts cb source]
   (try
     (let [expression-form (repl-read-string source)
-          opts (options/normalize-opts opts) ;; AR - does the whole user option processing
+          opts (normalize-opts opts) ;; AR - does the whole user option processing
           data {:form expression-form
                 :ns (:current-ns @app-env)
                 :target (keyword *target*)}]
