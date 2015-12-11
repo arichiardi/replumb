@@ -5,6 +5,7 @@
             replumb.common-test
             replumb.load-test
             replumb.options-test
-            replumb.require-node-test))
+            replumb.require-node-test
+            replumb.source-node-test))
 
 (doo-all-tests #"^replumb.*-test")

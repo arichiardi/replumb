@@ -9,7 +9,6 @@
             [cljs.env :as env]
             [cljs.repl :as repl]
             [cljs.pprint :refer [pprint]]
-            [clojure.string :as s]
             [replumb.common :as common]
             [replumb.doc-maps :as docs]
             [replumb.load :as load]
@@ -217,12 +216,12 @@
       (load/skip-load? load-map) (load/fake-load-fn! load-map cb)
       (re-matches #"^goog/.*" path) (if-let [goog-path (get-goog-path name)]
                                       (load/read-files-and-callback! verbose?
-                                                                     (load/goog-filenames-to-try src-paths goog-path)
+                                                                     (load/goog-file-paths-to-try src-paths goog-path)
                                                                      read-file-fn
                                                                      cb)
                                       (cb nil))
       :else (load/read-files-and-callback! verbose?
-                                           (load/filenames-to-try src-paths macros path)
+                                           (load/file-paths-to-try src-paths macros path)
                                            read-file-fn
                                            cb))))
 
@@ -514,25 +513,23 @@
                                      (-> (r/read {:read-cond :allow :features #{:cljs}} rdr)
                                          meta 
                                          :source
-                                         common/wrap-success
                                          cb)))))
-
-(defn filenames-to-try-from-symbol
-  [sym src-paths]
-  (let [without-extension (s/replace (s/replace (name sym) #"\." "/") #"-" "_")
-        files (map #(str without-extension %) [".clj" ".cljc" ".cljs"])]
-    (for [file files src-path src-paths]
-      (str (common/normalize-path src-path) file))))
 
 (defn process-source
   [opts cb data env sym]
   (let [var (get-var opts env sym)
-        call-back (partial call-back! (merge opts {:no-pr-str-on-value true}) cb data)]
+        cb-partial (partial call-back! (merge opts {:no-pr-str-on-value true}) cb data)
+        call-back (fn [result]
+                    (if (nil? result)   ; if nil? means that no file was found
+                      (cb-partial (common/wrap-success "nil"))
+                      (cb-partial (common/wrap-success result))))]
     (if-let [filepath (or (:file var) (:file (:meta var)))]
       (let [src-paths (:src-paths opts)
-            ; see discussion here: https://github.com/ScalaConsultants/replumb/issues/17#issuecomment-163832028
+            ;; see discussion here: https://github.com/ScalaConsultants/replumb/issues/17#issuecomment-163832028
+            ;; if (symbol? filepath) is true, filepath will contain the symbol of a namespace
+            ;; eg. clojure.set
             paths-to-try (if (symbol? filepath)
-                           (filenames-to-try-from-symbol filepath src-paths)
+                           (load/file-paths-to-try-from-ns-symbol filepath src-paths)
                            (map #(str (common/normalize-path %) filepath) src-paths))]
         (fetch-source opts var paths-to-try call-back))
       (call-back nil))))

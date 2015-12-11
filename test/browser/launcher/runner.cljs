@@ -5,6 +5,7 @@
             replumb.common-test
             replumb.load-test
             replumb.options-test
-            replumb.require-browser-test))
+            replumb.require-browser-test
+            replumb.source-browser-test))
 
 (doo-all-tests #"^replumb.*-test")
