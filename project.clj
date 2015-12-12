@@ -21,46 +21,46 @@
                         :figwheel {:on-jsload "replumb-repl.core/main"
                                    :css-dirs ["dev-resources/public/styles"]}
                         :compiler {:main replumb-repl.core
+                                   :optimizations :none
                                    :output-to "dev-resources/public/js/compiled/replumb-repl.js"
                                    :output-dir "dev-resources/public/js/compiled/out"
                                    :asset-path "js/compiled/out"
-                                   :optimizations :none
-                                   :source-map-timestamp true}}
-                       {:id "browser-repl"
-                        :source-paths ["src/cljs" "repl-demo/browser/cljs"]
-                        :compiler {:output-to "dev-resources/public/js/compiled/replumb-repl.js"
-                                   :optimizations :whitespace
-                                   :pretty-print false}}
+                                   :source-map-timestamp true
+                                   :static-fns true}}
                        {:id "browser-test"
                         :source-paths ["src/cljs" "test/cljs" "test/browser" "test/doo"]
-                        :compiler {:main launcher.runner
+                        :compiler {:optimizations :none
+                                   :main launcher.runner
                                    :output-to "dev-resources/private/test/browser/compiled/browser-test.js"
                                    :output-dir "dev-resources/private/test/browser/compiled/out"
                                    :asset-path "dev-resources/private/test/browser/compiled/out"
-                                   :optimizations :none}}
+                                   :static-fns true}}
                        {:id "node-test"
                         :source-paths ["src/cljs" "src/node" "test/cljs" "test/node" "test/doo"]
                         :compiler {:target :nodejs
+                                   :optimizations :none
                                    :main launcher.runner
                                    :output-to "dev-resources/private/test/node/compiled/nodejs-test.js"
                                    :output-dir "dev-resources/private/test/node/compiled/out"
                                    :asset-path "dev-resources/private/test/node/compiled/out"
-                                   :optimizations :none}}
+                                   :static-fns true}}
                        {:id "node-repl"
                         :source-paths ["src/cljs" "src/node" "repl-demo/node/cljs"]
                         :compiler {:target :nodejs
+                                   :optimizations :none
                                    :main nodejs-repl.core
                                    :output-to "dev-resources/private/node/compiled/nodejs-repl.js"
                                    :output-dir "dev-resources/private/node/compiled/out"
                                    :asset-path "dev-resources/private/node/compiled/out"
-                                   :optimizations :none}}
+                                   :static-fns true}}
                        {:id "min"
                         :source-paths ["src/cljs"]
                         :compiler { ;; :main cljs-browser-repl.core ;; https://github.com/emezeske/lein-cljsbuild/issues/420
                                    :output-to "dev-resources/public/js/compiled/replumb-repl.js"
-                                   :optimizations :advanced
+                                   :optimizations :simple
                                    :pretty-print false
-                                   :elide-asserts true}}]}
+                                   :elide-asserts true
+                                   :static-fns true}}]}
   ;; :figwheel {:repl false}
 
   :prep-tasks ["codox"]

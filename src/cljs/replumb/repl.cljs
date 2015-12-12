@@ -124,7 +124,8 @@
     :def-emits-var true
     :load (:load-fn! opts)
     :eval cljs/js-eval
-    :verbose (or (:verbose opts) false)}))
+    :verbose (or (:verbose opts) false)
+    :static-fns false}))
 
 (defn self-require?
   [specs]
