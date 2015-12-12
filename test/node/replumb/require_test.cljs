@@ -162,7 +162,8 @@
         (is (success? res) "(require 'alterable.core) and alterable.core/b should succeed")
         (is (valid-eval-result? out) "(require 'alterable.core) and alterable.core/b should be a valid result")
         (is (= 'cljs.user (repl/current-ns)) "(require 'alterable.core) and alterable.core/b should not change namespace")
-        (is (= "\"pre\"" out) "(require 'alterable.core) and alterable.core/b should return \"pre\""))
+        (is (= "\"pre\"" out) "(require 'alterable.core) and alterable.core/b should return \"pre\"")
+        (repl/reset-env! '[alterable.core alterable.utils]))
 
       (let [res (do (read-eval-call "(require 'alterable.utils)")
                     (read-eval-call "alterable.utils/c"))
@@ -170,7 +171,8 @@
         (is (success? res) "(require 'alterable.utils) and alterable.utils/c should succeed")
         (is (valid-eval-result? out) "(require 'alterable.utils) and alterable.utils/c should be a valid result")
         (is (= 'cljs.user (repl/current-ns)) "(require 'alterable.utils) and alterable.utils/c should not change namespace")
-        (is (= "\"pre\"" out) "(require 'alterable.utils) and alterable.utils/c should return \"pre\""))
+        (is (= "\"pre\"" out) "(require 'alterable.utils) and alterable.utils/c should return \"pre\"")
+        (repl/reset-env! '[alterable.utils]))
 
       ;; Writing "post" version of alterable.core & alterable.utils
       (io/write-file! alterable-utils-path utils-post-content)
@@ -180,7 +182,7 @@
         (is (success? res) "(require 'alterable.core :reload) and alterable.core/b should succeed")
         (is (valid-eval-result? out) "(require 'alterable.core :reload) and alterable.core/b should be a valid result")
         (is (= 'cljs.user (repl/current-ns)) "(require 'alterable.core :reload) and alterable.core/b should not change namespace")
-        (is (= "\"post\"" out) "(require 'alterable.core :reload) and alterable.core/b should return \"post\""))
-      (repl/reset-env! ['alterable.core 'alterable.utils])
+        (is (= "\"post\"" out) "(require 'alterable.core :reload) and alterable.core/b should return \"post\"")
+        (repl/reset-env! '[alterable.core alterable.utils]))
       (io/delete-file! alterable-core-path)
       (io/delete-file! alterable-utils-path))))
