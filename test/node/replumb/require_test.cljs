@@ -36,7 +36,7 @@
       (is (success? res) "(require ...) and (doc clojure.string/trim) should succeed.")
       (is (valid-eval-result? docstring) "(require ...) and (doc clojure.string/trim) should be a valid result")
       (is (re-find #"Removes whitespace from both ends of string" docstring) "(require ...) and (doc clojure.string/trim) should return valid docstring")
-      (repl/reset-env! ['clojure.set])))
+      (repl/reset-env! '[clojure.string goog.string goog.string.StringBuffer])))
 
   (deftest process-require
     ;; AR - Test for "No *load-fn* when requiring a namespace in browser #35"
@@ -96,7 +96,7 @@
       (is (valid-eval-result? out) "(require 'clojure.string) should be a valid result")
       (is (= 'cljs.user (repl/current-ns)) "(require 'clojure.string) should not change namespace")
       (is (= "nil" out) "(require 'clojure.string) should return \"nil\"")
-      (repl/reset-env! ['clojure.string]))
+      (repl/reset-env! '[clojure.string goog.string goog.string.StringBuffer]))
 
     (let [res (do (read-eval-call "(require 'clojure.string)")
                   (read-eval-call "(clojure.string/reverse \"clojurescript\")"))
@@ -105,7 +105,7 @@
       (is (valid-eval-result? out) "(require 'clojure.string) and clojure.string/reverse should be a valid result")
       (is (= 'cljs.user (repl/current-ns)) "(require 'clojure.string) and clojure.string/reverse should not change namespace")
       (is (= "\"tpircserujolc\"" out) "(require 'clojure.string) and clojure.string/reverse should return \"tpircserujolc\"")
-      (repl/reset-env! ['clojure.string]))
+      (repl/reset-env! '[clojure.string goog.string goog.string.StringBuffer]))
 
     (let [res (do (read-eval-call "(import 'goog.string.StringBuffer)")
                   (read-eval-call "(let [sb (StringBuffer. \"clojure\")]
@@ -116,7 +116,7 @@
       (is (valid-eval-result? out) "(import 'goog.string.StringBuffer) and .toString should be a valid result")
       (is (= 'cljs.user (repl/current-ns)) "(import 'goog.string.StringBuffer) and .toString should not change namespace")
       (is (= "\"clojurescript\"" out) "(import 'goog.string.StringBuffer) and .toString should return \"clojurescript\"")
-      (repl/reset-env! ['goog.string.StringBuffer])))
+      (repl/reset-env! '[goog.string goog.string.StringBuffer])))
 
   (deftest process-reload
     (let [alterable-core-path "dev-resources/private/test/src/cljs/alterable/core.cljs"
@@ -130,7 +130,8 @@
         (is (success? res) "(require 'alterable.core) and alterable.core/b should succeed")
         (is (valid-eval-result? out) "(require 'alterable.core) and alterable.core/b should be a valid result")
         (is (= 'cljs.user (repl/current-ns)) "(require 'alterable.core) and alterable.core/b should not change namespace")
-        (is (= "\"pre\"" out) "(require 'alterable.core) and alterable.core/b should return \"pre\""))
+        (is (= "\"pre\"" out) "(require 'alterable.core) and alterable.core/b should return \"pre\"")
+        (repl/reset-env! ['alterable.core]))
 
       ;; Writing "post" version of alterable.core
       (io/write-file! alterable-core-path post-content)
@@ -140,8 +141,9 @@
         (is (success? res) "(require 'alterable.core :reload) and alterable.core/b should succeed")
         (is (valid-eval-result? out) "(require 'alterable.core :reload) and alterable.core/b should be a valid result")
         (is (= 'cljs.user (repl/current-ns)) "(require 'alterable.core :reload) and alterable.core/b should not change namespace")
-        (is (= "\"post\"" out) "(require 'alterable.core :reload) and alterable.core/b should return \"post\""))
-      (repl/reset-env! ['alterable.core])
+        (is (= "\"post\"" out) "(require 'alterable.core :reload) and alterable.core/b should return \"post\"")
+        (repl/reset-env! ['alterable.core]))
+
       (io/delete-file! alterable-core-path)))
 
   (deftest process-reload-all
