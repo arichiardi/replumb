@@ -7,4 +7,5 @@ before_script:
 script: lein2 do test-phantom*, test-node*
 jdk:
     - oraclejdk8
-sudo: false
+sudo: required
+dist: trusty
