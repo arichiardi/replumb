@@ -1,4 +1,4 @@
-(ns replumb.require-test
+(ns replumb.require-node-test
   (:require [cljs.test :refer-macros [deftest is]]
             [cljs.nodejs :as nodejs]
             [doo.runner :as doo]

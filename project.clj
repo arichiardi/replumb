@@ -28,7 +28,7 @@
                                    :source-map-timestamp true
                                    :static-fns true}}
                        {:id "browser-test"
-                        :source-paths ["src/cljs" "test/cljs" "test/browser" "test/doo"]
+                        :source-paths ["src/cljs" "test/cljs" "test/browser"]
                         :compiler {:optimizations :none
                                    :main launcher.runner
                                    :output-to "dev-resources/private/test/browser/compiled/browser-test.js"
@@ -36,7 +36,7 @@
                                    :asset-path "dev-resources/private/test/browser/compiled/out"
                                    :static-fns true}}
                        {:id "node-test"
-                        :source-paths ["src/cljs" "src/node" "test/cljs" "test/node" "test/doo"]
+                        :source-paths ["src/cljs" "src/node" "test/cljs" "test/node"]
                         :compiler {:target :nodejs
                                    :optimizations :none
                                    :main launcher.runner

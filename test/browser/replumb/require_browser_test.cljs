@@ -1,4 +1,4 @@
-(ns replumb.require-test)
+(ns replumb.require-browser-test)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; AR - This is not possible with phantom/slimer at the moment.
