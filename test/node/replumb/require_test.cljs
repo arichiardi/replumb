@@ -19,6 +19,9 @@
       target-opts (nodejs-options src-paths io/read-file!)
       read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)]
 
+  (deftest dummy
+    (is (= 2 42) "Dummy failing test should fail"))
+
   (deftest require+doc
     ;; https://github.com/ScalaConsultants/replumb/issues/47
     (let [res (do (read-eval-call "(require 'clojure.set)")
