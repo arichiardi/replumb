@@ -1,4 +1,4 @@
-(ns replumb.require-test
+(ns replumb.require-node-test
   (:require [cljs.test :refer-macros [deftest is]]
             [cljs.nodejs :as nodejs]
             [doo.runner :as doo]
@@ -17,7 +17,8 @@
                  "dev-resources/private/test/src/clj"]
       validated-echo-cb (partial repl/validated-call-back! echo-callback)
       target-opts (nodejs-options src-paths io/read-file!)
-      read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)]
+      read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)
+      read-eval-call-verbose (partial repl/read-eval-call (merge target-opts {:verbose true}) validated-echo-cb)]
 
   (deftest require+doc
     ;; https://github.com/ScalaConsultants/replumb/issues/47
@@ -162,7 +163,8 @@
         (is (success? res) "(require 'alterable.core) and alterable.core/b should succeed")
         (is (valid-eval-result? out) "(require 'alterable.core) and alterable.core/b should be a valid result")
         (is (= 'cljs.user (repl/current-ns)) "(require 'alterable.core) and alterable.core/b should not change namespace")
-        (is (= "\"pre\"" out) "(require 'alterable.core) and alterable.core/b should return \"pre\""))
+        (is (= "\"pre\"" out) "(require 'alterable.core) and alterable.core/b should return \"pre\"")
+        (repl/reset-env! '[alterable.core alterable.utils]))
 
       (let [res (do (read-eval-call "(require 'alterable.utils)")
                     (read-eval-call "alterable.utils/c"))
@@ -170,7 +172,8 @@
         (is (success? res) "(require 'alterable.utils) and alterable.utils/c should succeed")
         (is (valid-eval-result? out) "(require 'alterable.utils) and alterable.utils/c should be a valid result")
         (is (= 'cljs.user (repl/current-ns)) "(require 'alterable.utils) and alterable.utils/c should not change namespace")
-        (is (= "\"pre\"" out) "(require 'alterable.utils) and alterable.utils/c should return \"pre\""))
+        (is (= "\"pre\"" out) "(require 'alterable.utils) and alterable.utils/c should return \"pre\"")
+        (repl/reset-env! '[alterable.utils]))
 
       ;; Writing "post" version of alterable.core & alterable.utils
       (io/write-file! alterable-utils-path utils-post-content)
@@ -180,7 +183,16 @@
         (is (success? res) "(require 'alterable.core :reload) and alterable.core/b should succeed")
         (is (valid-eval-result? out) "(require 'alterable.core :reload) and alterable.core/b should be a valid result")
         (is (= 'cljs.user (repl/current-ns)) "(require 'alterable.core :reload) and alterable.core/b should not change namespace")
-        (is (= "\"post\"" out) "(require 'alterable.core :reload) and alterable.core/b should return \"post\""))
-      (repl/reset-env! ['alterable.core 'alterable.utils])
+        (is (= "\"post\"" out) "(require 'alterable.core :reload) and alterable.core/b should return \"post\"")
+        (repl/reset-env! '[alterable.core alterable.utils]))
       (io/delete-file! alterable-core-path)
-      (io/delete-file! alterable-utils-path))))
+      (io/delete-file! alterable-utils-path)))
+
+  ;; AR - we need to force the order so that we can force re-init at the beginning
+  (defn test-ns-hook []
+    (repl/force-init!)
+    (require+doc)
+    (process-require)
+    (process-goog-import)
+    (process-reload)
+    (process-reload-all)))
