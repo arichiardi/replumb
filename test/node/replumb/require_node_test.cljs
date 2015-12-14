@@ -17,7 +17,8 @@
                  "dev-resources/private/test/src/clj"]
       validated-echo-cb (partial repl/validated-call-back! echo-callback)
       target-opts (nodejs-options src-paths io/read-file!)
-      read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)]
+      read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)
+      read-eval-call-verbose (partial repl/read-eval-call (merge target-opts {:verbose true}) validated-echo-cb)]
 
   (deftest require+doc
     ;; https://github.com/ScalaConsultants/replumb/issues/47
@@ -185,4 +186,13 @@
         (is (= "\"post\"" out) "(require 'alterable.core :reload) and alterable.core/b should return \"post\"")
         (repl/reset-env! '[alterable.core alterable.utils]))
       (io/delete-file! alterable-core-path)
-      (io/delete-file! alterable-utils-path))))
+      (io/delete-file! alterable-utils-path)))
+
+  ;; AR - we need to force the order so that we can force re-init at the beginning
+  (defn test-ns-hook []
+    (repl/force-init!)
+    (require+doc)
+    (process-require)
+    (process-goog-import)
+    (process-reload)
+    (process-reload-all)))

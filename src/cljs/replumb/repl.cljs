@@ -580,11 +580,27 @@
   (merge old-app-env {:initializing? false
                       :needs-init? false}))
 
+(defn reset-init-state
+  [old-app-env]
+  (merge old-app-env {:initializing? false
+                      :needs-init? true}))
+
 (defn init-repl-if-necessary!
   [opts data]
   (when (:needs-init? (swap! app-env update-to-initializing))
     (do (init-repl! opts data)
         (swap! app-env update-to-initialized))))
+
+(defn force-init!
+  "Force the initialization at the next read-eval-call. Use this every
+  time an option that needs to be read at initialization time changes,
+  e.g. :source-path. In the future this will be automated."
+  []
+  (swap! app-env reset-init-state))
+
+;;;;;;;;;;;;;;;;;;;;;;
+;;; Read-Eval-Call ;;;
+;;;;;;;;;;;;;;;;;;;;;;
 
 (defn read-eval-call
   "Reads, evaluates and calls back with the evaluation result.
