@@ -71,6 +71,15 @@
   [error]
   (instance? js/Error error))
 
+(defn valid-eval-warning?
+  "Is the string returned from an evaluation valid?"
+  [warning]
+  (string? warning))
+
+(defn has-valid-warning?
+  [result]
+  (some-> (:warning result) valid-eval-warning?))
+
 (defn error-keyword-not-supported
   "Yields a \"keyword not supported\" error map. Receives the
   symbol/keyword printed in the message and ex-info data."

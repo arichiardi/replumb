@@ -293,18 +293,20 @@
   Supports the following options:
 
   * :no-pr-str-on-value avoids wrapping value in pr-str."
-  ([opts form value]
+  ([opts form warning value]
    {:success? true
     :form form
+    :warning warning
     :value (if-not (:no-pr-str-on-value opts)
              (pr-str value)
              value)}))
 
 (defn error-map
   "Builds the map to return when the evaluation returned error."
-  ([opts form error]
+  ([opts form warning error]
    {:success? false
     :form form
+    :warning warning
     :error error}))
 
 (defn reset-last-warning!
@@ -332,7 +334,9 @@
          (or (and (find res :value) (get res :success?))
              (and (find res :error) (not (get res :success?))))
          (or (and (find res :value) (string? (get res :value)))
-             (and (find res :error) (instance? js/Error (get res :error))))]}
+             (and (find res :error) (instance? js/Error (get res :error))))
+         (or (not (find res :warning))
+             (and (find res :warning)) (string? (get res :warning)))]}
   (call-back! res))
 
 (defn validated-init-fn!
@@ -354,20 +358,31 @@
       (when-let [e! (:on-error-fn! data)] (e!)))))
 
 (defn warning-error-map!
-  "Checks if there has been a warning and if so will return the correct
-  error map instead of the input one. Note that if the input map was
-  already an :error, the warning will be ignored.
-  If (:warning-as-error opts) is truey, in case of warning it will
-  return a with :error."
-  [opts {:keys [error] :as original-res}]
-  (if (or error (not (:warning-as-error opts)))
-    original-res
-    (if-let [warning-msg (:last-eval-warning @app-env)]
-      (let [warning-error (ex-info warning-msg ex-info-data)]
-        (when (:verbose opts)
-          (common/debug-prn "Erroring on last warning: " warning-msg))
-        (common/wrap-error warning-error))
-      original-res)))
+  "Checks if there has been a warning and if so will return a new result
+  map instead of the input one, potentially with a :warning key
+  containing the warning message in it.
+
+  The code paths are the following:
+
+  - if the input map was already an :error, there will be no warning,
+  the original :error is returned.
+  - if the input map was a :value:
+    - if (:warning-as-error opts) is truey, the new map will always
+      contain it as :error, overriding the original.
+    - if (:warning-as-error opts) is falsey, the new map will contain
+      the warning as :warning along with the original :value"
+
+  [opts {:keys [error] :as orig}]
+  (if-let [warning-msg (:last-eval-warning @app-env)]
+    (if-not error
+      (if (not (:warning-as-error opts))
+        (assoc orig :warning warning-msg)
+        (let [warning-error (ex-info warning-msg ex-info-data)]
+          (when (:verbose opts)
+            (common/debug-prn "Erroring on last warning: " warning-msg))
+          (common/wrap-error warning-error)))
+      orig)
+    orig))
 
 (defn call-back!
   "Handles the evaluation result, calling the callback in the right way,
@@ -406,14 +421,14 @@
                                                                 :data (common/filter-fn-keys data)
                                                                 :res res}))))
    (let [new-map (warning-error-map! opts res)]
-     (let [{:keys [value error]} new-map]
+     (let [{:keys [value error warning]} new-map]
        (call-side-effect! data new-map)
        (reset-last-warning!)
        (if-not error
          (do (set! *e nil)
-             (cb (success-map opts (:form data) value)))
+             (cb (success-map opts (:form data) warning value)))
          (do (set! *e error)
-             (cb (error-map opts (:form data) error))))))))
+             (cb (error-map opts (:form data) warning error))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Processing fns - from mfikes/plank ;;;
@@ -608,28 +623,28 @@
   The first parameter is a map of configuration options, currently
   supporting:
 
-  * :verbose  will enable the the evaluation logging, defaults to false
-  * :warning-as-error  will consider a compiler warning as error
-  * :target :nodejs and :browser supported, the latter is used if
+  * :verbose - will enable the the evaluation logging, defaults to false
+  * :warning-as-error - will consider a compiler warning as error
+  * :target - :nodejs and :browser supported, the latter is used if
   missing
-  * :init-fn!  user provided initialization function, it will be passed
+  * :init-fn! - user provided initialization function, it will be passed
   a map of data currently containing:
 
       :form   ;; the form to evaluate, as data, past the reader step
       :ns     ;; the current namespace, as symbol
       :target ;; *target* as keyword, :default is the default
 
-  * :load-fn! will override replumb's default cljs.js/*load-fn*.
+  * :load-fn! - will override replumb's default cljs.js/*load-fn*.
   It rules out `:read-file-fn!`, losing any perk of using replumb.load
   helpers. Use it if you know what you are doing.
 
-  * :read-file-fn!  an asynchronous 2-arity function (fn [filename
+  * :read-file-fn! - an asynchronous 2-arity function (fn [filename
   src-cb] ...) where src-cb is itself a function (fn [source] ...)  that
   needs to be called when ready with the found file source as
   string (nil if no file is found). It is mutually exclusive with
   :load-fn! and will be ignored in case both are present.
 
-  * :src-paths  a vector of paths containing source files.
+  * :src-paths - a vector of paths containing source files.
 
   The second parameter cb, is a 1-arity function which receives the
   result map.
@@ -639,6 +654,7 @@
   :success? ;; a boolean indicating if everything went right
   :value    ;; (if (success? result)) will contain the actual yield of the evaluation
   :error    ;; (if (not (success? result)) will contain a js/Error
+  :warning  ;; in case a warning was thrown and :warning-as-error is falsey
   :form     ;; the evaluated form as data structure (not a string)
 
   The third parameter is the source string to be read and evaluated.
