@@ -508,15 +508,15 @@
                                  read-file-fn!
                                  (fn [result]
                                    (if result
-                                    (let [source (:source result)
-                                          rdr (rt/source-logging-push-back-reader source)]
-                                      (dotimes [_ (dec (:line var))] (rt/read-line rdr))
-                                      (-> (r/read {:read-cond :allow :features #{:cljs}} rdr)
-                                          meta 
-                                          :source
-                                          common/wrap-success
-                                          cb))
-                                    (cb (common/wrap-success "nil"))))))
+                                     (let [source (:source result)
+                                           rdr (rt/source-logging-push-back-reader source)]
+                                       (dotimes [_ (dec (:line var))] (rt/read-line rdr))
+                                       (-> (r/read {:read-cond :allow :features #{:cljs}} rdr)
+                                           meta
+                                           :source
+                                           common/wrap-success
+                                           cb))
+                                     (cb (common/wrap-success "nil"))))))
 
 (defn process-source
   [opts cb data env sym]
@@ -722,6 +722,9 @@
   ([namespaces]
    (doseq [ns namespaces]
      (purge-ns! st (symbol ns)))
+   (if (seq @cljs.js/*loaded*)
+     (throw (ex-info (str "The cljs.js/*loaded* atom still contains " @cljs.js/*loaded* " - make sure you purge dependent namespaces.") ex-info-data)))
+   (assert (empty? @cljs.js/*loaded*))
    (reset-last-warning!)
    (read-eval-call {} identity "(set! *e nil)")
    (read-eval-call {} identity "(in-ns 'cljs.user)")))

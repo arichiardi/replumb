@@ -279,6 +279,7 @@
       (is (valid-eval-result? out) "Executing (defmacro hello ..) as function should have a valid result")
       (is (= "(inc 13)" out) "Executing (defmacro hello ..) as function shoud return (inc 13)")
       (repl/reset-env!))
+
     (let [res (do (read-eval-call "(ns foo.core$macros)")
                   (read-eval-call "(defmacro hello [x] (prn &form) `(inc ~x))")
                   (read-eval-call "(foo.core/hello (+ 2 3))"))
@@ -286,7 +287,8 @@
       (is (success? res) "Executing (foo.core/hello ..) as function should succeed")
       (is (valid-eval-result? out) "Executing (foo.core/hello ..) hello ..) as function should have a valid result")
       (is (= "6" out) "Executing (foo.core/hello ..) hello ..) as function shoud return 6")
-      (repl/reset-env! ["foo.core$macros"]))
+      (repl/reset-env! '[foo.core]))
+
     (let [res (do (read-eval-call "(ns foo.core$macros)")
                   (read-eval-call "(defmacro hello [x] (prn &form) `(inc ~x))")
                   (read-eval-call "(ns another.ns)")
@@ -296,7 +298,7 @@
       (is (success? res) "Executing (foo.core/hello ..) as function should succeed")
       (is (valid-eval-result? out) "Executing (foo.core/hello ..) hello ..) as function should have a valid result")
       (is (= "6" out) "Executing (foo.core/hello ..) hello ..) as function shoud return 6")
-      (repl/reset-env! ["foo.core$macros"])))
+      (repl/reset-env! '[foo.core])))
 
   (deftest tagged-literals
     ;; AR - Don't need to test more as ClojureScript already has extensive tests on this
