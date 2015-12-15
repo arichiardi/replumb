@@ -42,7 +42,7 @@
                                  (read-files-and-callback! verbose? (rest file-names) read-file-fn load-fn-cb))))))
     (load-fn-cb nil)))
 
-(defn filenames-to-try
+(defn file-paths-to-try
   "Produces a sequence of filenames to try reading, in the
   order they should be tried."
   [src-paths macros file-path]
@@ -54,7 +54,14 @@
       ;; AR - will there be a need for https://nodejs.org/docs/latest/api/path.html ?
       (str (common/normalize-path src-path) file-path extension))))
 
-(defn goog-filenames-to-try
+(defn file-paths-to-try-from-ns-symbol
+  "Given the symbol of a namespace produces all possibile file names
+  in which given ns could be found."
+  [ns-sym src-paths]
+  (let [without-extension (string/replace (string/replace (name ns-sym) #"\." "/") #"-" "_")]
+    (file-paths-to-try src-paths false without-extension)))
+
+(defn goog-file-paths-to-try
   "Produces a sequence of filenames to try reading crafted for goog
   libraries, in the order they should be tried."
   [src-paths goog-path]

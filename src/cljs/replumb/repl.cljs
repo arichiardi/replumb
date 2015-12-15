@@ -4,6 +4,7 @@
   (:require [cljs.js :as cljs]
             [cljs.tagged-literals :as tags]
             [cljs.tools.reader :as r]
+            [cljs.tools.reader.reader-types :as rt]
             [cljs.analyzer :as ana]
             [cljs.env :as env]
             [cljs.repl :as repl]
@@ -215,12 +216,12 @@
       (load/skip-load? load-map) (load/fake-load-fn! load-map cb)
       (re-matches #"^goog/.*" path) (if-let [goog-path (get-goog-path name)]
                                       (load/read-files-and-callback! verbose?
-                                                                     (load/goog-filenames-to-try src-paths goog-path)
+                                                                     (load/goog-file-paths-to-try src-paths goog-path)
                                                                      read-file-fn
                                                                      cb)
                                       (cb nil))
       :else (load/read-files-and-callback! verbose?
-                                           (load/filenames-to-try src-paths macros path)
+                                           (load/file-paths-to-try src-paths macros path)
                                            read-file-fn
                                            cb))))
 
@@ -500,6 +501,38 @@
                                 (common/wrap-error error)
                                 (common/wrap-success nil)))))))))))))
 
+(defn fetch-source
+  [{:keys [verbose read-file-fn!]} var paths-to-try cb]
+  (load/read-files-and-callback! verbose
+                                 paths-to-try
+                                 read-file-fn!
+                                 (fn [result]
+                                   (if result
+                                    (let [source (:source result)
+                                          rdr (rt/source-logging-push-back-reader source)]
+                                      (dotimes [_ (dec (:line var))] (rt/read-line rdr))
+                                      (-> (r/read {:read-cond :allow :features #{:cljs}} rdr)
+                                          meta 
+                                          :source
+                                          common/wrap-success
+                                          cb))
+                                    (cb (common/wrap-success "nil"))))))
+
+(defn process-source
+  [opts cb data env sym]
+  (let [var (get-var opts env sym)
+        call-back (partial call-back! (merge opts {:no-pr-str-on-value true}) cb data)]
+    (if-let [filepath (or (:file var) (:file (:meta var)))]
+      (let [src-paths (:src-paths opts)
+            ;; see discussion here: https://github.com/ScalaConsultants/replumb/issues/17#issuecomment-163832028
+            ;; if (symbol? filepath) is true, filepath will contain the symbol of a namespace
+            ;; eg. clojure.set
+            paths-to-try (if (symbol? filepath)
+                           (load/file-paths-to-try-from-ns-symbol filepath src-paths)
+                           (map #(str (common/normalize-path %) filepath) src-paths))]
+        (fetch-source opts var paths-to-try call-back))
+      (call-back (common/wrap-success "nil")))))
+
 (defn process-repl-special
   [opts cb data expression-form]
   (let [env (assoc (ana/empty-env) :context :expr
@@ -511,7 +544,7 @@
       require-macros (process-require opts cb data :require-macros (rest expression-form))
       import (process-require opts cb data :import (rest expression-form))
       doc (process-doc opts cb data env argument)
-      source (call-back! opts cb data (common/error-keyword-not-supported "source" ex-info-data)) ;; (println (fetch-source (get-var env argument)))
+      source (process-source opts cb data env argument)
       pst (process-pst opts cb data argument)
       load-file (call-back! opts cb data (common/error-keyword-not-supported "load-file" ex-info-data))))) ;; (process-load-file argument opts)
 
