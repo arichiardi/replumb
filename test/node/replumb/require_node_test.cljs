@@ -119,6 +119,100 @@
       (is (= "\"clojurescript\"" out) "(import 'goog.string.StringBuffer) and .toString should return \"clojurescript\"")
       (repl/reset-env! '[goog.string goog.string.StringBuffer])))
 
+  ;; see https://github.com/clojure/clojurescript/wiki/Differences-from-Clojure#namespaces
+  ;; for reference
+  (deftest ns-macro
+    (let [res (read-eval-call "(ns my.namespace (:use [clojure.string :as s :only (trim)]))")
+          error (unwrap-result res)]
+      (is (not (success? error)) "(ns my.namespace (:use [clojure.string :as s :only (trim)])) should not succeed")
+      (is (valid-eval-error? error) "(ns my.namespace (:use [clojure.string :as s :only (trim)])) should be an instance of js/Error")
+      (is (re-find #"Only \[lib.ns :only \(names\)\] specs supported in :use / :use-macros;" (extract-message error))
+          "(ns my.namespace (:use [clojure.string :as s :only (trim)])) should have correct error message")
+      (repl/reset-env!))
+
+    (let [res (do (read-eval-call "(ns my.namespace (:use [clojure.string :only (trim)]))")
+                  (read-eval-call "(trim \"   clojure   \")"))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:use ... )) and (trim ...) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:use ... )) and (trim ...) should be a valid result.")
+      (is (re-find #"clojure" out) "The result should be \"clojure\"")
+      (repl/reset-env! '[my.namespace clojure.string goog.string goog.string.StringBuffer]))
+
+    (let [res (do (read-eval-call "(ns my.namespace (:require [clojure.set :as s :refer [union]]))")
+                  (read-eval-call "(s/difference (set (range 1 5)) (union #{1 2} #{2 3}))"))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:require ... )) and (s/difference ...) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require ... )) and (s/difference ...) should be a valid result.")
+      (is (re-find #"\{4\}" out) "The result should be #{4}")
+      (repl/reset-env! '[my.namespace clojure.set]))
+
+    (let [res (do (read-eval-call "(ns my.namespace (:require clojure.set))")
+                  (read-eval-call "(clojure.set/difference (set (range 1 5)) (clojure.set/union #{1 2} #{2 3}))"))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:require ... )) and (clojure.set/difference ...) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require ... )) and (clojure.set/difference ...) should be a valid result.")
+      (is (re-find #"\{4\}" out) "The result should be #{4}")
+      (repl/reset-env! '[my.namespace clojure.set]))
+
+    (let [res (read-eval-call "(ns my.namespace (:require [clojure set string]))")
+          error (unwrap-result res)]
+      (is (not (success? error)) "(ns my.namespace (:require [clojure set string])) should not succeed. Prefix lists are not supported.")
+      (is (valid-eval-error? error) "(ns my.namespace (:require [clojure set string])) should be an instance of js/Error")
+      (is (re-find #"Only :as and :refer options supported in :require / :require-macros;" (extract-message error))
+          "(ns my.namespace (:require [clojure set string])) should have correct error message.")
+      (repl/reset-env!))
+
+    ;; http://stackoverflow.com/questions/24463469/is-it-possible-to-use-refer-all-in-a-clojurescript-require
+    (let [res (read-eval-call "(ns my.namespace (:require [clojure.string :refer :all]))")
+          error (unwrap-result res)]
+      (is (not (success? error)) "(ns my.namespace (:require [clojure.string :refer :all])) should not succeed. :refer :all is not allowed.")
+      (is (valid-eval-error? error) "(ns my.namespace (:require [clojure.string :refer :all])) should be an instance of js/Error")
+      (is (re-find #":refer must be followed by a sequence of symbols in :require / :require-macros;" (extract-message error))
+          "(ns my.namespace (:require [clojure.string :refer :all])) should have correct error message.")
+      (repl/reset-env!))
+
+    (let [res (read-eval-call "(ns my.namespace (:refer-clojure :rename {print core-print}))")
+          error (unwrap-result res)]
+      (is (not (success? error)) "(ns my.namespace (:refer-clojure ...)) should not succeed. Only :exlude is allowed for :refer-clojure.")
+      (is (valid-eval-error? error) "(ns my.namespace (:refer-clojure :rename {print core-print})) should be an instance of js/Error")
+      (is (re-find #"Only \[:refer-clojure :exclude \(names\)\] form supported" (extract-message error))
+          "(ns my.namespace (:refer-clojure :rename {print core-print})) should have correct error message.")
+      (repl/reset-env!))
+
+    (let [res (do (read-eval-call "(ns my.namespace (:refer-clojure :exclude [max]))")
+                  (read-eval-call "(max 1 2 3)"))
+          error (unwrap-result res)]
+      (is (not (success? error)) "(ns my.namespace (:refer-clojure ... :exclude)) and (max ...) should not succeed.")
+      (is (valid-eval-error? error) "(ns my.namespace (:refer-clojure ... :exclude)) and (max ...) should be an instance of js/Error")
+      (is (re-find #"ERROR" (extract-message error))
+          "(ns my.namespace (:refer-clojure ... :exclude)) and (max ...) should have correct error message.")
+      (repl/reset-env!))
+
+    (let [res (do (read-eval-call "(ns my.namespace (:refer-clojure :exclude [max]))")
+                  (read-eval-call "(min 1 2 3)"))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:refer-clojure ... :exclude)) and (min ...) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:refer-clojure ... :exclude)) and (min ...) should be a valid result.")
+      (is (re-find #"1" out) "The result should be 1")
+      (repl/reset-env! '[my.namespace clojure.set]))
+
+    (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.baz :refer [MyRecord]]))")
+                  (read-eval-call "(apply str ((juxt :first :second) (MyRecord. \"ABC\" \"DEF\")))"))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:require ... )) and (apply str ...) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require ... )) and (apply str ...) should be a valid result.")
+      (is (re-find #"ABCDEF" out) "The result should be ABCDEF")
+      (repl/reset-env! '[my.namespace foo.bar.baz]))
+
+    ;; even if not idiomatic, it should work also with "import"
+    (let [res (do (read-eval-call "(ns my.namespace (:import foo.bar.baz [MyRecord]))")
+                  (read-eval-call "(apply str ((juxt :first :second) (foo.bar.baz.MyRecord. \"ABC\" \"DEF\")))"))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:import ... )) and (apply str ...) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:import ... )) and (apply str ...) should be a valid result.")
+      (is (re-find #"ABCDEF" out) "The result should be ABCDEF")
+      (repl/reset-env! '[my.namespace foo.bar.baz])))
+
   (deftest process-reload
     (let [alterable-core-path "dev-resources/private/test/src/cljs/alterable/core.cljs"
           pre-content "(ns alterable.core)\n\n(def b \"pre\")"
@@ -194,5 +288,6 @@
     (require+doc)
     (process-require)
     (process-goog-import)
+    (ns-macro)
     (process-reload)
     (process-reload-all)))
