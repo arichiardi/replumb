@@ -507,22 +507,21 @@
                                  paths-to-try
                                  read-file-fn!
                                  (fn [result]
-                                   (let [source (:source result)
-                                         rdr (rt/source-logging-push-back-reader source)]
-                                     (dotimes [_ (dec (:line var))] (rt/read-line rdr))
-                                     (-> (r/read {:read-cond :allow :features #{:cljs}} rdr)
-                                         meta 
-                                         :source
-                                         cb)))))
+                                   (if result
+                                    (let [source (:source result)
+                                          rdr (rt/source-logging-push-back-reader source)]
+                                      (dotimes [_ (dec (:line var))] (rt/read-line rdr))
+                                      (-> (r/read {:read-cond :allow :features #{:cljs}} rdr)
+                                          meta 
+                                          :source
+                                          common/wrap-success
+                                          cb))
+                                    (cb (common/wrap-success "nil"))))))
 
 (defn process-source
   [opts cb data env sym]
   (let [var (get-var opts env sym)
-        cb-partial (partial call-back! (merge opts {:no-pr-str-on-value true}) cb data)
-        call-back (fn [result]
-                    (if (nil? result)   ; if nil? means that no file was found
-                      (cb-partial (common/wrap-success "nil"))
-                      (cb-partial (common/wrap-success result))))]
+        call-back (partial call-back! (merge opts {:no-pr-str-on-value true}) cb data)]
     (if-let [filepath (or (:file var) (:file (:meta var)))]
       (let [src-paths (:src-paths opts)
             ;; see discussion here: https://github.com/ScalaConsultants/replumb/issues/17#issuecomment-163832028
@@ -532,7 +531,7 @@
                            (load/file-paths-to-try-from-ns-symbol filepath src-paths)
                            (map #(str (common/normalize-path %) filepath) src-paths))]
         (fetch-source opts var paths-to-try call-back))
-      (call-back nil))))
+      (call-back (common/wrap-success "nil")))))
 
 (defn process-repl-special
   [opts cb data expression-form]
