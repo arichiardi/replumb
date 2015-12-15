@@ -95,6 +95,6 @@
                                   [org.clojure/tools.nrepl "0.2.11"]
                                   [cljsjs/jqconsole "2.13.1-0"]
                                   [reagent "0.5.1"]]
-                   :plugins [[lein-doo "0.1.6"]
+                   :plugins [[lein-doo "0.1.7-SNAPSHOT"]
                              [lein-figwheel "0.5.0-2" :exclusions [cider/cider-nrepl]]
                              [lein-shell "0.4.2"]]}})
