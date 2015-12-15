@@ -6,6 +6,7 @@
             [replumb.common :as common :refer [echo-callback valid-eval-result?
                                                extract-message valid-eval-error?]]
             [replumb.repl :as repl]
+            [replumb.load :as load]
             [replumb.nodejs.io :as io]))
 
 ;; Damian - Add js/COMPILED flag to cljs eval to turn off namespace already declared errors
@@ -291,3 +292,15 @@
     (ns-macro)
     (process-reload)
     (process-reload-all)))
+
+(let [validated-echo-cb (partial repl/validated-call-back! echo-callback)
+      target-opts (nodejs-options load/no-resource-load-fn!)
+      read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)]
+  (deftest require-when-read-file-return-nil
+    (let [res (do (read-eval-call "(require 'clojure.string)")
+                  (read-eval-call "(doc clojure.string/trim)"))
+          out (unwrap-result res)]
+      (is (success? res) "(doc clojure.string/trim) should succeed.")
+      (is (valid-eval-result? out) "(source clojure.string/trim) should be a valid result")
+      (is (= "nil" out) "(source clojure.string/trim) should return nil")
+      (repl/reset-env! '[clojure.string goog.string goog.string.StringBuffer]))))

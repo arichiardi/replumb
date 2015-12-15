@@ -6,6 +6,7 @@
             [replumb.common :as common :refer [echo-callback valid-eval-result?
                                                extract-message valid-eval-error?]]
             [replumb.repl :as repl]
+            [replumb.load :as load]
             [replumb.nodejs.io :as io]))
 
 (let [src-paths ["dev-resources/private/test/node/compiled/out"
@@ -13,11 +14,7 @@
                  "dev-resources/private/test/src/clj"]
       validated-echo-cb (partial repl/validated-call-back! echo-callback)
       target-opts (nodejs-options src-paths io/read-file!)
-      read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)
-      fake-read-file-fn (fn [path cb] (cb nil))
-      read-eval-call-fake-read-file (partial repl/read-eval-call
-                                             (merge target-opts {:read-file-fn! fake-read-file-fn})
-                                             validated-echo-cb)]
+      read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)]
 
   (deftest source-in-cljs-core
     (let [res (read-eval-call "(source max)")
@@ -81,7 +78,7 @@
       (is (success? res) "(source clojure.string/trim) should succeed.")
       (is (valid-eval-result? source-string) "(source clojure.string/trim) should be a valid result")
       (is (= expected source-string) "(source clojure.string/trim) should return valid source")
-      (repl/reset-env! ['clojure.string]))
+      (repl/reset-env! '[clojure.string goog.string goog.string.StringBuffer]))
 
     (let [res (do (read-eval-call "(require 'clojure.string)")
                   (read-eval-call "(source clojure.string/not-existing)"))
@@ -89,7 +86,7 @@
       (is (success? res) "(source clojure.string/not-existing) should succeed.")
       (is (valid-eval-result? source-string) "(source clojure.string/not-existing) should be a valid result")
       (is (= "nil" source-string) "(source clojure.string/not-existing) should return valid source")
-      (repl/reset-env! ['clojure.string])))
+      (repl/reset-env! '[clojure.string goog.string goog.string.StringBuffer])))
 
   (deftest source-in-custom-ns
     (let [res (do (read-eval-call "(require 'foo.bar.baz)")
@@ -99,15 +96,7 @@
       (is (success? res) "(source foo.bar.baz/a) should succeed.")
       (is (valid-eval-result? source-string) "(source foo.bar.baz/a) should be a valid result")
       (is (= expected source-string) "(source foo.bar.baz/a) should return valid source")
-      (repl/reset-env! ['foo.bar.baz]))
-
-    (let [res (do (read-eval-call "(require 'clojure.string)")
-                  (read-eval-call-fake-read-file "(source clojure.string/trim)"))
-          source-string (unwrap-result res)]
-      (is (success? res) "(source clojure.string/trim) should succeed.")
-      (is (valid-eval-result? source-string) "(source clojure.string/trim) should be a valid result")
-      (is (= "nil" source-string) "(source clojure.string/trim) should return nil")
-      (repl/reset-env! ['clojure.string])))
+      (repl/reset-env! ['foo.bar.baz])))
 
   ;; see "RUNNING TESTS" section for explanation of `test-ns-hook` special function
   ;; https://clojure.github.io/clojure/clojure.test-api.html
@@ -116,3 +105,15 @@
     (source-in-cljs-core)
     (source-in-non-core-ns)
     (source-in-custom-ns)))
+
+(let [validated-echo-cb (partial repl/validated-call-back! echo-callback)
+      target-opts (nodejs-options load/no-resource-load-fn!)
+      read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)]
+  (deftest source-when-read-file-return-nil
+    (let [res (do (read-eval-call "(require 'clojure.string)")
+                  (read-eval-call "(source clojure.string/trim)"))
+          source-string (unwrap-result res)]
+      (is (success? res) "(source clojure.string/trim) should succeed.")
+      (is (valid-eval-result? source-string) "(source clojure.string/trim) should be a valid result")
+      (is (= "nil" source-string) "(source clojure.string/trim) should return nil")
+      (repl/reset-env! '[clojure.string goog.string goog.string.StringBuffer]))))
