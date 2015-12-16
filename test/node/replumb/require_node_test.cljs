@@ -223,6 +223,14 @@
       (is (= "20" out) "(foo.bar/add 10 10) should be 20")
       (repl/reset-env! '[my.namespace foo.bar]))
 
+    (let [res (do (read-eval-call "(ns my.namespace (:require-macros [foo.bar :refer [add]]))")
+                  (read-eval-call "(add 10 10)"))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:require-macros ... :refer ...)) and (add 10 10) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...:refer...)) and (add 10 10) should be a valid result.")
+      (is (= "20" out) "(add 10 10) should be 20")
+      (repl/reset-env! '[my.namespace foo.bar]))
+
     ;; TB - this test fails but shouldn't, see https://github.com/clojure/clojurescript/wiki/Differences-from-Clojure#lisp
     ;; see also http://dev.clojure.org/jira/browse/CLJS-1449
     ;; I'm leaving it here for reference, it needs to be changed when the bug will be resolved
@@ -234,14 +242,6 @@
       ;; (is (= "20" out) "(f/add 10 10) should be 20")
       (is (re-find #"ERROR" (extract-message error))
           "(ns my.namespace (:require-macros ...:as...)) and (f/add 10 10) should have correct error message")
-      (repl/reset-env! '[my.namespace foo.bar]))
-
-    (let [res (do (read-eval-call-verbose "(ns my.namespace (:require-macros [foo.bar :refer [add]]))")
-                  (read-eval-call-verbose "(add 10 10)"))
-          out (unwrap-result res)]
-      (is (success? res) "(ns my.namespace (:require-macros ... :refer ...)) and (add 10 10) should succeed")
-      (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...:refer...)) and (add 10 10) should be a valid result.")
-      (is (= "20" out) "(add 10 10) should be 20")
       (repl/reset-env! '[my.namespace foo.bar]))
 
     (let [res (do (read-eval-call "(ns my.namespace (:use-macros [foo.baz :only [mul]]))")
