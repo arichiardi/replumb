@@ -236,11 +236,11 @@
           "(ns my.namespace (:require-macros ...:as...)) and (f/add 10 10) should have correct error message")
       (repl/reset-env! '[my.namespace foo.bar]))
 
-    (let [res (do (read-eval-call "(ns my.namespace (:require-macros [foo.bar :refer [add]]))")
-                  (read-eval-call "(add 10 10)"))
+    (let [res (do (read-eval-call-verbose "(ns my.namespace (:require-macros [foo.bar :refer [add]]))")
+                  (read-eval-call-verbose "(add 10 10)"))
           out (unwrap-result res)]
-      (is (success? res) "(ns my.namespace (:require-macros ...)) and (add 10 10) should succeed")
-      (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...)) and (add 10 10) should be a valid result.")
+      (is (success? res) "(ns my.namespace (:require-macros ... :refer ...)) and (add 10 10) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...:refer...)) and (add 10 10) should be a valid result.")
       (is (= "20" out) "(add 10 10) should be 20")
       (repl/reset-env! '[my.namespace foo.bar]))
 
