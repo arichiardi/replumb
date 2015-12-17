@@ -143,6 +143,44 @@
       (is (= "nil" result) "(apropos \"t[i]me\") should return nil.")
       (repl/reset-env!)))
 
+  (deftest process-find-doc
+    (let [res (read-eval-call "(find-doc \"unguessable-string\")")
+          result (unwrap-result res)]
+      (is (success? res) "(find-doc \"unguessable-string\") should succeed")
+      (is (valid-eval-result? result) "(find-doc \"unguessable-string\") should be a valid result")
+      (is (= "nil" result) "(find-doc \"unguessable-string\") should return nil")
+      (repl/reset-env!))
+
+    (let [res (read-eval-call "(find-doc \"^(di|a)ssoc.*!\")")
+          result (unwrap-result res)
+          expected "-------------------------
+assoc!
+([tcoll key val] [tcoll key val & kvs])
+  When applied to a transient map, adds mapping of key(s) to
+  val(s). When applied to a transient vector, sets the val at index.
+  Note - index must be <= (count vector). Returns coll.
+-------------------------
+dissoc!
+([tcoll key] [tcoll key & ks])
+  Returns a transient map that doesn't contain a mapping for key(s).
+"]
+      (is (success? res) "(find-doc \"^(di|a)ssoc.*!\") should succeed")
+      (is (valid-eval-result? result) "(find-doc \"^(di|a)ssoc.*!\") should be a valid result")
+      (is (= expected result) "(find-doc \"^(di|a)ssoc.*!\") should return valid docstrings")
+      (repl/reset-env!))
+
+    (let [res (read-eval-call "(find-doc \"select-keys\")")
+          result (unwrap-result res)
+          expected "-------------------------
+select-keys
+([map keyseq])
+  Returns a map containing only those entries in map whose key is in keys
+"]
+      (is (success? res) "(find-doc \"select-keys\") should succeed")
+      (is (valid-eval-result? result) "(find-doc \"select-keys\") should be a valid result")
+      (is (= expected result) "(find-doc \"select-keys\") should return valid docstring")
+      (repl/reset-env!)))
+
   (deftest process-in-ns
     ;; Damian - Add COMPILED flag to cljs eval to turn off namespace already declared errors
     ;; AR - COMPILED goes here not in the runner otherwise node does not execute doo tests
