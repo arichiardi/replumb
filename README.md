@@ -81,7 +81,7 @@ supporting:
     > If the resource could not be resolved, the callback should be invoked with
     > nil.
       
-* `:read-file-fn!` an asynchronous 2-arity function `(fn [filename src-cb] ...)`
+* `:read-file-fn!` an asynchronous 2-arity function `(fn [file-path src-cb] ...)`
   where src-cb is itself a function `(fn [source] ...)` that needs to be called
   when ready with the found file source as string (nil if no file is found). It
   is mutually exclusive with `:load-fn!` and will be ignored in case both are
@@ -123,15 +123,12 @@ Support is provided, but only `:optimizations :none` works fine at the moment:
   cmd)
 ```
 
-Where `node-read-file!` is typically a client-provided asynchronous 2-arity
-function `(fn [filename src-cb] ...)` where `src-cb` is itself a function `(fn
-[source] ...)` that needs to be called with the found file source as
-string (`nil` if no file is found).
+Where `node-read-file!` is the user-provided node implementation for
+`:read-file-fn!`.
 
-See `replumb.core/nodejs-options` documentation and feel free to steal
-`src/node/replumb/nodejs/io.cljs` implementation. Moreover `repl-demo/node`
-contains a working example that can be built and executed with ```lein
-node-repl```.
+See `replumb.core/nodejs-options` documentation and feel free to reuse code in
+`src/node/replumb/nodejs/io.cljs`. Moreover `repl-demo/node` contains a working
+example that can be built and executed with ```lein node-repl```.
 
 You can also watch [Mike Fikes](https://www.youtube.com/watch?v=VwARsqTRw7s)'
 demo or peek under the crook of his [elbow](https://github.com/mfikes/elbow).
