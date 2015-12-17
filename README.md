@@ -18,7 +18,7 @@ Put the following into the `:dependencies` vector.
 
 [![via Clojars](http://clojars.org/replumb/latest-version.svg)](http://clojars.org/replumb)
 
-*Note:* I [made a mistake](https://github.com/technomancy/leiningen/issues/2043) and there is a `0.1.3` version already on Clojars that cannot be overriden. It is safe to use and reflects the latest changes in `0.1.3-alpha`.
+*Note:* I [made a mistake](https://github.com/technomancy/leiningen/issues/2043) and there is a `0.1.3` version already on Clojars that cannot be overridden. It is safe to use as it includes the latest changes also present in `0.1.3-alpha`.
 
 Then in your code, directly call ```replumb.core``` functions:
 
