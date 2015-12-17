@@ -14,11 +14,9 @@ As [current maintainer](https://github.com/arichiardi) of the project I would li
 
 ## Usage
 
-__Leiningen__ ([via Clojars](https://clojars.org/replumb))
-
 Put the following into the `:dependencies` vector.
 
-[![Clojars Project](http://clojars.org/replumb/latest-version.svg)](http://clojars.org/replumb)
+[![via Clojars](http://clojars.org/replumb/latest-version.svg)](http://clojars.org/replumb)
 
 Then in your code, directly call ```replumb.core``` functions:
 
