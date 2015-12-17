@@ -48,46 +48,48 @@ with the evaluation result.
 The first parameter is a map of configuration options, currently
 supporting:
 
-* `:verbose`  will enable the the evaluation logging, defaults to false
-* `:warning-as-error`  will consider a compiler warning as error
-* `:target`  `:nodejs` and `:browser` supported, the latter used if missing
-* `:init-fn!`  user provided initialization function, it will be passed a map:
+* `:verbose` will enable the the evaluation logging, defaults to false
+* `:warning-as-error` will consider a compiler warning as error
+* `:target` `:nodejs` and `:browser` supported, the latter is used if
+missing
+* `:init-fn!` user provided initialization function, it will be passed a
+map:
 
-            :form   ;; the form to evaluate, as data
-            :ns     ;; the current namespace, as symbol
-            :target ;; the current target
+        :form   ;; the form to evaluate, as data
+        :ns     ;; the current namespace, as symbol
+        :target ;; the current target
 
 * `:load-fn!` will override replumb's default `cljs.js/*load-fn*`.
-  It rules out `:read-file-fn!`, losing any perk of using `replumb.load`
-  helpers. Use it if you know what you are doing and follow this protocol:
+It rules out `:read-file-fn!`, losing any perk of using `replumb.load`
+helpers. Use it if you know what you are doing and follow this
+protocol:
 
-    > Each runtime environment provides a different way to load a library.
-    > Whatever function `*load-fn*` is bound to will be passed two arguments,
-    > a map and a callback function. The map will have the following keys:
-    >
-    >     :name   - the name of the library (a symbol)
-    >     :macros - modifier signaling a macros namespace load
-    >     :path   - munged relative library path (a string)
-    >
-    > The callback cb, upon resolution, will need to pass the map:
-    >
-    >     :lang       - the language, :clj or :js
-    >     :source     - the source of the library (a string)
-    >     :cache      - optional, if a :clj namespace has been precompiled to
-    >                   :js, can give an analysis cache for faster loads.
-    >     :source-map - optional, if a :clj namespace has been precompiled
-    >                   to :js, can give a V3 source map JSON
-    >
-    > If the resource could not be resolved, the callback should be invoked with
-    > nil.
-      
-* `:read-file-fn!` an asynchronous 2-arity function `(fn [file-path src-cb] ...)`
-  where src-cb is itself a function `(fn [source] ...)` that needs to be called
-  when ready with the found file source as string (nil if no file is found). It
-  is mutually exclusive with `:load-fn!` and will be ignored in case both are
-  present.
+> Each runtime environment provides a different way to load a library.
+> Whatever function `*load-fn*` is bound to will be passed two arguments
+> - a map and a callback function: The map will have the following keys:
+>    :name   - the name of the library (a symbol)
+>    :macros - modifier signaling a macros namespace load
+>    :path   - munged relative library path (a string)
+>
+> The callback cb, upon resolution, will need to pass the same map:
+>
+>    :lang       - the language, :clj or :js
+>    :source     - the source of the library (a string)
+>    :cache      - optional, if a :clj namespace has been precompiled to
+>                  :js, can give an analysis cache for faster loads.
+>    :source-map - optional, if a :clj namespace has been precompiled
+>                  to :js, can give a V3 source map JSON
+>
+> If the resource could not be resolved, the callback should be invoked with
+> nil.
 
-* `:src-paths`  a vector of paths containing source files.
+* `:read-file-fn!` an asynchronous 2-arity function with signature
+`[file-path src-cb]` where src-cb is itself a function `(fn [source]
+...)` that needs to be called with the file content as string (`nil`
+if no file is found). It is mutually exclusive with `:load-fn!` and
+will be ignored in case both are present
+
+* `:src-paths`  a vector of paths containing source files
 
 The second parameter, `callback`, should be a 1-arity function which receives
 the result map, whose result keys will be:
@@ -96,13 +98,14 @@ the result map, whose result keys will be:
 :success?  ;; a boolean indicating if everything went right
 :value     ;; (if (success? result)) will contain the actual yield of the evaluation
 :error     ;; (if (not (success? result)) will contain a js/Error
+:warning   ;; in case a warning was thrown and :warning-as-error is falsey
 :form      ;; the evaluated form as data structure (not a string)
 ```
 
 The third parameter is the source string to be read and evaluated.
 
-It initializes the repl harness on the first execution if necessary.
-
+It initializes the repl harness if necessary.
+  
 See [```repl-demo```](https://github.com/ScalaConsultants/replumb/blob/master/repl-demo/browser/cljs/replumb_repl/console.cljs)
 for an actual implementation using [```jq-console```](https://github.com/replit/jq-console).
 
