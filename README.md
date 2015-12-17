@@ -26,7 +26,7 @@ Then in your code, directly call ```replumb.core``` functions:
 (ns ...
   (:require ...
             [replumb.core :as replumb]
-            [replumb.load :as load])
+            [replumb.load :as load]))
             
 (defn handle-result!
   [console result]
@@ -64,24 +64,24 @@ It rules out `:read-file-fn!`, losing any perk of using `replumb.load`
 helpers. Use it if you know what you are doing and follow this
 protocol:
 
-> Each runtime environment provides a different way to load a library.
-> Whatever function `*load-fn*` is bound to will be passed two arguments
-> - a map and a callback function: The map will have the following keys:
->    :name   - the name of the library (a symbol)
->    :macros - modifier signaling a macros namespace load
->    :path   - munged relative library path (a string)
->
-> The callback cb, upon resolution, will need to pass the same map:
->
->    :lang       - the language, :clj or :js
->    :source     - the source of the library (a string)
->    :cache      - optional, if a :clj namespace has been precompiled to
->                  :js, can give an analysis cache for faster loads.
->    :source-map - optional, if a :clj namespace has been precompiled
->                  to :js, can give a V3 source map JSON
->
-> If the resource could not be resolved, the callback should be invoked with
-> nil.
+    > Each runtime environment provides a different way to load a library.
+    > Whatever function `*load-fn*` is bound to will be passed two arguments
+    > - a map and a callback function: The map will have the following keys:
+    >    :name   - the name of the library (a symbol)
+    >    :macros - modifier signaling a macros namespace load
+    >    :path   - munged relative library path (a string)
+    >
+    > The callback cb, upon resolution, will need to pass the same map:
+    >
+    >    :lang       - the language, :clj or :js
+    >    :source     - the source of the library (a string)
+    >    :cache      - optional, if a :clj namespace has been precompiled to
+    >                  :js, can give an analysis cache for faster loads.
+    >    :source-map - optional, if a :clj namespace has been precompiled
+    >                  to :js, can give a V3 source map JSON
+    >
+    > If the resource could not be resolved, the callback should be invoked with
+    > nil.
 
 * `:read-file-fn!` an asynchronous 2-arity function with signature
 `[file-path src-cb]` where src-cb is itself a function `(fn [source]
