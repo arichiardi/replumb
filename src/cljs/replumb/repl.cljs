@@ -515,7 +515,6 @@
       contain it as :error, overriding the original.
     - if (:warning-as-error opts) is falsey, the new map will contain
       the warning as :warning along with the original :value"
-
   [opts {:keys [error] :as orig}]
   (if-let [warning-msg (:last-eval-warning @app-env)]
     (if-not error
@@ -740,10 +739,11 @@
       ;; if (symbol? filepath) is true, filepath will contain the symbol of a namespace
       ;; eg. clojure.set
       (let [paths-to-try (if-not (symbol? full-path-or-ns)
-                           (load/file-paths (:src-paths opts) full-path-or-ns)
-                           (load/file-paths-for-load-fn (:src-paths opts) ;; this branch tries the conversion ns->file
-                                                        (macro? var)
-                                                        (cljs/ns->relpath full-path-or-ns)))]
+                           ;; AR - we try first the string as is because now
+                           ;; CLJS-1515 can return directly the file in the
+                           ;; meta :file key.
+                           (into [full-path-or-ns] (load/file-paths (:src-paths opts) full-path-or-ns))
+                           (load/file-paths-for-load-fn (:src-paths opts) (macro? var) (cljs/ns->relpath full-path-or-ns)))]
         (fetch-source opts var paths-to-try call-back))
       (call-back (common/wrap-success "nil")))))
 
