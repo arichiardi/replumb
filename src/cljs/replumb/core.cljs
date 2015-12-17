@@ -48,13 +48,13 @@
       nil.
       ```
 
-  * `:read-file-fn!` an asynchronous 2-arity function `(fn [filename
-  src-cb] ...)` where src-cb is itself a function `(fn [source] ...)`
-  that needs to be called when ready with the found file source as
-  string (nil if no file is found). It is mutually exclusive with
-  `:load-fn!` and will be ignored in case both are present.
+  * `:read-file-fn!` an asynchronous 2-arity function with signature
+  `[file-path src-cb]` where src-cb is itself a function `(fn [source]
+  ...)` that needs to be called with the file content as string (`nil`
+  if no file is found). It is mutually exclusive with `:load-fn!` and
+  will be ignored in case both are present
 
-  * `:src-paths`  a vector of paths containing source files.
+  * `:src-paths`  a vector of paths containing source files
 
   The second parameter, `callback`, should be a 1-arity function which receives
   the result map, whose result keys will be:
@@ -90,8 +90,8 @@
   It returns the content of `:value` in case of success and the content
   of `:error` (a `js/Error`) in case of failure.
 
-  When include-warning? is true, then the value will yield from, in
-  order, `:error`, then `:warning` and then eventually `:value`."
+  When `include-warning?` is true, then the value yields from, in order,
+  `:error`, then `:warning` and then eventually `:value`."
   ([result-map]
    (unwrap-result result-map false))
   ([result-map include-warning?]
@@ -110,10 +110,9 @@
 (defn ^:export result->string
   "Given a `result-map`, returns the result of the evaluation as string.
 
-  - When include-warning? is true, then the string returned will yield
-  from, in order, `:error`, then `:warning` and then eventually
-  `:value`.
-  - When print-stack? is true, the error string will include the stack
+  - When `include-warning?` is true, then the string yields from, in
+  order, `:error`, then `:warning` and then eventually `:value`.
+  - When `print-stack?` is true, the error string will include the stack
   trace."
   ([result-map]
    (result->string result-map false false))
@@ -154,17 +153,17 @@
       If the resource could not be resolved, the callback should be invoked with
       nil.
 
-  The 2-arity function accepts a sequence of source paths where files
-  can be found and the read-file-fn, an asynchronous 2-arity
-  function (fn [filename src-cb] ...) where src-cb is itself a
-  function (fn [source] ...) that needs to be called when ready with the
-  found file source as string (nil if no file is found)."
-  ([load-fn]
+  The 2-arity function accepts a sequence of source paths and
+  `read-file-fn!`, an asynchronous 2-arity function with signature
+  `[file-path src-cb]` where src-cb is itself a function `(fn [source]
+  ...)` that needs to be called with the file content as string (`nil`
+  if no file is found)."
+  ([load-fn!]
    {:target :default
     :load-fn! load-fn!})
-  ([src-paths read-file-fn]
+  ([src-paths read-file-fn!]
    {:target :default
-    :read-file-fn! read-file-fn
+    :read-file-fn! read-file-fn!
     :src-paths src-paths}))
 
 (defn ^:export nodejs-options
@@ -194,11 +193,11 @@
       If the resource could not be resolved, the callback should be invoked with
       nil.
 
-  The 2-arity function accepts a sequence of source paths where files
-  can be found and the read-file-fn, an asynchronous 2-arity
-  function (fn [filename src-cb] ...) where src-cb is itself a
-  function (fn [source] ...) that needs to be called when ready with the
-  found file source as string (nil if no file is found)."
+  The 2-arity function accepts a sequence of source paths and
+  `read-file-fn!`, an asynchronous 2-arity function with signature
+  `[file-path src-cb]` where src-cb is itself a function `(fn [source]
+  ...)` that needs to be called with the file content as string (`nil`
+  if no file is found)."
   ([load-fn!]
    {:target :nodejs
     :load-fn! load-fn!})

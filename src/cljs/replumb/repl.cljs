@@ -206,7 +206,7 @@
   using a supplied read-file-fn. It returns a cljs.js-compatible
   *load-fn*.
 
-  Read-file-fn is an async 2-arity function (fn [filename src-cb] ...)
+  Read-file-fn is an async 2-arity function (fn [file-path src-cb] ...)
   where src-cb is itself a function (fn [source] ...) that needs to be
   called with the full source of the library (as string)."
   [verbose? src-paths read-file-fn]
@@ -638,7 +638,7 @@
   It rules out `:read-file-fn!`, losing any perk of using replumb.load
   helpers. Use it if you know what you are doing.
 
-  * :read-file-fn! - an asynchronous 2-arity function (fn [filename
+  * :read-file-fn!  an asynchronous 2-arity function (fn [file-path
   src-cb] ...) where src-cb is itself a function (fn [source] ...)  that
   needs to be called when ready with the found file source as
   string (nil if no file is found). It is mutually exclusive with
