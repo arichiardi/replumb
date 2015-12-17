@@ -5,7 +5,8 @@
             [replumb.load :as load]
             [replumb.core :as core :refer [success? unwrap-result]]
             [replumb.common :as common :refer [echo-callback valid-eval-result?
-                                               extract-message valid-eval-error?]]))
+                                               extract-message valid-eval-error?
+                                               has-valid-warning?]]))
 
 (deftest current-ns
   (is (symbol? (repl/current-ns)) "The current ns should be a symbol"))
@@ -210,8 +211,9 @@
                                    "(def a \"6\"")
           out (unwrap-result res)]
       (is (not (success? res)) "Response is :error and warning-as-error is true should not succeed")
+      (is (not (has-valid-warning? res)) "Response is :error and warning-as-error is true should not contain :warning")
       (is (valid-eval-error? out) "Response is :error and warning-as-error is true should result in an js/Error")
-      (is (re-find #"EOF" (extract-message out)) "Response is :error and warning-as-error is true should return EOF")
+      (is (re-find #"EOF" (extract-message out)) "Response is :error and warning-as-error is true should return EOF, the original error")
       (repl/reset-env!))
 
     ;; Response is :error and warning-as-error is false
@@ -219,45 +221,50 @@
                                    "(def a \"6\"")
           out (unwrap-result res)]
       (is (not (success? res)) "Response is :error and warning-as-error is false should not succeed")
+      (is (not (has-valid-warning? res)) "Response is :error and warning-as-error is false should not contain :warning")
       (is (valid-eval-error? out) "Response is :error and warning-as-error is false should result in an js/Error")
       (is (re-find #"EOF" (extract-message out)) "Response is :error and warning-as-error is false should return EOF")
       (repl/reset-env!))
 
-    ;; Response is :value with warning and warning-as-error is true
+    ;; Response is :value but warning was raised and warning-as-error is true
     (let [res (repl/read-eval-call (merge target-opts {:warning-as-error true}) validated-echo-cb
                                    "_arsenununpa42")
           out (unwrap-result res)]
-      (is (not (success? res)) "Response is :value with warning and warning-as-error is true should not succeed")
-      (is (valid-eval-error? out) "Response is :value with warning and warning-as-error is true should result in an js/Error")
-      (is (re-find #"undeclared.*_arsenununpa42" (extract-message out)) "Response is :value with warning and warning-as-error is true should have the right error msg")
+      (is (not (success? res)) "Response is :value but warning was raised and warning-as-error is true should not succeed")
+      (is (not (has-valid-warning? res)) "Response is :value but warning was raised and warning-as-error is true should not contain warning")
+      (is (valid-eval-error? out) "Response is :value but warning was raised and warning-as-error is true should result in an js/Error")
+      (is (re-find #"undeclared.*_arsenununpa42" (extract-message out)) "Response is :value but warning was raised and warning-as-error is true should have the right error msg")
       (repl/reset-env!))
 
-    ;; Response is :value, with warning and warning-as-error is false
+    ;; Response is :value but warning was raised and warning-as-error is false
     (let [res (repl/read-eval-call target-opts validated-echo-cb
                                    "_arsenununpa42")
           out (unwrap-result res)]
-      (is (success? res) "Response is :value with warning and warning-as-error is false should succeed")
-      (is (valid-eval-result? out) "Response is :value with warning and warning-as-error is false should be a valid result")
-      (is (= "nil" out) "Response is :value with warning and warning-as-error is false should return nil")
+      (is (success? res) "Response is :value but warning was raised and warning-as-error is false should succeed")
+      (is (has-valid-warning? res) "Response is :value but warning was raised and warning-as-error is false should contain warning")
+      (is (valid-eval-result? out) "Response is :value but warning was raised and warning-as-error is false should be a valid result")
+      (is (= "nil" out) "Response is :value but warning was raised and warning-as-error is false should return nil")
       (repl/reset-env!))
 
-    ;; Response is :value no warning and warning-as-error is false
+    ;; Response is :value, no warning and warning-as-error is false
     (let [res (do (repl/read-eval-call target-opts validated-echo-cb "(def a 2)")
                   (repl/read-eval-call target-opts validated-echo-cb "a"))
           out (unwrap-result res)]
-      (is (success? res) "Response is :value no warning and warning-as-error is false should succeed")
-      (is (valid-eval-result? out) "Response is :value no warning and warning-as-error is false should be a valid result")
-      (is (= "2" out) "Response is :value no warning and warning-as-error is false symbol should return 2")
+      (is (success? res) "Response is :value, no warning and warning-as-error is false should succeed")
+      (is (not (has-valid-warning? res)) "Response is :value, no warning was raised and warning-as-error is false should not contain warning")
+      (is (valid-eval-result? out) "Response is :value, no warning and warning-as-error is false should be a valid result")
+      (is (= "2" out) "Response is :value, no warning and warning-as-error is false symbol should return 2")
       (repl/reset-env!))
 
-    ;; Response is :value no warning and warning-as-error is true
+    ;; Response is :value, no warning and warning-as-error is true
     (let [opts (merge target-opts {:warning-as-error true})
           res (do (repl/read-eval-call opts validated-echo-cb "(def a 2)")
                   (repl/read-eval-call opts validated-echo-cb "a"))
           out (unwrap-result res)]
-      (is (success? res) "Response is :value no warning and warning-as-error is true should succeed")
-      (is (valid-eval-result? out) "Response is :value no warning and warning-as-error is true should be a valid result")
-      (is (= "2" out) "Response is :value no warning and warning-as-error is true symbol should return 2")
+      (is (success? res) "Response is :value, no warning and warning-as-error is true should succeed")
+      (is (not (has-valid-warning? res)) "Response is :value, no warning was raised and warning-as-error is true should not contain warning")
+      (is (valid-eval-result? out) "Response is :value, no warning and warning-as-error is true should be a valid result")
+      (is (= "2" out) "Response is :value, no warning and warning-as-error is true symbol should return 2")
       (repl/reset-env!)))
 
   (deftest macros
