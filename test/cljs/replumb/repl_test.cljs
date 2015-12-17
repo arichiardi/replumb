@@ -95,7 +95,15 @@
       (is (success? res) "(doc myns.testns) should succeed.")
       (is (valid-eval-result? docstring) "(doc myns.testns) should be a valid result")
       (is (re-find #"Docstring for namespace" docstring) "(doc myns.testns) should return valid docstring")
-      (repl/reset-env! ["myns.testns"])))
+      (repl/reset-env! '[myns.testns])))
+
+  (deftest process-dir
+    (let [res (read-eval-call "(dir clojure.string)")
+          dirstring (unwrap-result res)]
+      (is (success? res) "(dir clojure.string) should succeed")
+      (is (valid-eval-result? dirstring) "(dir clojure.string) should be a valid result")
+      (is (= "nil" dirstring) "(dir clojure.string) should return valid docstring")
+      (repl/reset-env!)))
 
   (deftest process-in-ns
     ;; Damian - Add COMPILED flag to cljs eval to turn off namespace already declared errors
@@ -136,7 +144,7 @@
       (is (success? res) "Deffing a var in an in-ns namespace and querying it should succeed")
       (is (valid-eval-result? out) "Deffing a var in an in-ns namespace and querying it should be a valid result")
       (is (= "3" out) "Deffing a var in an in-ns namespace and querying it should retrieve the interned var value")
-      (repl/reset-env! ['first.namespace 'second.namespace])))
+      (repl/reset-env! '[first.namespace second.namespace])))
 
   (deftest process-ns
     (let [res (read-eval-call "(ns 'something.ns)")
@@ -151,7 +159,7 @@
       (is (success? res) "(ns my.namespace) should succeed")
       (is (valid-eval-result? out) "(ns my.namespace) should be a valid result")
       (is (= "nil" out) "(ns my.namespace) should return \"nil\"")
-      (repl/reset-env! ['my.namespace])))
+      (repl/reset-env! '[my.namespace])))
 
   ;; AR - with fake load, we want to test functionality that don't depend on
   ;; source reading. This will stay until we will provide a mechanism to inject
@@ -180,7 +188,7 @@
       (is (success? res) "(require 'something.ns) should succeed")
       (is (valid-eval-result? out) "(require 'something.ns) should be a valid result")
       (is (= "nil" out) "(require 'something.ns) should return nil")
-      (repl/reset-env! ['something.ns]))
+      (repl/reset-env! '[something.ns]))
 
     (let [res (do (read-eval-call "(ns a.ns)")
                   (read-eval-call "(def a 3)")
@@ -190,7 +198,7 @@
       (is (success? res) "(require 'a.ns) from b.ns should succeed")
       (is (valid-eval-result? out) "(require 'a.ns) from b.ns should be a valid result")
       (is (= 'b.ns (repl/current-ns)) "(require 'a.ns) from b.ns should not change namespace")
-      (repl/reset-env! ['a.ns 'b.ns]))
+      (repl/reset-env! '[a.ns b.ns]))
 
     (let [res (do (read-eval-call "(ns c.ns)")
                   (read-eval-call "(def referred-a 3)")
@@ -202,7 +210,7 @@
       (is (valid-eval-result? out) )
       (is (= 'd.ns (repl/current-ns)) "(require '[c.ns :refer [referred-a]]) should not change namespace")
       (is (= "3" out) "(require '[c.ns :refer [referred-a]]) should retrieve the interned var value")
-      (repl/reset-env! ['c.ns 'd.ns])))
+      (repl/reset-env! '[c.ns d.ns])))
 
   (deftest warnings
     ;; AR - The only missing is because you can't have an error and a warning at the same time.
@@ -344,4 +352,4 @@
         (is (not (:macros @load-map-atom)) "Loading map with custom load-fn should have correct :macros")
         (is (= "bar/core" (:path @load-map-atom)) "Loading map with custom load-fn should have correct :path")
         (reset! load-map-atom {})
-        (repl/reset-env! ["bar.core"])))))
+        (repl/reset-env! '[bar.core])))))

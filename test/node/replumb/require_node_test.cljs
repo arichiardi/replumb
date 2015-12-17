@@ -1,5 +1,6 @@
 (ns replumb.require-node-test
   (:require [cljs.test :refer-macros [deftest is]]
+            [clojure.string :as s]
             [cljs.nodejs :as nodejs]
             [doo.runner :as doo]
             [replumb.core :as core :refer [nodejs-options success? unwrap-result]]
@@ -39,6 +40,22 @@
       (is (valid-eval-result? docstring) "(require ...) and (doc clojure.string/trim) should be a valid result")
       (is (re-find #"Removes whitespace from both ends of string" docstring) "(require ...) and (doc clojure.string/trim) should return valid docstring")
       (repl/reset-env! '[clojure.string goog.string goog.string.StringBuffer])))
+
+  (deftest require+dir
+    (let [res (do (read-eval-call "(require 'clojure.walk)")
+                  (read-eval-call "(dir clojure.walk)"))
+          dirstring (unwrap-result res)
+          expected (s/join \newline ["keywordize-keys"
+                                     "postwalk"
+                                     "postwalk-replace"
+                                     "prewalk"
+                                     "prewalk-replace"
+                                     "stringify-keys"
+                                     "walk"])]
+      (is (success? res) "(dir clojure.walk) should succeed")
+      (is (valid-eval-result? dirstring) "(dir clojure.walk) should be a valid result")
+      (is (= expected dirstring) "(dir walk) should return valid docstring")
+      (repl/reset-env! '[clojure.walk])))
 
   (deftest process-require
     ;; AR - Test for "No *load-fn* when requiring a namespace in browser #35"
@@ -287,6 +304,7 @@
   (defn test-ns-hook []
     (repl/force-init!)
     (require+doc)
+    (require+dir)
     (process-require)
     (process-goog-import)
     (ns-macro)

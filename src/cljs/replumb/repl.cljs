@@ -1,5 +1,5 @@
 (ns replumb.repl
-  (:refer-clojure :exclude [load-file])
+  (:refer-clojure :exclude [load-file ns-publics])
   (:require-macros [cljs.env.macros :refer [with-compiler-env]])
   (:require [cljs.js :as cljs]
             [cljs.tagged-literals :as tags]
@@ -9,6 +9,7 @@
             [cljs.env :as env]
             [cljs.repl :as repl]
             [cljs.pprint :refer [pprint]]
+            [clojure.string :as s]
             [replumb.common :as common]
             [replumb.doc-maps :as docs]
             [replumb.load :as load]
@@ -41,6 +42,19 @@
 (defn known-namespaces
   []
   (keys (:cljs.analyzer/namespaces @st)))
+
+(defn ns-publics
+  "Given a namespace return all the public var analysis maps. Analagous to
+  clojure.core/ns-publics but returns var analysis maps not vars."
+  ([ns]
+   (ns-publics env/*compiler* ns))
+  ([state ns]
+   {:pre [(symbol? ns)]}
+   (->> (merge
+          (get-in @state [::ana/namespaces ns :macros])
+          (get-in @state [::ana/namespaces ns :defs]))
+        (remove (fn [[k v]] (:private v)))
+        (into {}))))
 
 (defn get-namespace
   [sym]
@@ -106,7 +120,7 @@
       var)))
 
 (def replumb-repl-special-set
-  '#{in-ns require require-macros import load-file doc source pst})
+  '#{in-ns require require-macros import load-file doc source pst dir})
 
 (defn repl-special?
   [form]
@@ -548,6 +562,14 @@
         (fetch-source opts var paths-to-try call-back))
       (call-back (common/wrap-success "nil")))))
 
+(defn process-dir
+  [opts cb data env sym]
+  (let [vars (-> (ns-publics st sym) keys sort)
+        call-back (partial call-back! (merge opts {:no-pr-str-on-value true}) cb data)]
+    (if (seq vars)
+      (call-back (common/wrap-success (s/join \newline vars)))
+      (call-back (common/wrap-success "nil")))))
+
 (defn process-repl-special
   [opts cb data expression-form]
   (let [env (assoc (ana/empty-env) :context :expr
@@ -561,6 +583,7 @@
       doc (process-doc opts cb data env argument)
       source (process-source opts cb data env argument)
       pst (process-pst opts cb data argument)
+      dir (process-dir opts cb data env argument)
       load-file (call-back! opts cb data (common/error-keyword-not-supported "load-file" ex-info-data))))) ;; (process-load-file argument opts)
 
 (defn process-1-2-3
