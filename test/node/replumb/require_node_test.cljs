@@ -66,6 +66,24 @@
       (is (= expected dirstring) "(dir walk) should return valid docstring")
       (repl/reset-env! '[clojure.walk])))
 
+  (deftest require+apropos
+    (let [res (read-eval-call "(apropos \"join\")")
+          result (unwrap-result res)
+          expected "(cljs.core/-disjoin cljs.core/-disjoin!)"]
+      (is (success? res) "(apropos \"join\") should succeed")
+      (is (valid-eval-result? result) "(apropos \"join\") should be a valid result")
+      (is (= expected result) "(apropos \"join\") should return valid docstring")
+      (repl/reset-env!))
+
+    (let [res (do (read-eval-call "(require 'clojure.string)")
+                  (read-eval-call "(apropos \"join\")"))
+          result (unwrap-result res)
+          expected "(cljs.core/-disjoin cljs.core/-disjoin! clojure.string/join)"]
+      (is (success? res) "(require ...) and (apropos \"join\") should succeed")
+      (is (valid-eval-result? result) "(require ...) and (apropos \"join\") should be a valid result")
+      (is (= expected result) "(require ...) and (apropos \"join\") should return valid docstring")
+      (repl/reset-env! '[clojure.string goog.string goog.string.StringBuffer])))
+
   (deftest process-require
     ;; AR - Test for "No *load-fn* when requiring a namespace in browser #35"
     ;; Note there these are tests with a real *load-fn*
@@ -314,6 +332,7 @@
     (repl/force-init!)
     (require+doc)
     (require+dir)
+    (require+apropos)
     (process-require)
     (process-goog-import)
     (ns-macro)

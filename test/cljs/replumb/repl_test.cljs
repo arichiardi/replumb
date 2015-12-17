@@ -98,11 +98,49 @@
       (repl/reset-env! '[myns.testns])))
 
   (deftest process-dir
+    ;; note that we don't require first
     (let [res (read-eval-call "(dir clojure.string)")
           dirstring (unwrap-result res)]
       (is (success? res) "(dir clojure.string) should succeed")
       (is (valid-eval-result? dirstring) "(dir clojure.string) should be a valid result")
-      (is (= "nil" dirstring) "(dir clojure.string) should return valid docstring")
+      (is (= "nil" dirstring) "(dir clojure.string) should be \"nil\" because clojure.string has not been required first")
+      (repl/reset-env!)))
+
+  (deftest process-apropos
+    ;; test with string "tim"
+    (let [res (read-eval-call "(apropos \"tim\")")
+          result (unwrap-result res)
+          expected "(cljs.core/-deref-with-timeout cljs.core/dotimes cljs.core/system-time cljs.core/time)"]
+      (is (success? res) "(apropos \"tim\") should succeed")
+      (is (valid-eval-result? result) "(apropos \"tim\") should be a valid result")
+      (is (= expected result) "(apropos \"tim\") should return valid docstring")
+      (repl/reset-env!))
+
+    ;; test with regular expression #"tim"
+    (let [res (read-eval-call "(apropos #\"tim\")")
+          result (unwrap-result res)
+          expected "(cljs.core/-deref-with-timeout cljs.core/dotimes cljs.core/system-time cljs.core/time)"]
+      (is (success? res) "(apropos #\"tim\") should succeed")
+      (is (valid-eval-result? result) "(apropos #\"tim\") should be a valid result")
+      (is (= expected result) "(apropos #\"tim\") should return valid docstring")
+      (repl/reset-env!))
+
+    ;; test with regular expression #"t[i]me, containing metacharacters
+    (let [res (read-eval-call "(apropos #\"t[i]me\")")
+          result (unwrap-result res)
+          expected "(cljs.core/-deref-with-timeout cljs.core/dotimes cljs.core/system-time cljs.core/time)"]
+      (is (success? res) "(apropos  #\"t[i]me\") should succeed")
+      (is (valid-eval-result? result) "(apropos  #\"t[i]me\") should be a valid result")
+      (is (= expected result) "(apropos #\"t[i]me\") should return valid docstring")
+      (repl/reset-env!))
+
+    ;; test with string "t[i]me"
+    ;; the metacharacters in this case will be interpreted just as characteres
+    (let [res (read-eval-call "(apropos \"t[i]me\")")
+          result (unwrap-result res)]
+      (is (success? res) "(apropos \"t[i]me\") should succeed")
+      (is (valid-eval-result? result) "(apropos  #\"t[i]me\") should be a valid result")
+      (is (= "nil" result) "(apropos \"t[i]me\") should return nil.")
       (repl/reset-env!)))
 
   (deftest process-in-ns
