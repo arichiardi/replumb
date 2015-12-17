@@ -218,25 +218,25 @@
 
 (defn make-load-fn
   "Makes a load function that will read from a sequence of src-paths
-  using a supplied read-file-fn. It returns a cljs.js-compatible
+  using a supplied read-file-fn!. It returns a cljs.js-compatible
   *load-fn*.
 
-  Read-file-fn is an async 2-arity function (fn [file-path src-cb] ...)
-  where src-cb is itself a function (fn [source] ...) that needs to be
-  called with the full source of the library (as string)."
-  [verbose? src-paths read-file-fn]
+  Read-file-fn! is an async 2-arity function with signature [file-path
+  src-cb] where src-cb is itself a function (fn [source] ...) that needs
+  to be called with the full source of the library (as string)."
+  [verbose? src-paths read-file-fn!]
   (fn [{:keys [name macros path] :as load-map} cb]
     (cond
       (load/skip-load? load-map) (load/fake-load-fn! load-map cb)
       (re-matches #"^goog/.*" path) (if-let [goog-path (get-goog-path name)]
                                       (load/read-files-and-callback! verbose?
                                                                      (load/goog-file-paths-to-try src-paths goog-path)
-                                                                     read-file-fn
+                                                                     read-file-fn!
                                                                      cb)
                                       (cb nil))
       :else (load/read-files-and-callback! verbose?
                                            (load/file-paths-to-try src-paths macros path)
-                                           read-file-fn
+                                           read-file-fn!
                                            cb))))
 
 ;;;;;;;;;;;;;;;;
@@ -270,12 +270,12 @@
   [opts user-opts]
   (assoc opts :load-fn!
          (or (:load-fn! user-opts)
-             (let [read-file-fn (:read-file-fn! user-opts)
+             (let [read-file-fn! (:read-file-fn! user-opts)
                    src-paths (:src-paths user-opts)]
-               (if (and read-file-fn (sequential? src-paths))
+               (if (and read-file-fn! (sequential? src-paths))
                  (make-load-fn (:verbose user-opts)
                                (into [] src-paths)
-                               read-file-fn)
+                               read-file-fn!)
                  (when (:verbose user-opts)
                    (common/debug-prn "Invalid :read-file-fn! or :src-paths (is it a valid sequence?). Cannot create *load-fn*.")))))))
 
