@@ -84,6 +84,64 @@
       (is (= expected result) "(require ...) and (apropos \"join\") should return valid docstring")
       (repl/reset-env! '[clojure.string goog.string goog.string.StringBuffer])))
 
+  (deftest require+find-doc
+    ;; note the lack of require
+    (let [res (read-eval-call "(find-doc \"union\")")
+          result (unwrap-result res)]
+      (is (success? res) "(find-doc \"union\") should succeed")
+      (is (valid-eval-result? result) "(find-doc \"union\") should be a valid result")
+      (is (= "nil" result) "(find-doc \"union\") should return nil because clojure.set has not been required.")
+      (repl/reset-env!))
+
+    (let [res (do (read-eval-call "(require 'clojure.set)")
+                  (read-eval-call "(find-doc \"union\")"))
+          result (unwrap-result res)
+          expected "-------------------------
+union
+([] [s1] [s1 s2] [s1 s2 & sets])
+  Return a set that is the union of the input sets
+-------------------------
+clojure.set
+  Set operations such as union/intersection.
+"]
+      (is (success? res) "(find-doc \"union\") should succeed")
+      (is (valid-eval-result? result) "(find-doc \"union\") should be a valid result")
+      (is (= expected result) "(find-doc \"union\") should return a valid docstring.")
+      (repl/reset-env! '[clojure.set]))
+
+    ;; without requiring clojure.string
+     (let [res (read-eval-call "(find-doc \"[^(]newline[^s*]\")")
+          result (unwrap-result res)
+          expected "-------------------------
+*flush-on-newline*
+  When set to true, output will be flushed whenever a newline is printed.
+
+  Defaults to true.
+"]
+      (is (success? res) "(find-doc \"[^(]newline[^s*]\") should succeed")
+      (is (valid-eval-result? result) "(find-doc \"[^(]newline[^s*]\") should be a valid result")
+      (is (= expected result) "(find-doc \"[^(]newline[^s*]\") should return valid docstring")
+      (repl/reset-env!))
+
+     (let [res (do (read-eval-call "(require 'clojure.string)")
+                   (read-eval-call "(find-doc \"[^(]newline[^s*]\")"))
+          result (unwrap-result res)
+          expected "-------------------------
+*flush-on-newline*
+  When set to true, output will be flushed whenever a newline is printed.
+
+  Defaults to true.
+-------------------------
+trim-newline
+([s])
+  Removes all trailing newline \\n or return \\r characters from
+  string.  Similar to Perl's chomp.
+"]
+      (is (success? res) "(require ...) and (find-doc \"[^(]newline[^s*]\") should succeed")
+      (is (valid-eval-result? result) "(require ...) and (find-doc \"[^(]newline[^s*]\") should be a valid result")
+      (is (= expected result) "(require ...) and (find-doc \"[^(]newline[^s*]\") should return valid docstring")
+      (repl/reset-env! '[clojure.string goog.string goog.string.StringBuffer])))
+
   (deftest process-require
     ;; AR - Test for "No *load-fn* when requiring a namespace in browser #35"
     ;; Note there these are tests with a real *load-fn*
@@ -333,6 +391,7 @@
     (require+doc)
     (require+dir)
     (require+apropos)
+    (require+find-doc)
     (process-require)
     (process-goog-import)
     (ns-macro)

@@ -1,5 +1,5 @@
 (ns replumb.repl
-  (:refer-clojure :exclude [load-file ns-publics])
+  (:refer-clojure :exclude [load-file ns-publics ns-interns find-ns])
   (:require-macros [cljs.env.macros :refer [with-compiler-env]])
   (:require [cljs.js :as cljs]
             [cljs.tagged-literals :as tags]
@@ -47,14 +47,21 @@
   "Given a namespace return all the public var analysis maps. Analagous to
   clojure.core/ns-publics but returns var analysis maps not vars."
   ([ns]
-   (ns-publics env/*compiler* ns))
-  ([state ns]
    {:pre [(symbol? ns)]}
    (->> (merge
-         (get-in @state [:cljs.analyzer/namespaces ns :macros])
-         (get-in @state [:cljs.analyzer/namespaces ns :defs]))
+         (get-in @st [:cljs.analyzer/namespaces ns :macros])
+         (get-in @st [:cljs.analyzer/namespaces ns :defs]))
         (remove (fn [[k v]] (:private v)))
         (into {}))))
+
+(defn ns-interns
+  "Given a namespace return all the var analysis maps. Analagous to
+  clojure.core/ns-interns but returns var analysis maps not vars."
+  [ns]
+  {:pre [(symbol? ns)]}
+  (merge
+   (get-in @st [:cljs.analyzer/namespaces ns :macros])
+   (get-in @st [:cljs.analyzer/namespaces ns :defs])))
 
 (defn get-namespace-defs
   "Given a namespace symbol, returns its AST :defs content"
@@ -131,7 +138,7 @@
       var)))
 
 (def replumb-repl-special-set
-  '#{in-ns require require-macros import load-file doc source pst dir apropos})
+  '#{in-ns require require-macros import load-file doc source pst dir apropos find-doc})
 
 (defn repl-special?
   [form]
@@ -576,7 +583,7 @@
 
 (defn process-dir
   [opts cb data sym]
-  (let [vars (-> (ns-publics st sym) keys sort)
+  (let [vars (-> (ns-publics sym) keys sort)
         call-back (partial call-back! (merge opts {:no-pr-str-on-value true}) cb data)]
     (if (seq vars)
       (call-back (common/wrap-success (s/join \newline vars)))
@@ -591,9 +598,33 @@
                   (mapcat (fn [ns]
                             (let [ns-name (str ns)]
                               (map #(symbol ns-name (str %))
-                                   (filter matches? (keys (ns-publics st ns)))))))
+                                   (filter matches? (keys (ns-publics ns)))))))
                   sort)]
     (call-back! opts cb data (common/wrap-success (seq defs)))))
+
+(defn process-find-doc
+  [opts cb data re-string-or-pattern]
+  (let [re (re-pattern re-string-or-pattern)
+        ms (concat
+            (mapcat
+             (fn [ns]
+               (map
+                (fn [m]
+                  (update-in (select-keys m [:ns :name :doc :forms :arglists :macro :url])
+                             [:name] #(if-not (nil? %) (clojure.core/name %) %)))
+                (sort-by :name (vals (ns-interns ns)))))
+             (known-namespaces))
+            (map #(select-keys (get-namespace %) [:name :doc]) (known-namespaces))
+            (map docs/special-doc (keys docs/special-doc-map)))
+        ms (for [m ms
+                 :when (and (:doc m)
+                            (or (re-find re (:doc m))
+                                (re-find re (str (:name m)))))]
+             m)
+        call-back (partial call-back! (merge opts {:no-pr-str-on-value true}) cb data)]
+    (if (seq ms)
+      (call-back (common/wrap-success (s/join (map #(with-out-str (repl/print-doc %)) ms))))
+      (call-back (common/wrap-success "nil")))))
 
 (defn process-repl-special
   [opts cb data expression-form]
@@ -608,6 +639,7 @@
       pst (process-pst opts cb data argument)
       dir (process-dir opts cb data argument)
       apropos (process-apropos opts cb data argument)
+      find-doc (process-find-doc opts cb data argument)
       load-file (call-back! opts cb data (common/error-keyword-not-supported "load-file" ex-info-data))))) ;; (process-load-file argument opts)
 
 (defn process-1-2-3
