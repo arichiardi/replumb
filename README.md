@@ -4,7 +4,7 @@
   <img src="https://raw.githubusercontent.com/ScalaConsultants/replumb/master/images/replumb_logo_bg.jpg" alt="Replumb Logo"/>
 </p>
 
-Replum (*'rɛplʌm*) is a plumbing library for your [self-hosted](https://en.m.wikipedia.org/wiki/Self-hosting_compiler) ClojureScript Read-Eval-Print-Loops. Live demo available [here](http://clojurescript.io) 
+Replum (*'rɛplʌm*) is a plumbing library for your [self-hosted](https://en.m.wikipedia.org/wiki/Self-hosting_compiler) ClojureScript Read-Eval-Print-Loops. Live demo available at [clojurescript.io](http://clojurescript.io).
 
 This library tries to ease the burden of talking direcly to ClojureScript ```cljs.js``` and puts together [pieces](https://github.com/kanaka/cljs-bootstrap) [of](https://github.com/mfikes/planck) [work](https://github.com/mfikes/replete) contributed by the ClojureScript community at disparate points in time on the [`cljs-in-cljs`](https://github.com/clojure/clojurescript/wiki/Bootstrapping-the-Compiler#cljs-in-cljs-from-2012) subject. It aspires to be a common starting point for custom REPLs and/or REPL-ish apps (educational interactive environments for instance).
 
@@ -18,9 +18,9 @@ Put the following into the `:dependencies` vector.
 
 [![via Clojars](http://clojars.org/replumb/latest-version.svg)](http://clojars.org/replumb)
 
-*Note:* I [made a mistake](https://github.com/technomancy/leiningen/issues/2043) and there is a `0.1.3` version already on Clojars that cannot be overridden. It is safe to use as it includes the latest changes also present in `0.1.3-alpha`.
+*Note:* I [made a mistake](https://github.com/technomancy/leiningen/issues/2043) and there is a `0.1.3` version already on Clojars that cannot be overridden. It is safe to use as it includes the latest changes also present in `0.1.3-alpha1`.
 
-Then in your code, directly call ```replumb.core``` functions:
+After that directly call ```replumb.core``` functions:
 
 ``` clojure
 (ns ...
@@ -139,7 +139,7 @@ demo or peek under the crook of his [elbow](https://github.com/mfikes/elbow).
 
 ## Design
 
-The implementation was designed not to conceal ClojureScript's ```cljs.js/eval``` quirks and idiosyncrasies. Therefore tricks like Mike Fikes' ["Messing with macros at the REPL"](http://blog.fikesfarm.com/posts/2015-09-07-messing-with-macros-at-the-repl.html) are still part of the game and actually [implemented as tests](https://github.com/ScalaConsultants/replumb/blob/master/test/cljs/replumb/repl_test.cljs#L187).
+The implementation was designed not to conceal ClojureScript's ```cljs.js/eval``` quirks and idiosyncrasies. Therefore tricks like Mike Fikes' ["Messing with macros at the REPL"](http://blog.fikesfarm.com/posts/2015-09-07-messing-with-macros-at-the-repl.html) are still part of the game and actually implemented as tests.
 
 This will in the long run be useful for both ```replumb``` and the ```ClojureScript``` community as it will help in finding and fix issues.
 
