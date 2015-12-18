@@ -39,6 +39,15 @@
       (is (success? res) "(require ...) and (doc clojure.string/trim) should succeed.")
       (is (valid-eval-result? docstring) "(require ...) and (doc clojure.string/trim) should be a valid result")
       (is (re-find #"Removes whitespace from both ends of string" docstring) "(require ...) and (doc clojure.string/trim) should return valid docstring")
+      (repl/reset-env! '[clojure.string goog.string goog.string.StringBuffer]))
+
+    ;; https://github.com/ScalaConsultants/replumb/issues/86
+    (let [res (do (read-eval-call "(require '[clojure.string :as string])")
+                  (read-eval-call "(doc string/trim)"))
+          docstring (unwrap-result res)]
+      (is (success? res) "(require '[clojure.string :as string]) and (doc string/trim) should succeed.")
+      (is (valid-eval-result? docstring) "(require '[clojure.string :as string]) and (doc string/trim) should be a valid result")
+      (is (re-find #"Removes whitespace from both ends of string" docstring) "(require '[clojure.string :as string]) and (doc string/trim) should return valid docstring")
       (repl/reset-env! '[clojure.string goog.string goog.string.StringBuffer])))
 
   (deftest require+dir

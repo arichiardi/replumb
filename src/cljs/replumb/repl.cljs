@@ -51,10 +51,15 @@
   ([state ns]
    {:pre [(symbol? ns)]}
    (->> (merge
-          (get-in @state [::ana/namespaces ns :macros])
-          (get-in @state [::ana/namespaces ns :defs]))
+         (get-in @state [:cljs.analyzer/namespaces ns :macros])
+         (get-in @state [:cljs.analyzer/namespaces ns :defs]))
         (remove (fn [[k v]] (:private v)))
         (into {}))))
+
+(defn get-namespace-defs
+  "Given a namespace symbol, returns its AST :defs content"
+  [sym]
+  (get-in @st [:cljs.analyzer/namespaces sym :defs]))
 
 (defn get-namespace
   [sym]
@@ -65,6 +70,12 @@
   returns the path to the actual file (without extension)."
   [provide]
   (get-in @app-env [:goog-provide->path provide]))
+
+(defn empty-analyzer-env
+  []
+  (assoc (ana/empty-env)
+         :ns (get-namespace (:current-ns @app-env))
+         :context :expr))
 
 (defn map-keys
   [f m]
@@ -88,7 +99,7 @@
       (second first-form))))
 
 (defn resolve
-  "From cljs.analizer.api.clj. Given an analysis environment resolve a
+  "From cljs.analyzer.api.clj. Given an analysis environment resolve a
   var. Analogous to clojure.core/resolve"
   [opts env sym]
   {:pre [(map? env) (symbol? sym)]}
@@ -166,7 +177,7 @@
 ;; from https://github.com/mfikes/planck/commit/fe9e7b3ee055930523af1ea3ec9b53407ed2b8c8
 (defn purge-ns-analysis-cache!
   [st ns]
-  (swap! st update-in [::ana/namespaces] dissoc ns))
+  (swap! st update-in [:cljs.analyzer/namespaces] dissoc ns))
 
 (defn purge-ns!
   [st ns]
@@ -218,25 +229,25 @@
 
 (defn make-load-fn
   "Makes a load function that will read from a sequence of src-paths
-  using a supplied read-file-fn. It returns a cljs.js-compatible
+  using a supplied read-file-fn!. It returns a cljs.js-compatible
   *load-fn*.
 
-  Read-file-fn is an async 2-arity function (fn [file-path src-cb] ...)
-  where src-cb is itself a function (fn [source] ...) that needs to be
-  called with the full source of the library (as string)."
-  [verbose? src-paths read-file-fn]
+  Read-file-fn! is an async 2-arity function with signature [file-path
+  src-cb] where src-cb is itself a function (fn [source] ...) that needs
+  to be called with the full source of the library (as string)."
+  [verbose? src-paths read-file-fn!]
   (fn [{:keys [name macros path] :as load-map} cb]
     (cond
       (load/skip-load? load-map) (load/fake-load-fn! load-map cb)
       (re-matches #"^goog/.*" path) (if-let [goog-path (get-goog-path name)]
                                       (load/read-files-and-callback! verbose?
                                                                      (load/goog-file-paths-to-try src-paths goog-path)
-                                                                     read-file-fn
+                                                                     read-file-fn!
                                                                      cb)
                                       (cb nil))
       :else (load/read-files-and-callback! verbose?
                                            (load/file-paths-to-try src-paths macros path)
-                                           read-file-fn
+                                           read-file-fn!
                                            cb))))
 
 ;;;;;;;;;;;;;;;;
@@ -270,12 +281,12 @@
   [opts user-opts]
   (assoc opts :load-fn!
          (or (:load-fn! user-opts)
-             (let [read-file-fn (:read-file-fn! user-opts)
+             (let [read-file-fn! (:read-file-fn! user-opts)
                    src-paths (:src-paths user-opts)]
-               (if (and read-file-fn (sequential? src-paths))
+               (if (and read-file-fn! (sequential? src-paths))
                  (make-load-fn (:verbose user-opts)
                                (into [] src-paths)
-                               read-file-fn)
+                               read-file-fn!)
                  (when (:verbose user-opts)
                    (common/debug-prn "Invalid :read-file-fn! or :src-paths (is it a valid sequence?). Cannot create *load-fn*.")))))))
 
@@ -474,7 +485,7 @@
                                  (common/wrap-success nil))))))))
 
 (defn process-doc
-  [opts cb data env sym]
+  [opts cb data sym]
   (call-back! (merge opts {:no-pr-str-on-value true})
               cb
               data
@@ -484,7 +495,7 @@
                    (docs/special-doc-map sym) (repl/print-doc (docs/special-doc sym))
                    (docs/repl-special-doc-map sym) (repl/print-doc (docs/repl-special-doc sym))
                    (get-namespace sym) (repl/print-doc (select-keys (get-namespace sym) [:name :doc]))
-                   :else (repl/print-doc (get-var opts env sym)))))))
+                   :else (repl/print-doc (get-var opts (empty-analyzer-env) sym)))))))
 
 (defn process-pst
   [opts cb data expr]
@@ -548,9 +559,10 @@
                                      (cb (common/wrap-success "nil"))))))
 
 (defn process-source
-  [opts cb data env sym]
-  (let [var (get-var opts env sym)
+  [opts cb data sym]
+  (let [var (get-var opts (empty-analyzer-env) sym)
         call-back (partial call-back! (merge opts {:no-pr-str-on-value true}) cb data)]
+
     (if-let [filepath (or (:file var) (:file (:meta var)))]
       (let [src-paths (:src-paths opts)
             ;; see discussion here: https://github.com/ScalaConsultants/replumb/issues/17#issuecomment-163832028
@@ -563,7 +575,7 @@
       (call-back (common/wrap-success "nil")))))
 
 (defn process-dir
-  [opts cb data env sym]
+  [opts cb data sym]
   (let [vars (-> (ns-publics st sym) keys sort)
         call-back (partial call-back! (merge opts {:no-pr-str-on-value true}) cb data)]
     (if (seq vars)
@@ -572,18 +584,16 @@
 
 (defn process-repl-special
   [opts cb data expression-form]
-  (let [env (assoc (ana/empty-env) :context :expr
-                   :ns {:name (:current-ns @app-env)})
-        argument (second expression-form)]
+  (let [argument (second expression-form)]
     (case (first expression-form)
       in-ns (process-in-ns opts cb data argument)
       require (process-require opts cb data :require (rest expression-form))
       require-macros (process-require opts cb data :require-macros (rest expression-form))
       import (process-require opts cb data :import (rest expression-form))
-      doc (process-doc opts cb data env argument)
-      source (process-source opts cb data env argument)
+      doc (process-doc opts cb data argument)
+      source (process-source opts cb data argument)
       pst (process-pst opts cb data argument)
-      dir (process-dir opts cb data env argument)
+      dir (process-dir opts cb data argument)
       load-file (call-back! opts cb data (common/error-keyword-not-supported "load-file" ex-info-data))))) ;; (process-load-file argument opts)
 
 (defn process-1-2-3
