@@ -131,7 +131,7 @@
       var)))
 
 (def replumb-repl-special-set
-  '#{in-ns require require-macros import load-file doc source pst dir})
+  '#{in-ns require require-macros import load-file doc source pst dir apropos})
 
 (defn repl-special?
   [form]
@@ -582,6 +582,19 @@
       (call-back (common/wrap-success (s/join \newline vars)))
       (call-back (common/wrap-success "nil")))))
 
+(defn process-apropos
+  [opts cb data str-or-pattern]
+  (let [matches? (if (instance? js/RegExp str-or-pattern)
+                   #(re-find str-or-pattern (str %))
+                   #(< -1 (.indexOf (str %) (str str-or-pattern))))
+        defs (->> (known-namespaces)
+                  (mapcat (fn [ns]
+                            (let [ns-name (str ns)]
+                              (map #(symbol ns-name (str %))
+                                   (filter matches? (keys (ns-publics st ns)))))))
+                  sort)]
+    (call-back! opts cb data (common/wrap-success (seq defs)))))
+
 (defn process-repl-special
   [opts cb data expression-form]
   (let [argument (second expression-form)]
@@ -594,6 +607,7 @@
       source (process-source opts cb data argument)
       pst (process-pst opts cb data argument)
       dir (process-dir opts cb data argument)
+      apropos (process-apropos opts cb data argument)
       load-file (call-back! opts cb data (common/error-keyword-not-supported "load-file" ex-info-data))))) ;; (process-load-file argument opts)
 
 (defn process-1-2-3
@@ -769,11 +783,11 @@
   ([]
    (reset-env! nil))
   ([namespaces]
+   (read-eval-call {} identity "(in-ns 'cljs.user)")
    (doseq [ns namespaces]
      (purge-ns! st (symbol ns)))
    (if (seq @cljs.js/*loaded*)
      (throw (ex-info (str "The cljs.js/*loaded* atom still contains " @cljs.js/*loaded* " - make sure you purge dependent namespaces.") ex-info-data)))
    (assert (empty? @cljs.js/*loaded*))
    (reset-last-warning!)
-   (read-eval-call {} identity "(set! *e nil)")
-   (read-eval-call {} identity "(in-ns 'cljs.user)")))
+   (read-eval-call {} identity "(set! *e nil)")))
