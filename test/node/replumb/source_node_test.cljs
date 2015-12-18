@@ -86,6 +86,15 @@
       (is (success? res) "(source clojure.string/not-existing) should succeed.")
       (is (valid-eval-result? source-string) "(source clojure.string/not-existing) should be a valid result")
       (is (= "nil" source-string) "(source clojure.string/not-existing) should return valid source")
+      (repl/reset-env! '[clojure.string goog.string goog.string.StringBuffer]))
+
+    ;; https://github.com/ScalaConsultants/replumb/issues/86
+    (let [res (do (read-eval-call "(require '[clojure.string :as s])")
+                  (read-eval-call "(source s/trim)"))
+          docstring (unwrap-result res)]
+      (is (success? res) "(require '[clojure.string :as s]) and (doc s/trim) should succeed.")
+      (is (valid-eval-result? docstring) "(require '[clojure.string :as s]) and (doc s/trim) should be a valid result")
+      (is (re-find #"Removes whitespace from both ends of string" docstring) "(require '[clojure.string :as s]) and (doc s/trim) should return valid docstring")
       (repl/reset-env! '[clojure.string goog.string goog.string.StringBuffer])))
 
   (deftest source-in-custom-ns
@@ -96,6 +105,16 @@
       (is (success? res) "(source foo.bar.baz/a) should succeed.")
       (is (valid-eval-result? source-string) "(source foo.bar.baz/a) should be a valid result")
       (is (= expected source-string) "(source foo.bar.baz/a) should return valid source")
+      (repl/reset-env! ['foo.bar.baz]))
+
+    ;; https://github.com/ScalaConsultants/replumb/issues/86
+    (let [res (do (read-eval-call "(require '[foo.bar.baz :as baz])")
+                  (read-eval-call "(source baz/a)"))
+          source-string (unwrap-result res)
+          expected "(def a \"whatever\")"]
+      (is (success? res) "(require '[foo.bar.baz :as baz]) and (source baz/a) should succeed.")
+      (is (valid-eval-result? source-string) "(require '[foo.bar.baz :as baz]) and (source baz/a) should be a valid result")
+      (is (= expected source-string) "(require '[foo.bar.baz :as baz]) and (source baz/a) should return valid source")
       (repl/reset-env! ['foo.bar.baz])))
 
   ;; see "RUNNING TESTS" section for explanation of `test-ns-hook` special function
