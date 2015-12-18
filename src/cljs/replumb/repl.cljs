@@ -51,10 +51,15 @@
   ([state ns]
    {:pre [(symbol? ns)]}
    (->> (merge
-          (get-in @state [::ana/namespaces ns :macros])
-          (get-in @state [::ana/namespaces ns :defs]))
+         (get-in @state [:cljs.analyzer/namespaces ns :macros])
+         (get-in @state [:cljs.analyzer/namespaces ns :defs]))
         (remove (fn [[k v]] (:private v)))
         (into {}))))
+
+(defn get-namespace-defs
+  "Given a namespace symbol, returns its AST :defs content"
+  [sym]
+  (get-in @st [:cljs.analyzer/namespaces sym :defs]))
 
 (defn get-namespace
   [sym]
@@ -94,7 +99,7 @@
       (second first-form))))
 
 (defn resolve
-  "From cljs.analizer.api.clj. Given an analysis environment resolve a
+  "From cljs.analyzer.api.clj. Given an analysis environment resolve a
   var. Analogous to clojure.core/resolve"
   [opts env sym]
   {:pre [(map? env) (symbol? sym)]}
@@ -172,7 +177,7 @@
 ;; from https://github.com/mfikes/planck/commit/fe9e7b3ee055930523af1ea3ec9b53407ed2b8c8
 (defn purge-ns-analysis-cache!
   [st ns]
-  (swap! st update-in [::ana/namespaces] dissoc ns))
+  (swap! st update-in [:cljs.analyzer/namespaces] dissoc ns))
 
 (defn purge-ns!
   [st ns]
