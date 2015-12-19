@@ -107,7 +107,7 @@ The third parameter is the source string to be read and evaluated.
 
 It initializes the repl harness if necessary.
   
-See [```repl-demo```](https://github.com/ScalaConsultants/replumb/blob/master/repl-demo/browser/cljs/replumb_repl/console.cljs)
+See the [```browser-repl```](https://github.com/ScalaConsultants/replumb/blob/master/repl-demo/browser/cljs/replumb_repl/console.cljs)
 for an actual implementation using [```jq-console```](https://github.com/replit/jq-console).
 
 
@@ -150,6 +150,8 @@ This project adheres to the [SemVer](http://semver.org/) specification.
 ### Documentation
 
 The documentation referring to the latest version (`SNAPSHOT` or release) can always be found in the ```doc``` folder of this repo or generated through `lein codox`.
+
+The [wiki](https://github.com/ScalaConsultants/replumb/wiki) is also good (growing) source of info.
 
 ### Contributions
 
