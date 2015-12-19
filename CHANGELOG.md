@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.4
+- Dir support
+- Apropos support
+- Find-doc support
+- Fix for [issue #86](https://github.com/ScalaConsultants/replumb/issues/86) - source does not work with aliased namespaces
+
 ## 0.1.3
 - The result map now contains a :warning key when :warning-as-error is false
 - Source support
