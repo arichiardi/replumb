@@ -806,10 +806,10 @@
 (defn reset-env!
   "It does the following (in order):
 
-  1. remove the input namespaces from the compiler environment
-  2. set *e to nil
+  1. in-ns to cljs.user
+  2. remove the input namespaces from the compiler environment
   3. reset the last warning
-  4. in-ns to cljs.user
+  4. set *e to nil
 
   It accepts a sequence of symbols or strings."
   ([]
@@ -817,9 +817,9 @@
   ([namespaces]
    (read-eval-call {} identity "(in-ns 'cljs.user)")
    (doseq [ns namespaces]
-     (purge-ns! st (symbol ns)))
+     (purge-ns! st (symbol ns))
+     (purge-ns! st (symbol (str ns "$macros"))))
    (if (seq @cljs.js/*loaded*)
      (throw (ex-info (str "The cljs.js/*loaded* atom still contains " @cljs.js/*loaded* " - make sure you purge dependent namespaces.") ex-info-data)))
-   (assert (empty? @cljs.js/*loaded*))
    (reset-last-warning!)
    (read-eval-call {} identity "(set! *e nil)")))

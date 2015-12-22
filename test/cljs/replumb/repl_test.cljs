@@ -363,6 +363,7 @@ select-keys
       (is (valid-eval-result? out) "(defmacro hello ..) should have a valid result")
       (is (= "true" out) "(defmacro hello ..) shoud return true")
       (repl/reset-env!))
+
     (let [res (do (read-eval-call "(defmacro hello [x] `(inc ~x))")
                   (read-eval-call "(hello nil nil 13)"))
           out (unwrap-result res)]
@@ -389,7 +390,7 @@ select-keys
       (is (success? res) "Executing (foo.core/hello ..) as function should succeed")
       (is (valid-eval-result? out) "Executing (foo.core/hello ..) hello ..) as function should have a valid result")
       (is (= "6" out) "Executing (foo.core/hello ..) hello ..) as function shoud return 6")
-      (repl/reset-env! '[foo.core])))
+      (repl/reset-env! '[foo.core another.ns])))
 
   (deftest tagged-literals
     ;; AR - Don't need to test more as ClojureScript already has extensive tests on this

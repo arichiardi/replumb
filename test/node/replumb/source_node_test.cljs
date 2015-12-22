@@ -105,7 +105,7 @@
       (is (success? res) "(source foo.bar.baz/a) should succeed.")
       (is (valid-eval-result? source-string) "(source foo.bar.baz/a) should be a valid result")
       (is (= expected source-string) "(source foo.bar.baz/a) should return valid source")
-      (repl/reset-env! ['foo.bar.baz]))
+      (repl/reset-env! '[foo.bar.baz]))
 
     ;; https://github.com/ScalaConsultants/replumb/issues/86
     (let [res (do (read-eval-call "(require '[foo.bar.baz :as baz])")
@@ -115,7 +115,7 @@
       (is (success? res) "(require '[foo.bar.baz :as baz]) and (source baz/a) should succeed.")
       (is (valid-eval-result? source-string) "(require '[foo.bar.baz :as baz]) and (source baz/a) should be a valid result")
       (is (= expected source-string) "(require '[foo.bar.baz :as baz]) and (source baz/a) should return valid source")
-      (repl/reset-env! ['foo.bar.baz])))
+      (repl/reset-env! '[foo.bar.baz])))
 
   ;; see "RUNNING TESTS" section for explanation of `test-ns-hook` special function
   ;; https://clojure.github.io/clojure/clojure.test-api.html
