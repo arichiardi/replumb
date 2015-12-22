@@ -97,7 +97,8 @@
   "Filter out the option map keys that have -fn in it."
   [opts]
   {:pre [(map? opts)]}
-  (into {} (filter #(not (re-find #"-fn" (name (first %)))) opts)))
+  (let [new-fn-entries (map #(assoc % 1 "<hidden function>") (filter #(re-find #"-fn" (name (first %))) (into [] opts)))]
+    (into opts new-fn-entries)))
 
 (defn debug-prn
   [& args]
