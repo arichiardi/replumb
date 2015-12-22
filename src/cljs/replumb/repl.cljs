@@ -149,14 +149,9 @@
                 (if (vector? spec) spec [spec]))))]
     (map canonicalize specs)))
 
-;; from https://github.com/mfikes/planck/commit/fe9e7b3ee055930523af1ea3ec9b53407ed2b8c8
-(defn purge-ns-analysis-cache!
-  [st ns]
-  (swap! st update-in [:cljs.analyzer/namespaces] dissoc ns))
-
 (defn purge-ns!
   [st ns]
-  (purge-ns-analysis-cache! st ns)
+  (swap! st ast/dissoc-ns ns)
   (swap! cljs.js/*loaded* disj ns))
 
 (defn process-reloads!

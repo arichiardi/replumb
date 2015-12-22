@@ -42,3 +42,12 @@
   [state ns]
   {:pre [(symbol? ns)]}
   (get-in state [:cljs.analyzer/namespaces ns]))
+
+;; from https://github.com/mfikes/planck/commit/fe9e7b3ee055930523af1ea3ec9b53407ed2b8c8
+(defn dissoc-ns
+  "Given compiler state and namespace symbol, dissoc the ns from the
+  AST.
+  This is commonly passed to swap! (e.g.: (swap! st dissoc-ns))."
+  [state ns]
+  {:pre [(symbol? ns)]}
+  (update-in state [:cljs.analyzer/namespaces] dissoc ns))
