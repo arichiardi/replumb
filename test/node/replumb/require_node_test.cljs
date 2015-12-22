@@ -227,7 +227,7 @@ trim-newline
   (deftest ns-macro
     (let [res (read-eval-call "(ns my.namespace (:use [clojure.string :as s :only (trim)]))")
           error (unwrap-result res)]
-      (is (not (success? error)) "(ns my.namespace (:use [clojure.string :as s :only (trim)])) should not succeed")
+      (is (not (success? res)) "(ns my.namespace (:use [clojure.string :as s :only (trim)])) should not succeed")
       (is (valid-eval-error? error) "(ns my.namespace (:use [clojure.string :as s :only (trim)])) should be an instance of js/Error")
       (is (re-find #"Only \[lib.ns :only \(names\)\] specs supported in :use / :use-macros;" (extract-message error))
           "(ns my.namespace (:use [clojure.string :as s :only (trim)])) should have correct error message")
@@ -259,7 +259,7 @@ trim-newline
 
     (let [res (read-eval-call "(ns my.namespace (:require [clojure set string]))")
           error (unwrap-result res)]
-      (is (not (success? error)) "(ns my.namespace (:require [clojure set string])) should not succeed. Prefix lists are not supported.")
+      (is (not (success? res)) "(ns my.namespace (:require [clojure set string])) should not succeed. Prefix lists are not supported.")
       (is (valid-eval-error? error) "(ns my.namespace (:require [clojure set string])) should be an instance of js/Error")
       (is (re-find #"Only :as and :refer options supported in :require / :require-macros;" (extract-message error))
           "(ns my.namespace (:require [clojure set string])) should have correct error message.")
@@ -268,7 +268,7 @@ trim-newline
     ;; http://stackoverflow.com/questions/24463469/is-it-possible-to-use-refer-all-in-a-clojurescript-require
     (let [res (read-eval-call "(ns my.namespace (:require [clojure.string :refer :all]))")
           error (unwrap-result res)]
-      (is (not (success? error)) "(ns my.namespace (:require [clojure.string :refer :all])) should not succeed. :refer :all is not allowed.")
+      (is (not (success? res)) "(ns my.namespace (:require [clojure.string :refer :all])) should not succeed. :refer :all is not allowed.")
       (is (valid-eval-error? error) "(ns my.namespace (:require [clojure.string :refer :all])) should be an instance of js/Error")
       (is (re-find #":refer must be followed by a sequence of symbols in :require / :require-macros;" (extract-message error))
           "(ns my.namespace (:require [clojure.string :refer :all])) should have correct error message.")
@@ -276,7 +276,7 @@ trim-newline
 
     (let [res (read-eval-call "(ns my.namespace (:refer-clojure :rename {print core-print}))")
           error (unwrap-result res)]
-      (is (not (success? error)) "(ns my.namespace (:refer-clojure ...)) should not succeed. Only :exlude is allowed for :refer-clojure.")
+      (is (not (success? res)) "(ns my.namespace (:refer-clojure ...)) should not succeed. Only :exlude is allowed for :refer-clojure.")
       (is (valid-eval-error? error) "(ns my.namespace (:refer-clojure :rename {print core-print})) should be an instance of js/Error")
       (is (re-find #"Only \[:refer-clojure :exclude \(names\)\] form supported" (extract-message error))
           "(ns my.namespace (:refer-clojure :rename {print core-print})) should have correct error message.")
@@ -285,7 +285,7 @@ trim-newline
     (let [res (do (read-eval-call "(ns my.namespace (:refer-clojure :exclude [max]))")
                   (read-eval-call "(max 1 2 3)"))
           error (unwrap-result res)]
-      (is (not (success? error)) "(ns my.namespace (:refer-clojure ... :exclude)) and (max ...) should not succeed.")
+      (is (not (success? res)) "(ns my.namespace (:refer-clojure ... :exclude)) and (max ...) should not succeed.")
       (is (valid-eval-error? error) "(ns my.namespace (:refer-clojure ... :exclude)) and (max ...) should be an instance of js/Error")
       (is (re-find #"ERROR" (extract-message error))
           "(ns my.namespace (:refer-clojure ... :exclude)) and (max ...) should have correct error message.")
@@ -315,6 +315,57 @@ trim-newline
       (is (valid-eval-result? out) "(ns my.namespace (:import ... )) and (apply str ...) should be a valid result.")
       (is (re-find #"ABCDEF" out) "The result should be ABCDEF")
       (repl/reset-env! '[my.namespace foo.bar.baz])))
+
+  (deftest ns-macro-with-require-macro
+    ;; baz.clj file pared with baz.cljs
+    (let [res (do (read-eval-call "(ns my.namespace (:require-macros [foo.bar.baz]))")
+                  (read-eval-call "(foo.bar.baz/mul-baz 2 2)"))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:require-macros ...)) and (foo.bar.baz/mul-baz 2 2) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...)) and (foo.bar.bar/mul-baz 2 2) should be a valid result.")
+      (is (= "4" out) "(foo.bar.bar/mul-baz 2 2) should be 4")
+      (repl/reset-env! '[my.namespace foo.bar.baz foo.bar.baz$macros]))
+
+    ;; only quux.clj file and namespace
+    (let [res (do (read-eval-call "(ns my.namespace (:require-macros [foo.bar.quux]))")
+                  (read-eval-call "(foo.bar.quux/mul-quux 2 2)"))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:require-macros ...)) and (foo.bar.quux/mul-quux 2 2) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...)) and (foo.bar.quux/mul-quux 2 2) should be a valid result.")
+      (is (= "4" out) "(foo.quux/mul-quux 2 2) should be 4")
+      (repl/reset-env! '[my.namespace foo.bar.quux foo.bar.quux$macros]))
+
+    (let [res (do (read-eval-call "(ns my.namespace (:require-macros [foo.bar.baz :refer [mul-baz]]))")
+                  (read-eval-call "(mul-baz 3 3)"))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:require-macros ... :refer ...)) and (mul-baz 3 3) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...:refer...)) and (mul-baz 3 3) should be a valid result.")
+      (is (= "9" out) "(mul-baz 3 3) should be 9")
+      (repl/reset-env! '[my.namespace foo.bar.baz foo.bar.baz$macros]))
+
+    (let [res (do (read-eval-call "(ns my.namespace (:require-macros [foo.bar.quux :refer [mul-quux]]))")
+                  (read-eval-call "(mul-quux 3 3)"))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:require-macros ... :refer ...)) and (mul-quux 3 3) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...:refer...)) and (mul-quux 3 3) should be a valid result.")
+      (is (= "9" out) "(mul-quux 3 3) should be 9")
+      (repl/reset-env! '[my.namespace foo.bar.quux foo.bar.quux$macros]))
+
+    (let [res (do (read-eval-call "(ns my.namespace (:use-macros [foo.bar.baz :only [mul-baz]]))")
+                  (read-eval-call "(mul-baz 5 5)"))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:use-macros ...)) and (mul-baz 5 5) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:use-macros ...)) and (mul-baz 5 5) should be a valid result.")
+      (is (= "25" out) "(mul-baz 5 5) should be 25")
+      (repl/reset-env! '[my.namespace foo.bar.baz foo.bar.baz$macros]))
+
+    (let [res (do (read-eval-call "(ns my.namespace (:use-macros [foo.bar.quux :only [mul-quux]]))")
+                  (read-eval-call "(mul-quux 5 5)"))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:use-macros ...)) and (mul-quux 5 5) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:use-macros ...)) and (mul-quux 5 5) should be a valid result.")
+      (is (= "25" out) "(mul-quux 25) should be 25")
+      (repl/reset-env! '[my.namespace foo.bar.quux foo.bar.quux$macros])))
 
   (deftest process-reload
     (let [alterable-core-path "dev-resources/private/test/src/cljs/alterable/core.cljs"
@@ -395,6 +446,7 @@ trim-newline
     (process-require)
     (process-goog-import)
     (ns-macro)
+    (ns-macro-with-require-macro)
     (process-reload)
     (process-reload-all)))
 
