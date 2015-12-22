@@ -390,7 +390,7 @@ select-keys
       (is (success? res) "Executing (foo.core/hello ..) as function should succeed")
       (is (valid-eval-result? out) "Executing (foo.core/hello ..) hello ..) as function should have a valid result")
       (is (= "6" out) "Executing (foo.core/hello ..) hello ..) as function shoud return 6")
-      (repl/reset-env! '[foo.core another.ns foo.core$macros])))
+      (repl/reset-env! '[foo.core another.ns])))
 
   (deftest tagged-literals
     ;; AR - Don't need to test more as ClojureScript already has extensive tests on this

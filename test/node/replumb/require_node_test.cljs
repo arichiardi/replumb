@@ -324,7 +324,7 @@ trim-newline
       (is (success? res) "(ns my.namespace (:require-macros ...)) and (foo.bar.baz/mul-baz 2 2) should succeed")
       (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...)) and (foo.bar.bar/mul-baz 2 2) should be a valid result.")
       (is (= "4" out) "(foo.bar.bar/mul-baz 2 2) should be 4")
-      (repl/reset-env! '[my.namespace foo.bar.baz foo.bar.baz$macros]))
+      (repl/reset-env! '[my.namespace foo.bar.baz]))
 
     ;; only quux.clj file and namespace
     (let [res (do (read-eval-call "(ns my.namespace (:require-macros [foo.bar.quux]))")
@@ -333,7 +333,7 @@ trim-newline
       (is (success? res) "(ns my.namespace (:require-macros ...)) and (foo.bar.quux/mul-quux 2 2) should succeed")
       (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...)) and (foo.bar.quux/mul-quux 2 2) should be a valid result.")
       (is (= "4" out) "(foo.quux/mul-quux 2 2) should be 4")
-      (repl/reset-env! '[my.namespace foo.bar.quux foo.bar.quux$macros]))
+      (repl/reset-env! '[my.namespace foo.bar.quux]))
 
     (let [res (do (read-eval-call "(ns my.namespace (:require-macros [foo.bar.baz :refer [mul-baz]]))")
                   (read-eval-call "(mul-baz 3 3)"))
@@ -341,7 +341,7 @@ trim-newline
       (is (success? res) "(ns my.namespace (:require-macros ... :refer ...)) and (mul-baz 3 3) should succeed")
       (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...:refer...)) and (mul-baz 3 3) should be a valid result.")
       (is (= "9" out) "(mul-baz 3 3) should be 9")
-      (repl/reset-env! '[my.namespace foo.bar.baz foo.bar.baz$macros]))
+      (repl/reset-env! '[my.namespace foo.bar.baz]))
 
     (let [res (do (read-eval-call "(ns my.namespace (:require-macros [foo.bar.quux :refer [mul-quux]]))")
                   (read-eval-call "(mul-quux 3 3)"))
@@ -349,7 +349,7 @@ trim-newline
       (is (success? res) "(ns my.namespace (:require-macros ... :refer ...)) and (mul-quux 3 3) should succeed")
       (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...:refer...)) and (mul-quux 3 3) should be a valid result.")
       (is (= "9" out) "(mul-quux 3 3) should be 9")
-      (repl/reset-env! '[my.namespace foo.bar.quux foo.bar.quux$macros]))
+      (repl/reset-env! '[my.namespace foo.bar.quux]))
 
     (let [res (do (read-eval-call "(ns my.namespace (:use-macros [foo.bar.baz :only [mul-baz]]))")
                   (read-eval-call "(mul-baz 5 5)"))
@@ -357,7 +357,7 @@ trim-newline
       (is (success? res) "(ns my.namespace (:use-macros ...)) and (mul-baz 5 5) should succeed")
       (is (valid-eval-result? out) "(ns my.namespace (:use-macros ...)) and (mul-baz 5 5) should be a valid result.")
       (is (= "25" out) "(mul-baz 5 5) should be 25")
-      (repl/reset-env! '[my.namespace foo.bar.baz foo.bar.baz$macros]))
+      (repl/reset-env! '[my.namespace foo.bar.baz]))
 
     (let [res (do (read-eval-call "(ns my.namespace (:use-macros [foo.bar.quux :only [mul-quux]]))")
                   (read-eval-call "(mul-quux 5 5)"))
@@ -365,7 +365,7 @@ trim-newline
       (is (success? res) "(ns my.namespace (:use-macros ...)) and (mul-quux 5 5) should succeed")
       (is (valid-eval-result? out) "(ns my.namespace (:use-macros ...)) and (mul-quux 5 5) should be a valid result.")
       (is (= "25" out) "(mul-quux 25) should be 25")
-      (repl/reset-env! '[my.namespace foo.bar.quux foo.bar.quux$macros])))
+      (repl/reset-env! '[my.namespace foo.bar.quux])))
 
   (deftest process-reload
     (let [alterable-core-path "dev-resources/private/test/src/cljs/alterable/core.cljs"
