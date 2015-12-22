@@ -11,6 +11,7 @@
             [cljs.pprint :refer [pprint]]
             [clojure.string :as s]
             [replumb.common :as common]
+            [replumb.ast :as ast]
             [replumb.doc-maps :as docs]
             [replumb.load :as load]
             [replumb.browser :as browser]
@@ -39,39 +40,6 @@
   []
   (:current-ns @app-env))
 
-(defn known-namespaces
-  []
-  (keys (:cljs.analyzer/namespaces @st)))
-
-(defn ns-publics
-  "Given a namespace return all the public var analysis maps. Analagous to
-  clojure.core/ns-publics but returns var analysis maps not vars."
-  ([ns]
-   {:pre [(symbol? ns)]}
-   (->> (merge
-         (get-in @st [:cljs.analyzer/namespaces ns :macros])
-         (get-in @st [:cljs.analyzer/namespaces ns :defs]))
-        (remove (fn [[k v]] (:private v)))
-        (into {}))))
-
-(defn ns-interns
-  "Given a namespace return all the var analysis maps. Analagous to
-  clojure.core/ns-interns but returns var analysis maps not vars."
-  [ns]
-  {:pre [(symbol? ns)]}
-  (merge
-   (get-in @st [:cljs.analyzer/namespaces ns :macros])
-   (get-in @st [:cljs.analyzer/namespaces ns :defs])))
-
-(defn get-namespace-defs
-  "Given a namespace symbol, returns its AST :defs content"
-  [sym]
-  (get-in @st [:cljs.analyzer/namespaces sym :defs]))
-
-(defn get-namespace
-  [sym]
-  (get-in @st [:cljs.analyzer/namespaces sym]))
-
 (defn get-goog-path
   "Given a Google Closure provide / Clojure require (e.g. goog.string),
   returns the path to the actual file (without extension)."
@@ -81,7 +49,7 @@
 (defn empty-analyzer-env
   []
   (assoc (ana/empty-env)
-         :ns (get-namespace (:current-ns @app-env))
+         :ns (ast/namespace @st (:current-ns @app-env))
          :context :expr))
 
 (defn map-keys
@@ -501,7 +469,7 @@
                  (cond
                    (docs/special-doc-map sym) (repl/print-doc (docs/special-doc sym))
                    (docs/repl-special-doc-map sym) (repl/print-doc (docs/repl-special-doc sym))
-                   (get-namespace sym) (repl/print-doc (select-keys (get-namespace sym) [:name :doc]))
+                   (ast/namespace @st sym) (repl/print-doc (select-keys (ast/namespace @st sym) [:name :doc]))
                    :else (repl/print-doc (get-var opts (empty-analyzer-env) sym)))))))
 
 (defn process-pst
@@ -531,7 +499,7 @@
            (common/debug-prn "in-ns argument is symbol? " (symbol? ns-symbol)))
          (if-not (symbol? ns-symbol)
            (call-back! opts cb data (common/error-argument-must-be-symbol "in-ns" ex-info-data))
-           (if (some (partial = ns-symbol) (known-namespaces))
+           (if (some (partial = ns-symbol) (ast/known-namespaces @st))
              (call-back! opts cb
                          (merge data {:side-effect-fn! #(swap! app-env assoc :current-ns ns-symbol)})
                          (common/wrap-success nil))
@@ -583,7 +551,7 @@
 
 (defn process-dir
   [opts cb data sym]
-  (let [vars (-> (ns-publics sym) keys sort)
+  (let [vars (-> (ast/ns-publics @st sym) keys sort)
         call-back (partial call-back! (merge opts {:no-pr-str-on-value true}) cb data)]
     (if (seq vars)
       (call-back (common/wrap-success (s/join \newline vars)))
@@ -594,11 +562,11 @@
   (let [matches? (if (instance? js/RegExp str-or-pattern)
                    #(re-find str-or-pattern (str %))
                    #(< -1 (.indexOf (str %) (str str-or-pattern))))
-        defs (->> (known-namespaces)
+        defs (->> (ast/known-namespaces @st)
                   (mapcat (fn [ns]
                             (let [ns-name (str ns)]
                               (map #(symbol ns-name (str %))
-                                   (filter matches? (keys (ns-publics ns)))))))
+                                   (filter matches? (keys (ast/ns-publics @st ns)))))))
                   sort)]
     (call-back! opts cb data (common/wrap-success (seq defs)))))
 
@@ -612,9 +580,9 @@
                 (fn [m]
                   (update-in (select-keys m [:ns :name :doc :forms :arglists :macro :url])
                              [:name] #(if-not (nil? %) (clojure.core/name %) %)))
-                (sort-by :name (vals (ns-interns ns)))))
-             (known-namespaces))
-            (map #(select-keys (get-namespace %) [:name :doc]) (known-namespaces))
+                (sort-by :name (vals (ast/ns-interns @st ns)))))
+             (ast/known-namespaces @st))
+            (map #(select-keys (ast/namespace @st %) [:name :doc]) (ast/known-namespaces @st))
             (map docs/special-doc (keys docs/special-doc-map)))
         ms (for [m ms
                  :when (and (:doc m)
