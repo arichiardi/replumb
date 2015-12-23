@@ -786,11 +786,13 @@
   ([]
    (reset-env! nil))
   ([namespaces]
-   (read-eval-call {} identity "(in-ns 'cljs.user)")
+   (reset-env! {} namespaces))
+  ([opts namespaces]
+   (read-eval-call opts identity "(in-ns 'cljs.user)")
    (doseq [ns namespaces]
      (purge-ns! st (symbol ns))
      (purge-ns! st (symbol (str ns "$macros"))))
    (if (seq @cljs.js/*loaded*)
      (throw (ex-info (str "The cljs.js/*loaded* atom still contains " @cljs.js/*loaded* " - make sure you purge dependent namespaces.") ex-info-data)))
    (reset-last-warning!)
-   (read-eval-call {} identity "(set! *e nil)")))
+   (read-eval-call opts identity "(set! *e nil)")))
