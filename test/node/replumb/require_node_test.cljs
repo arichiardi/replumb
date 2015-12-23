@@ -33,7 +33,7 @@
       (is (success? res) "(require ...) and (doc clojure.set) should succeed.")
       (is (valid-eval-result? docstring) "(require ...) and (doc clojure.set) should be a valid result")
       (is (re-find #"Set operations such as union/intersection" docstring) "(require ...) and (doc clojure.set) should return valid docstring")
-      (reset-env! ['clojure.set]))
+      (reset-env! '[clojure.set]))
 
     ;; https://github.com/ScalaConsultants/replumb/issues/59
     (let [res (do (read-eval-call "(require 'clojure.string)")
@@ -154,7 +154,7 @@ trim-newline
       (is (valid-eval-result? out) "(require 'foo.bar.baz) should be a valid result")
       (is (= 'cljs.user (repl/current-ns)) "(require 'foo.bar.baz) should not change namespace")
       (is (= "nil" out) "(require 'foo.bar.baz) should return \"nil\"")
-      (reset-env! ['foo.bar.baz]))
+      (reset-env! '[foo.bar.baz]))
 
     (let [res (do (read-eval-call "(require 'foo.bar.baz)")
                   (read-eval-call "foo.bar.baz/a"))
@@ -163,7 +163,7 @@ trim-newline
       (is (valid-eval-result? out) "(require 'foo.bar.baz) and foo.bar.baz/a should be a valid result")
       (is (= 'cljs.user (repl/current-ns)) "(require 'foo.bar.baz) and foo.bar.baz/a should not change namespace")
       (is (= "\"whatever\"" out) "(require 'foo.bar.baz) and foo.bar.baz/a should return \"whatever\"")
-      (reset-env! ['foo.bar.baz]))
+      (reset-env! '[foo.bar.baz]))
 
     ;; https://github.com/ScalaConsultants/replumb/issues/39
     (let [res (do (read-eval-call "(require 'foo.bar.baz)")
@@ -173,7 +173,7 @@ trim-newline
       (is (valid-eval-result? out) "(require 'foo.bar.baz) and foo.bar.baz/const-a should be a valid result")
       (is (= 'cljs.user (repl/current-ns)) "(require 'foo.bar.baz) and foo.bar.baz/const-a should not change namespace")
       (is (= "1024" out) "(require 'foo.bar.baz) and foo.bar.baz/const-a should return \"1024\"")
-      (reset-env! ['foo.bar.baz]))
+      (reset-env! '[foo.bar.baz]))
 
     ;; AR - Upstream problem (already solved)
     ;; https://github.com/ScalaConsultants/replumb/issues/66
@@ -184,7 +184,7 @@ trim-newline
         (is (valid-eval-result? out) "(require '[foo.bar.baz :refer [a]]) and a should be a valid result")
         (is (= 'cljs.user (repl/current-ns)) "(require '[foo.bar.baz :refer [a]]) and a should not change namespace")
         (is (= "\"whatever\"" out) "(require '[foo.bar.baz :refer [a]]) and a should return \"whatever\"")
-        (reset-env! ['foo.bar.baz 'a]))
+        (reset-env! '[foo.bar.baz]))
     #_(let [res (do (read-eval-call "(require '[foo.bar.baz :refer [const-a]])")
                     (read-eval-call "const-a"))
             out (unwrap-result res)]
@@ -192,7 +192,7 @@ trim-newline
         (is (valid-eval-result? out) "(require '[foo.bar.baz :refer [const-a]]) and const-a should be a valid result")
         (is (= 'cljs.user (repl/current-ns)) "(require '[foo.bar.baz :refer [const-a]]) and const-a should not change namespace")
         (is (= "1024" out) "(require '[foo.bar.baz :refer [const-a]]) and const-a should return 1024")
-        (reset-env! ['foo.bar.baz 'const-a])))
+        (reset-env! '[foo.bar.baz])))
 
   (deftest process-goog-import
     ;; AR - requiring clojure.string in turns imports goog.string
@@ -496,7 +496,7 @@ trim-newline
         (is (valid-eval-result? out) "(require 'alterable.core) and alterable.core/b should be a valid result")
         (is (= 'cljs.user (repl/current-ns)) "(require 'alterable.core) and alterable.core/b should not change namespace")
         (is (= "\"pre\"" out) "(require 'alterable.core) and alterable.core/b should return \"pre\"")
-        (reset-env! ['alterable.core]))
+        (reset-env! '[alterable.core]))
 
       ;; Writing "post" version of alterable.core
       (io/write-file! alterable-core-path post-content)
@@ -507,7 +507,7 @@ trim-newline
         (is (valid-eval-result? out) "(require 'alterable.core :reload) and alterable.core/b should be a valid result")
         (is (= 'cljs.user (repl/current-ns)) "(require 'alterable.core :reload) and alterable.core/b should not change namespace")
         (is (= "\"post\"" out) "(require 'alterable.core :reload) and alterable.core/b should return \"post\"")
-        (reset-env! ['alterable.core]))
+        (reset-env! '[alterable.core]))
 
       (io/delete-file! alterable-core-path)))
 

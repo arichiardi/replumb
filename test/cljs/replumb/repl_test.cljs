@@ -226,7 +226,7 @@ select-keys
       (is (success? res) "(in-ns 'symbol) should succeed")
       (is (valid-eval-result? out) "(in-ns 'symbol) should be a valid result")
       (is (= "nil" out) "(in-ns 'symbol) should return nil")
-      (reset-env! ['first.namespace]))
+      (reset-env! '[first.namespace]))
 
     ;; Note that (do (in-ns 'my.namespace) (def a 3) (in-ns 'cljs) my.namespace/a)
     ;; Does not work in ClojureScript!

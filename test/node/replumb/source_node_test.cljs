@@ -67,7 +67,7 @@
       (is (success? res) "(source clojure.set/union) should succeed.")
       (is (valid-eval-result? source-string) "(source clojure.set/union) should be a valid result")
       (is (= expected source-string) "(source clojure.set/union) should return valid source")
-      (reset-env! ['clojure.set]))
+      (reset-env! '[clojure.set]))
 
     (let [res (do (read-eval-call "(require 'clojure.string)")
                   (read-eval-call "(source clojure.string/trim)"))
