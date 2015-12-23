@@ -129,12 +129,22 @@
 (let [validated-echo-cb (partial repl/validated-call-back! echo-callback)
       target-opts (nodejs-options load/no-resource-load-fn!)
       reset-env! (partial repl/reset-env! target-opts)
-      read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)]
-  (deftest source-when-read-file-return-nil
-    (let [res (do (read-eval-call "(require 'clojure.string)")
-                  (read-eval-call "(source clojure.string/trim)"))
+      read-eval-call-no-resource (partial repl/read-eval-call target-opts validated-echo-cb)
+      read-eval-call-nil-read-file-fn (partial repl/read-eval-call (assoc target-opts :read-file-fn! nil) validated-echo-cb)]
+
+  (deftest source-corner-cases
+    (let [res (do (read-eval-call-no-resource "(require 'clojure.string)")
+                  (read-eval-call-no-resource "(source clojure.string/trim)"))
           source-string (unwrap-result res)]
-      (is (success? res) "(source clojure.string/trim) should succeed.")
-      (is (valid-eval-result? source-string) "(source clojure.string/trim) should be a valid result")
-      (is (= "nil" source-string) "(source clojure.string/trim) should return nil")
+      (is (success? res) "(source ...) when *load-fn* returns nil should succeed.")
+      (is (valid-eval-result? source-string) "(source ...) when *load-fn* returns nil should be a valid result")
+      (is (= "nil" source-string) "(source ...) when *load-fn* returns nil should return nil")
+      (reset-env! '[clojure.string goog.string goog.string.StringBuffer]))
+
+    (let [res (do (read-eval-call-nil-read-file-fn "(require 'clojure.string)")
+                  (read-eval-call-nil-read-file-fn "(source clojure.string/trim)"))
+          source-string (unwrap-result res)]
+      (is (success? res) "(source ...) when :read-file-fn! is nil should succeed.")
+      (is (valid-eval-result? source-string) "(source ...) when :read-file-fn! is nil should be a valid result")
+      (is (= "nil" source-string) "(source ...) when :read-file-fn! is nil should return nil")
       (reset-env! '[clojure.string goog.string goog.string.StringBuffer]))))
