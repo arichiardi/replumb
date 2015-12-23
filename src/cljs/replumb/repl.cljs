@@ -206,19 +206,24 @@
   src-cb] where src-cb is itself a function (fn [source] ...) that needs
   to be called with the full source of the library (as string)."
   [verbose? src-paths read-file-fn!]
-  (fn [{:keys [name macros path] :as load-map} cb]
-    (cond
-      (load/skip-load? load-map) (load/fake-load-fn! load-map cb)
-      (re-matches #"^goog/.*" path) (if-let [goog-path (get-goog-path name)]
-                                      (load/read-files-and-callback! verbose?
-                                                                     (load/goog-file-paths-to-try src-paths goog-path)
-                                                                     read-file-fn!
-                                                                     cb)
-                                      (cb nil))
-      :else (load/read-files-and-callback! verbose?
-                                           (load/file-paths-to-try src-paths macros path)
-                                           read-file-fn!
-                                           cb))))
+  (if (and read-file-fn! (sequential? src-paths))
+    (fn [{:keys [name macros path] :as load-map} cb]
+      (cond
+        (load/skip-load? load-map) (load/fake-load-fn! load-map cb)
+        (re-matches #"^goog/.*" path) (if-let [goog-path (get-goog-path name)]
+                                        (load/read-files-and-callback! verbose?
+                                                                       (load/goog-file-paths-to-try src-paths goog-path)
+                                                                       read-file-fn!
+                                                                       cb)
+                                        (cb nil))
+        :else (load/read-files-and-callback! verbose?
+                                             (load/file-paths-to-try src-paths macros path)
+                                             read-file-fn!
+                                             cb)))
+    (do (when verbose?
+          (common/debug-prn "Invalid :read-file-fn! or :src-paths (is it a valid sequence?). No *load-fn* will be passed to cljs.js."))
+        ;; AR - by returning nil we force a "No *load-fn* set" in cljs.js
+        nil)))
 
 ;;;;;;;;;;;;;;;;
 ;;; Options ;;;;
@@ -251,14 +256,10 @@
   [opts user-opts]
   (assoc opts :load-fn!
          (or (:load-fn! user-opts)
-             (let [read-file-fn! (:read-file-fn! user-opts)
-                   src-paths (:src-paths user-opts)]
-               (if (and read-file-fn! (sequential? src-paths))
-                 (make-load-fn (:verbose user-opts)
-                               (into [] src-paths)
-                               read-file-fn!)
-                 (when (:verbose user-opts)
-                   (common/debug-prn "Invalid :read-file-fn! or :src-paths (is it a valid sequence?). Cannot create *load-fn*.")))))))
+             ;; AR - make-load-fn will validate :src-paths/:read-file-fn!
+             (make-load-fn (:verbose user-opts)
+                           (:src-paths user-opts)
+                           (:read-file-fn! user-opts)))))
 
 (defn add-init-fns
   "Given current and user options, returns a map containing a
@@ -513,20 +514,24 @@
 
 (defn fetch-source
   [{:keys [verbose read-file-fn!]} var paths-to-try cb]
-  (load/read-files-and-callback! verbose
-                                 paths-to-try
-                                 read-file-fn!
-                                 (fn [result]
-                                   (if result
-                                     (let [source (:source result)
-                                           rdr (rt/source-logging-push-back-reader source)]
-                                       (dotimes [_ (dec (:line var))] (rt/read-line rdr))
-                                       (-> (r/read {:read-cond :allow :features #{:cljs}} rdr)
-                                           meta
-                                           :source
-                                           common/wrap-success
-                                           cb))
-                                     (cb (common/wrap-success "nil"))))))
+  (if read-file-fn!
+    (load/read-files-and-callback! verbose
+                                   paths-to-try
+                                   read-file-fn!
+                                   (fn [result]
+                                     (if result
+                                       (let [source (:source result)
+                                             rdr (rt/source-logging-push-back-reader source)]
+                                         (dotimes [_ (dec (:line var))] (rt/read-line rdr))
+                                         (-> (r/read {:read-cond :allow :features #{:cljs}} rdr)
+                                             meta
+                                             :source
+                                             common/wrap-success
+                                             cb))
+                                       (cb (common/wrap-success "nil")))))
+    (do (when verbose
+          (common/debug-prn "No :read-file-fn! provided, skipping source fetching..."))
+        (cb (common/wrap-success "nil")))))
 
 (defn process-source
   [opts cb data sym]
@@ -625,18 +630,21 @@
   [opts]
   (let [verbose? (:verbose opts)
         read-file! (:read-file-fn! opts)]
-    (when verbose?
-      (common/debug-prn "Discovering goog/deps.js in" (:src-paths opts)))
-    (doseq [path (:src-paths opts)]
-      (let [goog-deps-path (str (common/normalize-path path) "goog/deps.js")]
-        (read-file! goog-deps-path
-                    (fn [content]
-                      (when content
-                        (do (when verbose?
-                              (common/debug-prn "Found valid" goog-deps-path))
-                            (swap! app-env
-                                   update :goog-provide->path
-                                   merge (goog-deps-map content))))))))))
+    (if read-file!
+      (do (when verbose?
+            (common/debug-prn "Discovering goog/deps.js in" (:src-paths opts)))
+          (doseq [path (:src-paths opts)]
+            (let [goog-deps-path (str (common/normalize-path path) "goog/deps.js")]
+              (read-file! goog-deps-path
+                          (fn [content]
+                            (when content
+                              (do (when verbose?
+                                    (common/debug-prn "Found valid" goog-deps-path))
+                                  (swap! app-env
+                                         update :goog-provide->path
+                                         merge (goog-deps-map content)))))))))
+      (when verbose?
+        (common/debug-prn "No :read-file-fn! provided, skipping goog/deps.js discovering...")))))
 
 (defn init-repl!
   "The init-repl function. It uses the following opts keys:
