@@ -7,6 +7,7 @@
             [replumb.common :as common :refer [echo-callback valid-eval-result?
                                                extract-message valid-eval-error?]]
             [replumb.repl :as repl]
+            [replumb.ast :as ast]
             [replumb.load :as load]
             [replumb.nodejs.io :as io]))
 
@@ -16,7 +17,8 @@
 ;; nodejs environment, see PR #57
 (let [src-paths ["dev-resources/private/test/node/compiled/out"
                  "dev-resources/private/test/src/cljs"
-                 "dev-resources/private/test/src/clj"]
+                 "dev-resources/private/test/src/clj"
+                 "dev-resources/private/test/src/cljc"]
       validated-echo-cb (partial repl/validated-call-back! echo-callback)
       target-opts (nodejs-options src-paths io/read-file!)
       read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)
@@ -316,8 +318,18 @@ trim-newline
       (is (re-find #"ABCDEF" out) "The result should be ABCDEF")
       (repl/reset-env! '[my.namespace foo.bar.baz])))
 
-  (deftest ns-macro-with-require-macro
-    ;; baz.clj file pared with baz.cljs
+  ;; quux.clj is a single .clj file and namespace
+  ;; baz.clj file is paired with baz.cljs (but with no require-macros in baz.cljs)
+  ;; core.cljc requires macros.cljc
+  (deftest ns-macro-require-macros
+    (let [res (do (read-eval-call "(ns my.namespace (:require-macros [foo.bar.quux]))")
+                  (read-eval-call "(foo.bar.quux/mul-quux 2 2)"))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:require-macros ...)) and (foo.bar.quux/mul-quux 2 2) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...)) and (foo.bar.quux/mul-quux 2 2) should be a valid result.")
+      (is (= "4" out) "(foo.quux/mul-quux 2 2) should be 4")
+      (repl/reset-env! '[my.namespace foo.bar.quux])) 
+
     (let [res (do (read-eval-call "(ns my.namespace (:require-macros [foo.bar.baz]))")
                   (read-eval-call "(foo.bar.baz/mul-baz 2 2)"))
           out (unwrap-result res)]
@@ -326,13 +338,34 @@ trim-newline
       (is (= "4" out) "(foo.bar.bar/mul-baz 2 2) should be 4")
       (repl/reset-env! '[my.namespace foo.bar.baz]))
 
-    ;; only quux.clj file and namespace
-    (let [res (do (read-eval-call "(ns my.namespace (:require-macros [foo.bar.quux]))")
-                  (read-eval-call "(foo.bar.quux/mul-quux 2 2)"))
+    (let [res (do (read-eval-call "(ns my.namespace (:require-macros [foo.bar.core]))")
+                  (read-eval-call "(foo.bar.core/mul-core 30 1)"))
           out (unwrap-result res)]
-      (is (success? res) "(ns my.namespace (:require-macros ...)) and (foo.bar.quux/mul-quux 2 2) should succeed")
-      (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...)) and (foo.bar.quux/mul-quux 2 2) should be a valid result.")
-      (is (= "4" out) "(foo.quux/mul-quux 2 2) should be 4")
+      (is (success? res) "(ns my.namespace (:require-macros ...)) and (foo.bar.core/mul-core 30 1) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...])) and (foo.bar.core/mul-core 30 1) should be a valid result.")
+      (is (= "30" out) "(foo.bar.core/mul-core 30 1) should be 30")
+      (repl/reset-env! '[my.namespace foo.bar.core foo.bar.macros])))
+
+  (deftest ns-macro-require-macros-as
+    ;; TB - this test fails but shouldn't, see https://github.com/clojure/clojurescript/wiki/Differences-from-Clojure#lisp
+    ;; see also http://dev.clojure.org/jira/browse/CLJS-1449
+    ;; I'm leaving it here for reference, it needs to be changed when the bug will be resolved
+    ;; the issue in replumb is https://github.com/ScalaConsultants/replumb/issues/90
+    (let [res (do (read-eval-call "(ns my.namespace (:require-macros [foo.bar.baz :as f]))")
+                  (read-eval-call "(f/mul-baz 20 20)"))
+          error (unwrap-result res)]
+      (is (not (success? res)) "(ns my.namespace (:require-macros ...:as...)) and (f/mul-baz 20 20) should not succeed")
+      (is (valid-eval-error? error) "(ns my.namespace (:require-macros ...:as...)) and (f/mul-baz 20 20) should be an instance of js/Error")
+      (is (re-find #"ERROR" (extract-message error)) "(ns my.namespace (:require-macros ...:as...)) and (f/mul-baz 20 20) should have correct error message")
+      (repl/reset-env! '[my.namespace foo.bar.baz])))
+
+  (deftest ns-macro-require-macros-refer
+    (let [res (do (read-eval-call "(ns my.namespace (:require-macros [foo.bar.quux :refer [mul-quux]]))")
+                  (read-eval-call "(mul-quux 3 3)"))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:require-macros ... :refer ...)) and (mul-quux 3 3) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...:refer...)) and (mul-quux 3 3) should be a valid result.")
+      (is (= "9" out) "(mul-quux 3 3) should be 9")
       (repl/reset-env! '[my.namespace foo.bar.quux]))
 
     (let [res (do (read-eval-call "(ns my.namespace (:require-macros [foo.bar.baz :refer [mul-baz]]))")
@@ -343,12 +376,21 @@ trim-newline
       (is (= "9" out) "(mul-baz 3 3) should be 9")
       (repl/reset-env! '[my.namespace foo.bar.baz]))
 
-    (let [res (do (read-eval-call "(ns my.namespace (:require-macros [foo.bar.quux :refer [mul-quux]]))")
-                  (read-eval-call "(mul-quux 3 3)"))
+    (let [res (do (read-eval-call "(ns my.namespace (:require-macros [foo.bar.core :refer [mul-core]]))")
+                  (read-eval-call "(mul-core 30 3)"))
           out (unwrap-result res)]
-      (is (success? res) "(ns my.namespace (:require-macros ... :refer ...)) and (mul-quux 3 3) should succeed")
-      (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...:refer...)) and (mul-quux 3 3) should be a valid result.")
-      (is (= "9" out) "(mul-quux 3 3) should be 9")
+      (is (success? res) "(ns my.namespace (:require-macros...:refer...])) and (mul-core 30 3) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require-macros...:refer...)) and (mul-core 30 3) should be a valid result")
+      (is (= "90" out) "(mul-core 30 3) should be 90")
+      (repl/reset-env! '[my.namespace foo.bar.core foo.bar.macros])))
+
+  (deftest ns-macro-use-macros
+    (let [res (do (read-eval-call "(ns my.namespace (:use-macros [foo.bar.quux :only [mul-quux]]))")
+                  (read-eval-call "(mul-quux 5 5)"))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:use-macros ...)) and (mul-quux 5 5) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:use-macros ...)) and (mul-quux 5 5) should be a valid result.")
+      (is (= "25" out) "(mul-quux 25) should be 25")
       (repl/reset-env! '[my.namespace foo.bar.quux]))
 
     (let [res (do (read-eval-call "(ns my.namespace (:use-macros [foo.bar.baz :only [mul-baz]]))")
@@ -359,14 +401,87 @@ trim-newline
       (is (= "25" out) "(mul-baz 5 5) should be 25")
       (repl/reset-env! '[my.namespace foo.bar.baz]))
 
-    (let [res (do (read-eval-call "(ns my.namespace (:use-macros [foo.bar.quux :only [mul-quux]]))")
-                  (read-eval-call "(mul-quux 5 5)"))
+    (let [res (do (read-eval-call "(ns my.namespace (:use-macros [foo.bar.core :only [mul-core]]))")
+                  (read-eval-call "(mul-core 30 4)"))
           out (unwrap-result res)]
-      (is (success? res) "(ns my.namespace (:use-macros ...)) and (mul-quux 5 5) should succeed")
-      (is (valid-eval-result? out) "(ns my.namespace (:use-macros ...)) and (mul-quux 5 5) should be a valid result.")
-      (is (= "25" out) "(mul-quux 25) should be 25")
-      (repl/reset-env! '[my.namespace foo.bar.quux])))
+      (is (success? res) "(ns my.namespace (:use-macros...:only...])) and (mul-core 30 4) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:use-macros...:only...)) and (mul-core 30 4) should be a valid result")
+      (is (= "120" out) "(mul-core 30 4) should be 120")
+      (repl/reset-env! '[my.namespace foo.bar.core foo.bar.macros])))
 
+  (deftest ns-macro-require
+    ;; cannot require clj file
+    (let [res (read-eval-call "(ns my.namespace (:require [foo.bar.quux]))")
+          error (unwrap-result res)]
+      (is (not (success? res)) "(ns my.namespace (:require [foo.bar.quux])) should not succeed")
+      (is (valid-eval-error? error) "(ns my.namespace (:require [foo.bar.quux])) should be an instance of jsError.")
+      (is (re-find #"No such namespace: foo.bar.quux" (extract-message error)) "(ns my.namespace (:require [foo.bar.quux])) should have a valid error message.")
+      (repl/reset-env! '[my.namespace]))
+
+    (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.core]))")
+                  (read-eval-call "(foo.bar.core/add-five 30)"))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:require...])) and (foo.bar.core/add-five 30) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require...])) and (foo.bar.core/add-five 30) should be a valid result")
+      (is (= "35" out) "(foo.bar.core/add-five 30) should be 35")
+      (repl/reset-env! '[my.namespace foo.bar.core foo.bar.macros]))
+
+    (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.core :as f]))")
+                  (read-eval-call "(f/add-five 31)"))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:require...:as...])) and (f/add-five 31) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require...:as...])) and (f/add-five 31) should be a valid result")
+      (is (= "36" out) "(f/add-five 31) should be 36")
+      (repl/reset-env! '[my.namespace foo.bar.core foo.bar.macros])))
+
+  (deftest ns-macro-require-include-macros
+    ;; solved in 1.7.202 - see commented test below
+    ;; the issue in replumb is https://github.com/ScalaConsultants/replumb/issues/91
+    (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.baz :include-macros true]))")
+                  (read-eval-call "(foo.bar.baz/mul-baz 6 6)"))
+          error (unwrap-result res)]
+      (is (not (success? res)) "(ns my.namespace (:require ... :include-macros ...)) and (foo.bar.baz/mul-baz 6 6) should not succeed")
+      (is (valid-eval-error? error) "(ns my.namespace (:require ...:include-macros...)) and (foo.bar.baz/mul-baz 6 6) should be an instance of jsError")
+      (is (re-find #"Cannot read property 'call' of undefined" (extract-message error)) "(ns my.namespace (:require ...:include-macros...)) and (foo.bar.baz/mul-baz 6 6) should have correct error message.")
+      (repl/reset-env! '[my.namespace foo.bar.baz]))
+
+    ;; (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.baz :include-macros true]))")
+    ;;               (read-eval-call "(foo.bar.baz/mul-baz 6 6)"))
+    ;;       out (unwrap-result res)]
+    ;;   (is (success? res) "(ns my.namespace (:require ... :include-macros ...)) and (f/mul-baz 6 6) should succeed")
+    ;;   (is (valid-eval-result? out) "(ns my.namespace (:require ...:include-macros...)) and (f/mul-baz 6 6) should be a valid result.")
+    ;;   (is (= "36" out) "(f/mul-baz 6 6) should be 36")
+    ;;   (repl/reset-env! '[my.namespace foo.bar.baz]))
+
+    (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.core :as f :include-macros true]))")
+                  (read-eval-call "(f/mul-core 30 5)"))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:require...:include-macros...])) and (f/mul-core 30 5) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require...:as...])) and (f/mul-core 30 5) should be a valid result")
+      (is (= "150" out) "(f/mul-core 30 5) should be 150")
+      (repl/reset-env! '[my.namespace foo.bar.core foo.bar.macros])))
+
+  (deftest ns-macro-require-refer-macros
+    ;; solved in 1.7.202 - see commented version below
+    ;; the issue in replumb is https://github.com/ScalaConsultants/replumb/issues/91
+    (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.baz :refer-macros [mul-baz]]))")
+                  (read-eval-call "(mul-baz 10 12)"))
+          error (unwrap-result res)]
+      (is (not (success? error)) "(ns my.namespace (:require ...)) and (mul 10 12) should not succeed")
+      (is (valid-eval-error? error) "(ns my.namespace (:require ...)) and (mul 10 12) should be an instance of js/Error")
+      (is (re-find #"ERROR" (extract-message error))
+          "(ns my.namespace (:require ...)) and (mul 10 12) should have correct error message")
+      (repl/reset-env! '[my.namespace foo.bar.baz]))
+
+    ;; (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.baz :refer-macros [mul-baz]]))")
+    ;;               (read-eval-call "(mul-baz 10 12)"))
+    ;;       out (unwrap-result res)]
+    ;;   (is (success? res) "(ns my.namespace (:require ...)) and (mul 10 12) should succeed")
+    ;;   (is (valid-eval-result? out) "(ns my.namespace (:require ...)) and (mul 10 12) should be a valid result")
+    ;;   (is (= "120" out) "(mul 10 12) should be equal to 120")
+    ;;   (repl/reset-env! '[my.namespace foo.bar.baz]))
+)
+  
   (deftest process-reload
     (let [alterable-core-path "dev-resources/private/test/src/cljs/alterable/core.cljs"
           pre-content "(ns alterable.core)\n\n(def b \"pre\")"
@@ -446,7 +561,15 @@ trim-newline
     (process-require)
     (process-goog-import)
     (ns-macro)
-    (ns-macro-with-require-macro)
+
+    (ns-macro-require-refer-macros)
+    (ns-macro-require-include-macros)
+    (ns-macro-require-macros)
+    (ns-macro-require-macros-refer)
+    (ns-macro-use-macros)
+    (ns-macro-require)
+    (ns-macro-require-macros-as)
+
     (process-reload)
     (process-reload-all)))
 
