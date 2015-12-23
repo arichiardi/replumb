@@ -679,6 +679,11 @@
   [opts]
   (swap! app-env assoc :previous-init-opts (auto-init-opts opts)))
 
+(defn reset-init-opts!
+  "Reset the initialization persisted options."
+  []
+  (swap! app-env assoc :previous-init-opts {}))
+
 (defn init-closure-index!
   "Create and swap in app-env a map from Google Closure provide string
   to their respective path (without extension).  It merges with the
@@ -831,4 +836,5 @@
    (if (seq @cljs.js/*loaded*)
      (throw (ex-info (str "The cljs.js/*loaded* atom still contains " @cljs.js/*loaded* " - make sure you purge dependent namespaces.") ex-info-data)))
    (reset-last-warning!)
-   (read-eval-call opts identity "(set! *e nil)")))
+   (read-eval-call opts identity "(set! *e nil)")
+   (reset-init-opts!)))
