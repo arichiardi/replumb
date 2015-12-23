@@ -27,7 +27,8 @@
 (defonce app-env (atom {:current-ns 'cljs.user
                         :last-eval-warning nil
                         :initializing? false
-                        :needs-init? true}))
+                        :needs-init? true
+                        :previous-init-opts {}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Util fns - many from mfikes/plank ;;;
@@ -622,6 +623,62 @@
 ;;; Initialization ;;;
 ;;;;;;;;;;;;;;;;;;;;;;
 
+(def init-option-set #{:init-fn! :src-paths})
+
+;;; Init FSM
+
+(defn initializing-state
+  "If we are not already :initializing? and :needs-init? is true, then
+  move to the \"Initializing\" state, signaling that the init is in
+  progress."
+  [old-app-env]
+  (if (and (not (:initializing? old-app-env))
+           (:needs-init? old-app-env))
+    (assoc old-app-env :initializing? true)
+    (assoc old-app-env :needs-init? false)))
+
+(defn initialized-state
+  "Move the state to \"Initialized\", signaling that the init is not in
+  progress and done."
+  [old-app-env]
+  {:pre [(:needs-init? old-app-env) (:initializing? old-app-env)]}
+  (merge old-app-env {:initializing? false
+                      :needs-init? false}))
+
+(defn auto-init-opts
+  "Just assoc the options to persist to the input map."
+  [opts]
+  (into {} (filter #(init-option-set (first %)) opts)))
+
+(defn needs-init-state
+  "Reset the initialization state, moving to \"Needs Init\", signaling
+  that the we need to initialize the app."
+  [old-app-env]
+  (merge old-app-env {:initializing? false
+                      :needs-init? true}))
+
+(defn needs-init-from-opts-state
+  "Update the :previous-auto-init-opts and, if necessary, also
+  turns :needs-init? to true, concretely deciding whether when need to
+  initialise again. Move the state to \"Needs Init\"."
+  [old-app-env new-opts]
+  (if-not (= (:previous-init-opts old-app-env)
+             (auto-init-opts new-opts))
+    (needs-init-state old-app-env)
+    old-app-env))
+
+(defn force-init!
+  "Force the initialization at the next read-eval-call. Use this every
+  time an option that needs to be read at initialization time changes,
+  e.g. :source-path. In the future this will be automated."
+  []
+  (swap! app-env needs-init-state))
+
+(defn persist-init-opts!
+  "Persist the options necessary to the initialization FSM to work."
+  [opts]
+  (swap! app-env assoc :previous-init-opts (auto-init-opts opts)))
+
 (defn init-closure-index!
   "Create and swap in app-env a map from Google Closure provide string
   to their respective path (without extension).  It merges with the
@@ -656,45 +713,24 @@
   [opts data]
   (when (:verbose opts)
     (common/debug-prn "Initializing REPL environment with data" (println data)))
-  (assert (= cljs.analyzer/*cljs-ns* 'cljs.user))
+
   ;; Target/user init, we need at least one init-fn, the default init function
   (let [init-fns (:init-fns opts)]
     (assert (> (count init-fns) 0))
     (doseq [init-fn! init-fns]
       (init-fn! data)))
   ;; Building the closure index
-  (init-closure-index! opts))
-
-(defn update-to-initializing
-  [old-app-env]
-  (if (and (not (:initializing? old-app-env))
-           (:needs-init? old-app-env))
-    (assoc old-app-env :initializing? true)
-    (assoc old-app-env :needs-init? false)))
-
-(defn update-to-initialized
-  [old-app-env]
-  {:pre [(:needs-init? old-app-env) (:initializing? old-app-env)]}
-  (merge old-app-env {:initializing? false
-                      :needs-init? false}))
-
-(defn reset-init-state
-  [old-app-env]
-  (merge old-app-env {:initializing? false
-                      :needs-init? true}))
+  (init-closure-index! opts)
+  ;; Persist the options I need for auto init
+  (persist-init-opts! opts))
 
 (defn init-repl-if-necessary!
   [opts data]
-  (when (:needs-init? (swap! app-env update-to-initializing))
+  (when (:needs-init? (swap! app-env #(-> %
+                                          (needs-init-from-opts-state opts)
+                                          initializing-state)))
     (do (init-repl! opts data)
-        (swap! app-env update-to-initialized))))
-
-(defn force-init!
-  "Force the initialization at the next read-eval-call. Use this every
-  time an option that needs to be read at initialization time changes,
-  e.g. :source-path. In the future this will be automated."
-  []
-  (swap! app-env reset-init-state))
+        (swap! app-env initialized-state))))
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;;; Read-Eval-Call ;;;
@@ -785,8 +821,8 @@
   It accepts a sequence of symbols or strings."
   ([]
    (reset-env! nil))
-  ([namespaces]
-   (reset-env! {} namespaces))
+  ([opts]
+   (reset-env! opts nil))
   ([opts namespaces]
    (read-eval-call opts identity "(in-ns 'cljs.user)")
    (doseq [ns namespaces]
