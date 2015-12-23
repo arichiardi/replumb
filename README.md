@@ -105,7 +105,8 @@ the result map, whose result keys will be:
 
 The third parameter is the source string to be read and evaluated.
 
-It initializes the repl harness if necessary.
+It initializes the repl harness either on first execution or if an option in
+`#{:src-paths :init-fn!}` changes from the previous `read-eval-call`.
   
 See the [```browser-repl```](https://github.com/ScalaConsultants/replumb/blob/master/repl-demo/browser/cljs/replumb_repl/console.cljs)
 for an actual implementation using [```jq-console```](https://github.com/replit/jq-console).

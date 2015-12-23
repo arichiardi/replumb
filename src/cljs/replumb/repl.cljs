@@ -759,14 +759,14 @@
       :target ;; *target* as keyword, :default is the default
 
   * :load-fn! - will override replumb's default cljs.js/*load-fn*.
-  It rules out `:read-file-fn!`, losing any perk of using replumb.load
+  It rules out :read-file-fn!, losing any perk of using replumb.load
   helpers. Use it if you know what you are doing.
 
-  * :read-file-fn!  an asynchronous 2-arity function (fn [file-path
-  src-cb] ...) where src-cb is itself a function (fn [source] ...)  that
-  needs to be called when ready with the found file source as
-  string (nil if no file is found). It is mutually exclusive with
-  :load-fn! and will be ignored in case both are present.
+  * :read-file-fn! an asynchronous 2-arity function with signature
+  [file-path src-cb] where src-cb is itself a function (fn [source] ...)
+  that needs to be called with the file content as string (nil if no
+  file is found). It is mutually exclusive with :load-fn! and will be
+  ignored in case both are present
 
   * :src-paths - a vector of paths containing source files.
 
@@ -783,7 +783,9 @@
 
   The third parameter is the source string to be read and evaluated.
 
-  It initializes the repl harness if necessary."
+  It initializes the repl harness either on first execution or if an
+  option in #{:src-paths :init-fn!} changes from the previous
+  `read-eval-call`."
   [opts cb source]
   (try
     (let [expression-form (repl-read-string source)
