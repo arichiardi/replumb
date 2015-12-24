@@ -155,7 +155,7 @@
       If the resource could not be resolved, the callback should be invoked with
       nil.
 
-  The 2-arity function accepts a sequence of source paths and
+  The 2-arity function accepts a sequence of source path strings and
   `read-file-fn!`, an asynchronous 2-arity function with signature
   `[file-path src-cb]` where src-cb is itself a function `(fn [source]
   ...)` that needs to be called with the file content as string (`nil`
@@ -195,7 +195,7 @@
       If the resource could not be resolved, the callback should be invoked with
       nil.
 
-  The 2-arity function accepts a sequence of source paths and
+  The 2-arity function accepts a sequence of source path strings and
   `read-file-fn!`, an asynchronous 2-arity function with signature
   `[file-path src-cb]` where src-cb is itself a function `(fn [source]
   ...)` that needs to be called with the file content as string (`nil`
