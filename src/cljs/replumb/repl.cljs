@@ -27,7 +27,8 @@
 (defonce app-env (atom {:current-ns 'cljs.user
                         :last-eval-warning nil
                         :initializing? false
-                        :needs-init? true}))
+                        :needs-init? true
+                        :previous-init-opts {}}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Util fns - many from mfikes/plank ;;;
@@ -206,19 +207,24 @@
   src-cb] where src-cb is itself a function (fn [source] ...) that needs
   to be called with the full source of the library (as string)."
   [verbose? src-paths read-file-fn!]
-  (fn [{:keys [name macros path] :as load-map} cb]
-    (cond
-      (load/skip-load? load-map) (load/fake-load-fn! load-map cb)
-      (re-matches #"^goog/.*" path) (if-let [goog-path (get-goog-path name)]
-                                      (load/read-files-and-callback! verbose?
-                                                                     (load/goog-file-paths-to-try src-paths goog-path)
-                                                                     read-file-fn!
-                                                                     cb)
-                                      (cb nil))
-      :else (load/read-files-and-callback! verbose?
-                                           (load/file-paths-to-try src-paths macros path)
-                                           read-file-fn!
-                                           cb))))
+  (if (and read-file-fn! (sequential? src-paths) (every? string? src-paths))
+    (fn [{:keys [name macros path] :as load-map} cb]
+      (cond
+        (load/skip-load? load-map) (load/fake-load-fn! load-map cb)
+        (re-matches #"^goog/.*" path) (if-let [goog-path (get-goog-path name)]
+                                        (load/read-files-and-callback! verbose?
+                                                                       (load/goog-file-paths-to-try src-paths goog-path)
+                                                                       read-file-fn!
+                                                                       cb)
+                                        (cb nil))
+        :else (load/read-files-and-callback! verbose?
+                                             (load/file-paths-to-try src-paths macros path)
+                                             read-file-fn!
+                                             cb)))
+    (do (when verbose?
+          (common/debug-prn "Invalid :read-file-fn! or :src-paths (is it sequential? Are all paths strings?). No *load-fn* will be passed to cljs.js."))
+        ;; AR - by returning nil we force a "No *load-fn* set" in cljs.js
+        nil)))
 
 ;;;;;;;;;;;;;;;;
 ;;; Options ;;;;
@@ -251,14 +257,10 @@
   [opts user-opts]
   (assoc opts :load-fn!
          (or (:load-fn! user-opts)
-             (let [read-file-fn! (:read-file-fn! user-opts)
-                   src-paths (:src-paths user-opts)]
-               (if (and read-file-fn! (sequential? src-paths))
-                 (make-load-fn (:verbose user-opts)
-                               (into [] src-paths)
-                               read-file-fn!)
-                 (when (:verbose user-opts)
-                   (common/debug-prn "Invalid :read-file-fn! or :src-paths (is it a valid sequence?). Cannot create *load-fn*.")))))))
+             ;; AR - make-load-fn will validate :src-paths/:read-file-fn!
+             (make-load-fn (:verbose user-opts)
+                           (:src-paths user-opts)
+                           (:read-file-fn! user-opts)))))
 
 (defn add-init-fns
   "Given current and user options, returns a map containing a
@@ -513,20 +515,24 @@
 
 (defn fetch-source
   [{:keys [verbose read-file-fn!]} var paths-to-try cb]
-  (load/read-files-and-callback! verbose
-                                 paths-to-try
-                                 read-file-fn!
-                                 (fn [result]
-                                   (if result
-                                     (let [source (:source result)
-                                           rdr (rt/source-logging-push-back-reader source)]
-                                       (dotimes [_ (dec (:line var))] (rt/read-line rdr))
-                                       (-> (r/read {:read-cond :allow :features #{:cljs}} rdr)
-                                           meta
-                                           :source
-                                           common/wrap-success
-                                           cb))
-                                     (cb (common/wrap-success "nil"))))))
+  (if read-file-fn!
+    (load/read-files-and-callback! verbose
+                                   paths-to-try
+                                   read-file-fn!
+                                   (fn [result]
+                                     (if result
+                                       (let [source (:source result)
+                                             rdr (rt/source-logging-push-back-reader source)]
+                                         (dotimes [_ (dec (:line var))] (rt/read-line rdr))
+                                         (-> (r/read {:read-cond :allow :features #{:cljs}} rdr)
+                                             meta
+                                             :source
+                                             common/wrap-success
+                                             cb))
+                                       (cb (common/wrap-success "nil")))))
+    (do (when verbose
+          (common/debug-prn "No :read-file-fn! provided, skipping source fetching..."))
+        (cb (common/wrap-success "nil")))))
 
 (defn process-source
   [opts cb data sym]
@@ -617,6 +623,67 @@
 ;;; Initialization ;;;
 ;;;;;;;;;;;;;;;;;;;;;;
 
+(def init-option-set #{:init-fn! :src-paths})
+
+;;; Init FSM
+
+(defn initializing-state
+  "If we are not already :initializing? and :needs-init? is true, then
+  move to the \"Initializing\" state, signaling that the init is in
+  progress."
+  [old-app-env]
+  (if (and (not (:initializing? old-app-env))
+           (:needs-init? old-app-env))
+    (assoc old-app-env :initializing? true)
+    (assoc old-app-env :needs-init? false)))
+
+(defn initialized-state
+  "Move the state to \"Initialized\", signaling that the init is not in
+  progress and done."
+  [old-app-env]
+  {:pre [(:needs-init? old-app-env) (:initializing? old-app-env)]}
+  (merge old-app-env {:initializing? false
+                      :needs-init? false}))
+
+(defn auto-init-opts
+  "Just assoc the options to persist to the input map."
+  [opts]
+  (into {} (filter #(init-option-set (first %)) opts)))
+
+(defn needs-init-state
+  "Reset the initialization state, moving to \"Needs Init\", signaling
+  that the we need to initialize the app."
+  [old-app-env]
+  (merge old-app-env {:initializing? false
+                      :needs-init? true}))
+
+(defn needs-init-from-opts-state
+  "Update the :previous-auto-init-opts and, if necessary, also
+  turns :needs-init? to true, concretely deciding whether when need to
+  initialise again. Move the state to \"Needs Init\"."
+  [old-app-env new-opts]
+  (if-not (= (:previous-init-opts old-app-env)
+             (auto-init-opts new-opts))
+    (needs-init-state old-app-env)
+    old-app-env))
+
+(defn force-init!
+  "Force the initialization at the next read-eval-call. Use this every
+  time an option that needs to be read at initialization time changes,
+  e.g. :source-path. In the future this will be automated."
+  []
+  (swap! app-env needs-init-state))
+
+(defn persist-init-opts!
+  "Persist the options necessary to the initialization FSM to work."
+  [opts]
+  (swap! app-env assoc :previous-init-opts (auto-init-opts opts)))
+
+(defn reset-init-opts!
+  "Reset the initialization persisted options."
+  []
+  (swap! app-env assoc :previous-init-opts {}))
+
 (defn init-closure-index!
   "Create and swap in app-env a map from Google Closure provide string
   to their respective path (without extension).  It merges with the
@@ -625,18 +692,21 @@
   [opts]
   (let [verbose? (:verbose opts)
         read-file! (:read-file-fn! opts)]
-    (when verbose?
-      (common/debug-prn "Discovering goog/deps.js in" (:src-paths opts)))
-    (doseq [path (:src-paths opts)]
-      (let [goog-deps-path (str (common/normalize-path path) "goog/deps.js")]
-        (read-file! goog-deps-path
-                    (fn [content]
-                      (when content
-                        (do (when verbose?
-                              (common/debug-prn "Found valid" goog-deps-path))
-                            (swap! app-env
-                                   update :goog-provide->path
-                                   merge (goog-deps-map content))))))))))
+    (if read-file!
+      (do (when verbose?
+            (common/debug-prn "Discovering goog/deps.js in" (:src-paths opts)))
+          (doseq [path (:src-paths opts)]
+            (let [goog-deps-path (str (common/normalize-path path) "goog/deps.js")]
+              (read-file! goog-deps-path
+                          (fn [content]
+                            (when content
+                              (do (when verbose?
+                                    (common/debug-prn "Found valid" goog-deps-path))
+                                  (swap! app-env
+                                         update :goog-provide->path
+                                         merge (goog-deps-map content)))))))))
+      (when verbose?
+        (common/debug-prn "No :read-file-fn! provided, skipping goog/deps.js discovering...")))))
 
 (defn init-repl!
   "The init-repl function. It uses the following opts keys:
@@ -648,45 +718,24 @@
   [opts data]
   (when (:verbose opts)
     (common/debug-prn "Initializing REPL environment with data" (println data)))
-  (assert (= cljs.analyzer/*cljs-ns* 'cljs.user))
+
   ;; Target/user init, we need at least one init-fn, the default init function
   (let [init-fns (:init-fns opts)]
     (assert (> (count init-fns) 0))
     (doseq [init-fn! init-fns]
       (init-fn! data)))
   ;; Building the closure index
-  (init-closure-index! opts))
-
-(defn update-to-initializing
-  [old-app-env]
-  (if (and (not (:initializing? old-app-env))
-           (:needs-init? old-app-env))
-    (assoc old-app-env :initializing? true)
-    (assoc old-app-env :needs-init? false)))
-
-(defn update-to-initialized
-  [old-app-env]
-  {:pre [(:needs-init? old-app-env) (:initializing? old-app-env)]}
-  (merge old-app-env {:initializing? false
-                      :needs-init? false}))
-
-(defn reset-init-state
-  [old-app-env]
-  (merge old-app-env {:initializing? false
-                      :needs-init? true}))
+  (init-closure-index! opts)
+  ;; Persist the options I need for auto init
+  (persist-init-opts! opts))
 
 (defn init-repl-if-necessary!
   [opts data]
-  (when (:needs-init? (swap! app-env update-to-initializing))
+  (when (:needs-init? (swap! app-env #(-> %
+                                          (needs-init-from-opts-state opts)
+                                          initializing-state)))
     (do (init-repl! opts data)
-        (swap! app-env update-to-initialized))))
-
-(defn force-init!
-  "Force the initialization at the next read-eval-call. Use this every
-  time an option that needs to be read at initialization time changes,
-  e.g. :source-path. In the future this will be automated."
-  []
-  (swap! app-env reset-init-state))
+        (swap! app-env initialized-state))))
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;;; Read-Eval-Call ;;;
@@ -710,14 +759,14 @@
       :target ;; *target* as keyword, :default is the default
 
   * :load-fn! - will override replumb's default cljs.js/*load-fn*.
-  It rules out `:read-file-fn!`, losing any perk of using replumb.load
+  It rules out :read-file-fn!, losing any perk of using replumb.load
   helpers. Use it if you know what you are doing.
 
-  * :read-file-fn!  an asynchronous 2-arity function (fn [file-path
-  src-cb] ...) where src-cb is itself a function (fn [source] ...)  that
-  needs to be called when ready with the found file source as
-  string (nil if no file is found). It is mutually exclusive with
-  :load-fn! and will be ignored in case both are present.
+  * :read-file-fn! an asynchronous 2-arity function with signature
+  [file-path src-cb] where src-cb is itself a function (fn [source] ...)
+  that needs to be called with the file content as string (nil if no
+  file is found). It is mutually exclusive with :load-fn! and will be
+  ignored in case both are present
 
   * :src-paths - a vector of paths containing source files.
 
@@ -734,7 +783,9 @@
 
   The third parameter is the source string to be read and evaluated.
 
-  It initializes the repl harness if necessary."
+  It initializes the repl harness either on first execution or if an
+  option in #{:src-paths :init-fn!} changes from the previous
+  `read-eval-call`."
   [opts cb source]
   (try
     (let [expression-form (repl-read-string source)
@@ -777,12 +828,15 @@
   It accepts a sequence of symbols or strings."
   ([]
    (reset-env! nil))
-  ([namespaces]
-   (read-eval-call {} identity "(in-ns 'cljs.user)")
+  ([opts]
+   (reset-env! opts nil))
+  ([opts namespaces]
+   (read-eval-call opts identity "(in-ns 'cljs.user)")
    (doseq [ns namespaces]
      (purge-ns! st (symbol ns))
      (purge-ns! st (symbol (str ns "$macros"))))
    (if (seq @cljs.js/*loaded*)
      (throw (ex-info (str "The cljs.js/*loaded* atom still contains " @cljs.js/*loaded* " - make sure you purge dependent namespaces.") ex-info-data)))
    (reset-last-warning!)
-   (read-eval-call {} identity "(set! *e nil)")))
+   (read-eval-call opts identity "(set! *e nil)")
+   (reset-init-opts!)))

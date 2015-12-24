@@ -14,19 +14,32 @@
 (let [src-paths ["dev-resources/private/test/node/compiled/out"
                  "dev-resources/private/test/src/cljs"
                  "dev-resources/private/test/src/clj"]
-      validated-echo-cb (partial repl/validated-call-back! echo-callback)
       target-opts (if (doo/node?)
                     (core/nodejs-options load/fake-load-fn!)
                     (core/browser-options load/fake-load-fn!))
+      validated-echo-cb (partial repl/validated-call-back! echo-callback)
+      reset-env! (partial repl/reset-env! target-opts)
       read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)]
 
   (deftest init
-    ;; This test heavily relies on repl execution order. If the repl is already
+    ;; The init test heavily relies on repl execution order. If the repl is already
     ;; initialized before this point this test will fail. It is a good idea not
     ;; to put repl tests in other places other then this file or force test execution
-    ;; order if this happens. At the moment it is disabled.
-    ;; (is (not (:initializing? @repl/app-env)) "Flag :initializing? should be false before init")
-    ;; (is (:needs-init? @repl/app-env) "Flag :needs-init? should be true before init")
+    ;; order if this happens. For some we use force-init! in order to reset the
+    ;; state.
+    (let [_ (repl/force-init!)]
+      (is (not (:initializing? @repl/app-env)) "After force-init! :initializing? should be false before init")
+      (is (:needs-init? @repl/app-env) "After force-init!, :needs-init? should be true before init")
+      (reset-env!))
+
+    (let [_ (repl/persist-init-opts! {:verbose true :src-paths ["src/a" "src/b"] :init-fn! #()})]
+      (is (every? repl/init-option-set (keys (:previous-init-opts @repl/app-env))) "After persist-init-opts!, the app-env should contain the right initoptions")
+      (reset-env!))
+
+    (let [_ (repl/persist-init-opts! {:verbose true :load-fn! #() :custom :opts})]
+      (is (not-any? repl/init-option-set (:previous-init-opts @repl/app-env)) "After persist-init-opts! but no option to persist, the app-env should not contain init options")
+      (reset-env!))
+
     (let [init-map-atom (atom {})
           custom-init-fn (fn [init-map] (reset! init-map-atom init-map))
           _ (swap! repl/app-env merge {:initializing? false
@@ -40,7 +53,12 @@
       (is (= (repl/current-ns) (:ns @init-map-atom)) "Init map should have correct :ns")
       (is (symbol? (:ns @init-map-atom)) "Init map :ns should be a symbol")
       (is (= (:target target-opts) (:target @init-map-atom)) "Init map with custom init-fn! should have correct :target")
-      (repl/reset-env!)))
+      (reset-env!))
+
+    (let [res (repl/read-eval-call (merge target-opts {:src-paths ["my/custom/path"]}) validated-echo-cb "(def c 4)")
+          previous-init-opts (:previous-init-opts @repl/app-env)]
+      (is (some #{"my/custom/path"} (:src-paths previous-init-opts)) "After changing :src-paths the new app-env should contain the new path")
+      (reset-env!)))
 
   (deftest process-pst
     (let [res (do (read-eval-call "(throw (ex-info \"This is my custom error message %#FT%\" {:tag :exception}))")
@@ -49,7 +67,7 @@
       (is (success? res) "Eval of *e with error should return successfully")
       (is (valid-eval-result? error) "Eval of *e with error should be a valid error")
       (is (re-find #"This is my custom error message %#FT%" error) "Eval of *e with error should return the correct message")
-      (repl/reset-env!))
+      (reset-env!))
 
     (let [res (do (read-eval-call "(throw (ex-info \"This is my custom error message %#FT%\" {:tag :exception}))")
                   (read-eval-call "(pst)"))
@@ -57,21 +75,21 @@
       (is (success? res) "(pst) with previous error should return successfully")
       (is (valid-eval-result? trace) "(pst) with previous error should be a valid result")
       (is (re-find #"This is my custom error message %#FT%" trace) "(pst) with previous error should return the correct message")
-      (repl/reset-env!))
+      (reset-env!))
 
     (let [res (read-eval-call "(pst)")
           trace (unwrap-result res)]
       (is (success? res) "(pst) with no error should return successfully")
       (is (valid-eval-result? trace) "(pst) with no error should be a valid result")
       (is (= "nil" trace) "(pst) with no error should return nil")
-      (repl/reset-env!)))
+      (reset-env!)))
 
   (deftest process-doc
     (let [res (read-eval-call "(doc 'println)")
           error (unwrap-result res)]
       (is (not (success? res)) "(doc 'symbol) should have correct error")
       (is (valid-eval-error? error) "(doc 'symbol) should result in an js/Error")
-      (repl/reset-env!))
+      (reset-env!))
 
     (let [res (read-eval-call "(doc println)")
           docstring (unwrap-result res)]
@@ -79,7 +97,7 @@
       (is (valid-eval-result? docstring) "(doc symbol) should be a valid result")
       ;; Cannot test #"cljs.core\/println" because of a compilation bug?
       (is (re-find #"cljs\.core.{1}println" docstring) "(doc symbol) should return valid docstring")
-      (repl/reset-env!))
+      (reset-env!))
 
     (let [res (do (read-eval-call "(defn my-function \"This is my documentation\" [param] (param))")
                   (read-eval-call "(doc my-function)"))
@@ -87,7 +105,7 @@
       (is (success? res) "(doc my-function) should succeed")
       (is (valid-eval-result? docstring) "(doc my-function) should be a valid result")
       (is (re-find #"This is my documentation" docstring) "(doc my-function) should return valid docstring")
-      (repl/reset-env!))
+      (reset-env!))
 
     (let [res (do (read-eval-call "(ns myns.testns \"Docstring for namespace\")")
                   (read-eval-call "(doc myns.testns)"))
@@ -95,7 +113,7 @@
       (is (success? res) "(doc myns.testns) should succeed.")
       (is (valid-eval-result? docstring) "(doc myns.testns) should be a valid result")
       (is (re-find #"Docstring for namespace" docstring) "(doc myns.testns) should return valid docstring")
-      (repl/reset-env! '[myns.testns])))
+      (reset-env! '[myns.testns])))
 
   (deftest process-dir
     ;; note that we don't require first
@@ -104,7 +122,7 @@
       (is (success? res) "(dir clojure.string) should succeed")
       (is (valid-eval-result? dirstring) "(dir clojure.string) should be a valid result")
       (is (= "nil" dirstring) "(dir clojure.string) should be \"nil\" because clojure.string has not been required first")
-      (repl/reset-env!)))
+      (reset-env!)))
 
   (deftest process-apropos
     ;; test with string "tim"
@@ -114,7 +132,7 @@
       (is (success? res) "(apropos \"tim\") should succeed")
       (is (valid-eval-result? result) "(apropos \"tim\") should be a valid result")
       (is (= expected result) "(apropos \"tim\") should return valid docstring")
-      (repl/reset-env!))
+      (reset-env!))
 
     ;; test with regular expression #"tim"
     (let [res (read-eval-call "(apropos #\"tim\")")
@@ -123,7 +141,7 @@
       (is (success? res) "(apropos #\"tim\") should succeed")
       (is (valid-eval-result? result) "(apropos #\"tim\") should be a valid result")
       (is (= expected result) "(apropos #\"tim\") should return valid docstring")
-      (repl/reset-env!))
+      (reset-env!))
 
     ;; test with regular expression #"t[i]me, containing metacharacters
     (let [res (read-eval-call "(apropos #\"t[i]me\")")
@@ -132,7 +150,7 @@
       (is (success? res) "(apropos  #\"t[i]me\") should succeed")
       (is (valid-eval-result? result) "(apropos  #\"t[i]me\") should be a valid result")
       (is (= expected result) "(apropos #\"t[i]me\") should return valid docstring")
-      (repl/reset-env!))
+      (reset-env!))
 
     ;; test with string "t[i]me"
     ;; the metacharacters in this case will be interpreted just as characteres
@@ -149,7 +167,7 @@
       (is (success? res) "(find-doc \"unguessable-string\") should succeed")
       (is (valid-eval-result? result) "(find-doc \"unguessable-string\") should be a valid result")
       (is (= "nil" result) "(find-doc \"unguessable-string\") should return nil")
-      (repl/reset-env!))
+      (reset-env!))
 
     (let [res (read-eval-call "(find-doc \"^(di|a)ssoc.*!\")")
           result (unwrap-result res)
@@ -167,7 +185,7 @@ dissoc!
       (is (success? res) "(find-doc \"^(di|a)ssoc.*!\") should succeed")
       (is (valid-eval-result? result) "(find-doc \"^(di|a)ssoc.*!\") should be a valid result")
       (is (= expected result) "(find-doc \"^(di|a)ssoc.*!\") should return valid docstrings")
-      (repl/reset-env!))
+      (reset-env!))
 
     (let [res (read-eval-call "(find-doc \"select-keys\")")
           result (unwrap-result res)
@@ -179,7 +197,7 @@ select-keys
       (is (success? res) "(find-doc \"select-keys\") should succeed")
       (is (valid-eval-result? result) "(find-doc \"select-keys\") should be a valid result")
       (is (= expected result) "(find-doc \"select-keys\") should return valid docstring")
-      (repl/reset-env!)))
+      (reset-env!)))
 
   (deftest process-in-ns
     ;; Damian - Add COMPILED flag to cljs eval to turn off namespace already declared errors
@@ -191,7 +209,7 @@ select-keys
       (is (not (success? res)) "(in-ns \"string\") should NOT succeed")
       (is (valid-eval-error? error) "(in-ns \"string\")  should result in an js/Error")
       (is (= "Argument to in-ns must be a symbol" (extract-message error)) "(in-ns \"string\") should have correct error")
-      (repl/reset-env!))
+      (reset-env!))
 
     (let [res (read-eval-call "(in-ns first.namespace)")
           error (unwrap-result res)]
@@ -201,14 +219,15 @@ select-keys
       (is (or (re-find #"is not defined" (extract-message error))
               (re-find #"Can't find variable" (extract-message error))
               (re-find #"Argument to in-ns must be a symbol" (extract-message error))) "(in-ns symbol) should have correct error")
-      (repl/reset-env!))
+      (reset-env!))
 
     (let [res (read-eval-call "(in-ns 'first.namespace)")
           out (unwrap-result res)]
       (is (success? res) "(in-ns 'symbol) should succeed")
       (is (valid-eval-result? out) "(in-ns 'symbol) should be a valid result")
       (is (= "nil" out) "(in-ns 'symbol) should return nil")
-      (repl/reset-env! ['first.namespace]))
+      (reset-env! '[first.namespace]))
+
     ;; Note that (do (in-ns 'my.namespace) (def a 3) (in-ns 'cljs) my.namespace/a)
     ;; Does not work in ClojureScript!
     (let [res (do (read-eval-call "(in-ns 'first.namespace)")
@@ -220,7 +239,7 @@ select-keys
       (is (success? res) "Deffing a var in an in-ns namespace and querying it should succeed")
       (is (valid-eval-result? out) "Deffing a var in an in-ns namespace and querying it should be a valid result")
       (is (= "3" out) "Deffing a var in an in-ns namespace and querying it should retrieve the interned var value")
-      (repl/reset-env! '[first.namespace second.namespace])))
+      (reset-env! '[first.namespace second.namespace])))
 
   (deftest process-ns
     (let [res (read-eval-call "(ns 'something.ns)")
@@ -228,14 +247,14 @@ select-keys
       (is (not (success? res)) "(ns 'something.ns) should NOT succeed")
       (is (valid-eval-error? error) "(ns 'something.ns) should result in an js/Error")
       (is (re-find #"Namespaces must be named by a symbol" (extract-message error)) "(ns 'something.ns) should have correct error")
-      (repl/reset-env!))
+      (reset-env!))
 
     (let [res (read-eval-call "(ns my.namespace)")
           out (unwrap-result res)]
       (is (success? res) "(ns my.namespace) should succeed")
       (is (valid-eval-result? out) "(ns my.namespace) should be a valid result")
       (is (= "nil" out) "(ns my.namespace) should return \"nil\"")
-      (repl/reset-env! '[my.namespace])))
+      (reset-env! '[my.namespace])))
 
   ;; AR - with fake load, we want to test functionality that don't depend on
   ;; source reading. This will stay until we will provide a mechanism to inject
@@ -250,21 +269,21 @@ select-keys
       (is (not (success? res)) "(require something) should NOT succeed")
       (is (valid-eval-error? error) "(require something) should result in an js/Error")
       (is (re-find #"is not ISeqable" (extract-message error)) "(require something) should have correct error")
-      (repl/reset-env!))
+      (reset-env!))
 
     (let [res (read-eval-call "(require \"something\")")
           error (unwrap-result res)]
       (is (not (success? res)) "(require \"something\") should NOT succeed")
       (is (valid-eval-error? error) "(require \"something\") should result in an js/Error")
       (is (re-find #"Argument to require must be a symbol" (extract-message error)) "(require \"something\") should have correct error")
-      (repl/reset-env!))
+      (reset-env!))
 
     (let [res (read-eval-call "(require 'something.ns)")
           out (unwrap-result res)]
       (is (success? res) "(require 'something.ns) should succeed")
       (is (valid-eval-result? out) "(require 'something.ns) should be a valid result")
       (is (= "nil" out) "(require 'something.ns) should return nil")
-      (repl/reset-env! '[something.ns]))
+      (reset-env! '[something.ns]))
 
     (let [res (do (read-eval-call "(ns a.ns)")
                   (read-eval-call "(def a 3)")
@@ -274,7 +293,7 @@ select-keys
       (is (success? res) "(require 'a.ns) from b.ns should succeed")
       (is (valid-eval-result? out) "(require 'a.ns) from b.ns should be a valid result")
       (is (= 'b.ns (repl/current-ns)) "(require 'a.ns) from b.ns should not change namespace")
-      (repl/reset-env! '[a.ns b.ns]))
+      (reset-env! '[a.ns b.ns]))
 
     (let [res (do (read-eval-call "(ns c.ns)")
                   (read-eval-call "(def referred-a 3)")
@@ -286,7 +305,7 @@ select-keys
       (is (valid-eval-result? out) )
       (is (= 'd.ns (repl/current-ns)) "(require '[c.ns :refer [referred-a]]) should not change namespace")
       (is (= "3" out) "(require '[c.ns :refer [referred-a]]) should retrieve the interned var value")
-      (repl/reset-env! '[c.ns d.ns])))
+      (reset-env! '[c.ns d.ns])))
 
   (deftest warnings
     ;; AR - The only missing is because you can't have an error and a warning at the same time.
@@ -298,7 +317,7 @@ select-keys
       (is (not (has-valid-warning? res)) "Response is :error and warning-as-error is true should not contain :warning")
       (is (valid-eval-error? out) "Response is :error and warning-as-error is true should result in an js/Error")
       (is (re-find #"EOF" (extract-message out)) "Response is :error and warning-as-error is true should return EOF, the original error")
-      (repl/reset-env!))
+      (reset-env!))
 
     ;; Response is :error and warning-as-error is false
     (let [res (repl/read-eval-call target-opts validated-echo-cb
@@ -308,7 +327,7 @@ select-keys
       (is (not (has-valid-warning? res)) "Response is :error and warning-as-error is false should not contain :warning")
       (is (valid-eval-error? out) "Response is :error and warning-as-error is false should result in an js/Error")
       (is (re-find #"EOF" (extract-message out)) "Response is :error and warning-as-error is false should return EOF")
-      (repl/reset-env!))
+      (reset-env!))
 
     ;; Response is :value but warning was raised and warning-as-error is true
     (let [res (repl/read-eval-call (merge target-opts {:warning-as-error true}) validated-echo-cb
@@ -318,7 +337,7 @@ select-keys
       (is (not (has-valid-warning? res)) "Response is :value but warning was raised and warning-as-error is true should not contain warning")
       (is (valid-eval-error? out) "Response is :value but warning was raised and warning-as-error is true should result in an js/Error")
       (is (re-find #"undeclared.*_arsenununpa42" (extract-message out)) "Response is :value but warning was raised and warning-as-error is true should have the right error msg")
-      (repl/reset-env!))
+      (reset-env!))
 
     ;; Response is :value but warning was raised and warning-as-error is false
     (let [res (repl/read-eval-call target-opts validated-echo-cb
@@ -328,7 +347,7 @@ select-keys
       (is (has-valid-warning? res) "Response is :value but warning was raised and warning-as-error is false should contain warning")
       (is (valid-eval-result? out) "Response is :value but warning was raised and warning-as-error is false should be a valid result")
       (is (= "nil" out) "Response is :value but warning was raised and warning-as-error is false should return nil")
-      (repl/reset-env!))
+      (reset-env!))
 
     ;; Response is :value, no warning and warning-as-error is false
     (let [res (do (repl/read-eval-call target-opts validated-echo-cb "(def a 2)")
@@ -338,7 +357,7 @@ select-keys
       (is (not (has-valid-warning? res)) "Response is :value, no warning was raised and warning-as-error is false should not contain warning")
       (is (valid-eval-result? out) "Response is :value, no warning and warning-as-error is false should be a valid result")
       (is (= "2" out) "Response is :value, no warning and warning-as-error is false symbol should return 2")
-      (repl/reset-env!))
+      (reset-env!))
 
     ;; Response is :value, no warning and warning-as-error is true
     (let [opts (merge target-opts {:warning-as-error true})
@@ -349,20 +368,20 @@ select-keys
       (is (not (has-valid-warning? res)) "Response is :value, no warning was raised and warning-as-error is true should not contain warning")
       (is (valid-eval-result? out) "Response is :value, no warning and warning-as-error is true should be a valid result")
       (is (= "2" out) "Response is :value, no warning and warning-as-error is true symbol should return 2")
-      (repl/reset-env!)))
+      (reset-env!)))
 
   (deftest macros
-    ;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;
     ;; Implementing examples from Mike Fikes work at:
     ;; http://blog.fikesfarm.com/posts/2015-09-07-messing-with-macros-at-the-repl.html
     ;; (it's not that I don't trust Mike, you know)
-    ;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;
     (let [res (read-eval-call "(defmacro hello [x] `(inc ~x))")
           out (unwrap-result res)]
       (is (success? res) "(defmacro hello ..) should succeed")
       (is (valid-eval-result? out) "(defmacro hello ..) should have a valid result")
       (is (= "true" out) "(defmacro hello ..) shoud return true")
-      (repl/reset-env!))
+      (reset-env!))
 
     (let [res (do (read-eval-call "(defmacro hello [x] `(inc ~x))")
                   (read-eval-call "(hello nil nil 13)"))
@@ -370,7 +389,7 @@ select-keys
       (is (success? res) "Executing (defmacro hello ..) as function should succeed")
       (is (valid-eval-result? out) "Executing (defmacro hello ..) as function should have a valid result")
       (is (= "(inc 13)" out) "Executing (defmacro hello ..) as function shoud return (inc 13)")
-      (repl/reset-env!))
+      (reset-env!))
 
     (let [res (do (read-eval-call "(ns foo.core$macros)")
                   (read-eval-call "(defmacro hello [x] (prn &form) `(inc ~x))")
@@ -379,7 +398,7 @@ select-keys
       (is (success? res) "Executing (foo.core/hello ..) as function should succeed")
       (is (valid-eval-result? out) "Executing (foo.core/hello ..) hello ..) as function should have a valid result")
       (is (= "6" out) "Executing (foo.core/hello ..) hello ..) as function shoud return 6")
-      (repl/reset-env! '[foo.core]))
+      (reset-env! '[foo.core]))
 
     (let [res (do (read-eval-call "(ns foo.core$macros)")
                   (read-eval-call "(defmacro hello [x] (prn &form) `(inc ~x))")
@@ -390,7 +409,7 @@ select-keys
       (is (success? res) "Executing (foo.core/hello ..) as function should succeed")
       (is (valid-eval-result? out) "Executing (foo.core/hello ..) hello ..) as function should have a valid result")
       (is (= "6" out) "Executing (foo.core/hello ..) hello ..) as function shoud return 6")
-      (repl/reset-env! '[foo.core another.ns])))
+      (reset-env! '[foo.core another.ns])))
 
   (deftest tagged-literals
     ;; AR - Don't need to test more as ClojureScript already has extensive tests on this
@@ -429,4 +448,4 @@ select-keys
         (is (not (:macros @load-map-atom)) "Loading map with custom load-fn should have correct :macros")
         (is (= "bar/core" (:path @load-map-atom)) "Loading map with custom load-fn should have correct :path")
         (reset! load-map-atom {})
-        (repl/reset-env! '[bar.core])))))
+        (reset-env! '[bar.core])))))

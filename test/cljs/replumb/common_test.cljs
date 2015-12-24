@@ -31,6 +31,5 @@
 
 (deftest filter-fn-key
   (is (map? (filter-fn-keys {:load-fn! #() :verbose true})) "The result of filter-fn-keys should be a map")
-  (is (= [:verbose] (keys (filter-fn-keys {:load-fn! #() :init-fn! #() :verbose true}))) "Keys with -fn should not pass through filter-fn-keys")
-  (is (= (empty? (keys (filter-fn-keys {:load-fn! #() :init-fn-testing #()})))) "If all keys have -fn then filter-fn-keys result should be empty")
-  (is (= {:verbose true} (filter-fn-keys {:verbose true})) "When there are no -fn key then filter-fn-keys result should be same as the input"))
+  (is (every? #{:verbose :load-fn! :init-fn!} (keys (filter-fn-keys {:load-fn! #() :init-fn! #() :verbose true}))) "Keys with -fn should pass through filter-fn-keys")
+  (is (= {:verbose true :init-fn! "<hidden function>"} (filter-fn-keys {:init-fn! #() :verbose true})) "When there are no -fn key then filter-fn-keys result should be same as the input"))

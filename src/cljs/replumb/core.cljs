@@ -69,7 +69,9 @@
 
   The third parameter is the source string to be read and evaluated.
 
-  It initializes the repl harness if necessary."
+  It initializes the repl harness either on first execution or if an
+  option in `#{:src-paths :init-fn!}` changes from the previous
+  `read-eval-call`."
   ([callback source] (repl/read-eval-call {} callback source))
   ([opts callback source] (repl/read-eval-call opts callback source)))
 
