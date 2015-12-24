@@ -207,7 +207,7 @@
   src-cb] where src-cb is itself a function (fn [source] ...) that needs
   to be called with the full source of the library (as string)."
   [verbose? src-paths read-file-fn!]
-  (if (and read-file-fn! (sequential? src-paths))
+  (if (and read-file-fn! (sequential? src-paths) (every? string? src-paths))
     (fn [{:keys [name macros path] :as load-map} cb]
       (cond
         (load/skip-load? load-map) (load/fake-load-fn! load-map cb)
@@ -222,7 +222,7 @@
                                              read-file-fn!
                                              cb)))
     (do (when verbose?
-          (common/debug-prn "Invalid :read-file-fn! or :src-paths (is it a valid sequence?). No *load-fn* will be passed to cljs.js."))
+          (common/debug-prn "Invalid :read-file-fn! or :src-paths (is it sequential? Are all paths strings?). No *load-fn* will be passed to cljs.js."))
         ;; AR - by returning nil we force a "No *load-fn* set" in cljs.js
         nil)))
 

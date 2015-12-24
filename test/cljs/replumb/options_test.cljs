@@ -34,6 +34,7 @@
   (is (= "precedence" (:load-fn! (normalize-opts {:load-fn! "precedence" :read-file-fn! #()}))) "Must be able to give precedence to :load-fn! when present")
   (is (nil? (:load-fn! (normalize-opts {:read-file-fn! #()}))) "Must create :load-fn! only when both :read-file-fn! and :src-paths are present")
   (is (nil? (:load-fn! (normalize-opts {:src-paths {} :read-file-fn! #()}))) "Must create :load-fn! only when :src-paths is sequential")
+  (is (nil? (:load-fn! (normalize-opts {:src-paths [:src "src"] :read-file-fn! #()}))) "Must create :load-fn! only when :src-paths are all strings")
   (is (not (nil? (:read-file-fn! (normalize-opts {:src-paths ["src"] :read-file-fn! #()})))) "Must NOT elide :read-file-fn! after having created :load-fn!")
   (is (not (nil? (:load-fn! (normalize-opts {:src-paths ["src"] :read-file-fn! #()})))) "Must create a brand new :load-fn! when :read-file-fn! is present"))
 
