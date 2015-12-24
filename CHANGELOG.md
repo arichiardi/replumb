@@ -4,7 +4,9 @@
 - Dir support
 - Apropos support
 - Find-doc support
+- Initialization is now also triggered when an option in `#{:src-paths :init-fn!}` changes from the previous `read-eval-call`
 - Fix for [issue #86](https://github.com/ScalaConsultants/replumb/issues/86) - source does not work with aliased namespaces
+- Fix for [issue #100](https://github.com/ScalaConsultants/replumb/issues/100) - make sure every `:src-paths` is string
 
 ## 0.1.3
 - Require support through custom `:load-fn!` or `read-file-fn!` plus `:src-paths` options, see [wiki](https://github.com/ScalaConsultants/replumb/wiki/Require-and-providing-source-files)
