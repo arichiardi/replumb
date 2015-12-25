@@ -440,26 +440,18 @@ trim-newline
     ;; the issue in replumb is https://github.com/ScalaConsultants/replumb/issues/91
     (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.baz :include-macros true]))")
                   (read-eval-call "(foo.bar.baz/mul-baz 6 6)"))
-          error (unwrap-result res)]
-      (is (not (success? res)) "(ns my.namespace (:require ... :include-macros ...)) and (foo.bar.baz/mul-baz 6 6) should not succeed")
-      (is (valid-eval-error? error) "(ns my.namespace (:require ...:include-macros...)) and (foo.bar.baz/mul-baz 6 6) should be an instance of jsError")
-      (is (re-find #"Cannot read property 'call' of undefined" (extract-message error)) "(ns my.namespace (:require ...:include-macros...)) and (foo.bar.baz/mul-baz 6 6) should have correct error message.")
-      (reset-env! '[my.namespace foo.bar.baz]))
-
-    ;; (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.baz :include-macros true]))")
-    ;;               (read-eval-call "(foo.bar.baz/mul-baz 6 6)"))
-    ;;       out (unwrap-result res)]
-    ;;   (is (success? res) "(ns my.namespace (:require ... :include-macros ...)) and (f/mul-baz 6 6) should succeed")
-    ;;   (is (valid-eval-result? out) "(ns my.namespace (:require ...:include-macros...)) and (f/mul-baz 6 6) should be a valid result.")
-    ;;   (is (= "36" out) "(f/mul-baz 6 6) should be 36")
-    ;;   (repl/reset-env! '[my.namespace foo.bar.baz]))
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:require ... :include-macros ...)) and (f/mul-baz 6 6) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require ...:include-macros...)) and (f/mul-baz 6 6) should be a valid result.")
+      (is (= "36" out) "(f/mul-baz 6 6) should be 36")
+      (repl/reset-env! '[my.namespace foo.bar.baz]))
 
     (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.core :as f :include-macros true]))")
                   (read-eval-call "(f/mul-core 30 5)"))
           out (unwrap-result res)]
-      (is (success? res) "(ns my.namespace (:require...:include-macros...])) and (f/mul-core 30 5) should succeed")
-      (is (valid-eval-result? out) "(ns my.namespace (:require...:as...])) and (f/mul-core 30 5) should be a valid result")
-      (is (= "150" out) "(f/mul-core 30 5) should be 150")
+      (is (success? res) "issue 91 - (ns my.namespace (:require...:include-macros...])) and (f/mul-core 30 5) should succeed")
+      (is (valid-eval-result? out) "issue 91 - (ns my.namespace (:require...:as...])) and (f/mul-core 30 5) should be a valid result")
+      (is (= "150" out) "issue 91 - (f/mul-core 30 5) should be 150")
       (reset-env! '[my.namespace foo.bar.core foo.bar.macros])))
 
   (deftest ns-macro-require-refer-macros
@@ -467,21 +459,11 @@ trim-newline
     ;; the issue in replumb is https://github.com/ScalaConsultants/replumb/issues/91
     (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.baz :refer-macros [mul-baz]]))")
                   (read-eval-call "(mul-baz 10 12)"))
-          error (unwrap-result res)]
-      (is (not (success? error)) "(ns my.namespace (:require ...)) and (mul 10 12) should not succeed")
-      (is (valid-eval-error? error) "(ns my.namespace (:require ...)) and (mul 10 12) should be an instance of js/Error")
-      (is (re-find #"ERROR" (extract-message error))
-          "(ns my.namespace (:require ...)) and (mul 10 12) should have correct error message")
-      (reset-env! '[my.namespace foo.bar.baz]))
-
-    ;; (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.baz :refer-macros [mul-baz]]))")
-    ;;               (read-eval-call "(mul-baz 10 12)"))
-    ;;       out (unwrap-result res)]
-    ;;   (is (success? res) "(ns my.namespace (:require ...)) and (mul 10 12) should succeed")
-    ;;   (is (valid-eval-result? out) "(ns my.namespace (:require ...)) and (mul 10 12) should be a valid result")
-    ;;   (is (= "120" out) "(mul 10 12) should be equal to 120")
-    ;;   (reset-env! '[my.namespace foo.bar.baz]))
-    )
+          out (unwrap-result res)]
+      (is (success? res) "issue 91 - (ns my.namespace (:require ...)) and (mul 10 12) should succeed")
+      (is (valid-eval-result? out) "issue 91 - (ns my.namespace (:require ...)) and (mul 10 12) should be a valid result")
+      (is (= "120" out) "issue 91 - (mul 10 12) should be equal to 120")
+      (reset-env! '[my.namespace foo.bar.baz])))
 
   (deftest process-reload
     (let [alterable-core-path "dev-resources/private/test/src/cljs/alterable/core.cljs"
