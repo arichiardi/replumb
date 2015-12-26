@@ -113,7 +113,14 @@
       (is (success? res) "(doc myns.testns) should succeed.")
       (is (valid-eval-result? docstring) "(doc myns.testns) should be a valid result")
       (is (re-find #"Docstring for namespace" docstring) "(doc myns.testns) should return valid docstring")
-      (reset-env! '[myns.testns])))
+      (reset-env! '[myns.testns]))
+
+    (let [res (read-eval-call "(doc ns-interns)")
+          docstring (unwrap-result res)]
+      (is (success? res) "(doc ns-interns), for issue #81, should succeed")
+      (is (valid-eval-result? docstring) "(doc ns-interns), for issue #81, should be a valid result")
+      (is (re-find #"Returns a map of the intern mappings for the namespace" docstring) "(doc ns-interns), for issue #81, should return the correct docstring")
+      (reset-env!)))
 
   (deftest process-dir
     ;; note that we don't require first
