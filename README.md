@@ -24,7 +24,7 @@ After that directly call ```replumb.core``` functions:
 (ns ...
   (:require ...
             [replumb.core :as replumb]
-            [replumb.load :as load]))
+            [replumb.browser.io :as io]))
             
 (defn handle-result!
   [console result]
@@ -32,10 +32,21 @@ After that directly call ```replumb.core``` functions:
     (write-fn console (replumb/unwrap-result result))))
 
 (defn cljs-read-eval-print!
-  [console user-input]
-  (replumb/read-eval-call (replumb/browser-options load/fake-load-fn!)
+  [console repl-opts user-input]
+  (replumb/read-eval-call repl-opts
                           (partial handle-result! console)
                           user-input))
+                          
+(defn cljs-console-did-mount
+  [console-opts]
+  (js/$
+   (fn []
+     (let [repl-opts (merge (replumb/browser-options ["/src/cljs" "/js/compiled/out"]
+                                                     io/fetch-file!)
+                            {:warning-as-error true
+                             :verbose true})
+           jqconsole (console/new-jqconsole "#cljs-console" console-opts)]
+       (cljs-console-prompt! jqconsole repl-opts)))))
 ```
 
 ## Read-eval-call options
