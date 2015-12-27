@@ -17,7 +17,7 @@
       reset-env! (partial repl/reset-env! target-opts)
       read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)]
 
-  (deftest source-in-cljs-core
+  (deftest source-in-cljs-core-fns
     (let [res (read-eval-call "(source max)")
           source-string (unwrap-result res)
           expected "(defn ^number max
@@ -47,6 +47,24 @@
       (is (success? res) "(source not-existing) should succeed.")
       (is (valid-eval-result? source-string) "(source not-existing) should be a valid result")
       (is (= "nil" source-string) "(source not-existing) should return nil")
+      (reset-env!)))
+
+  (deftest source-in-cljs-core-macros
+    ;; AR - when bundling and https://github.com/ScalaConsultants/replumb/issues/69
+    ;; will be hacked together, this will work. The reason is that we need
+    ;; clojure/core.clj on the source path.
+    ;; (let [res (read-eval-call "(source when)")
+        ;; source-string (unwrap-result res)]
+      ;; (is (success? res) "(source when) should succeed.")
+      ;; (is (valid-eval-result? source-string) "(source when) should be a valid result")
+      ;; (is (re-find #"core/defmacro when" source-string) "(source when) does not correspond to correct source")
+      ;; (reset-env!))
+
+    (let [res (read-eval-call "(source or)")
+          source-string (unwrap-result res)]
+      (is (success? res) "(source or) should succeed.")
+      (is (valid-eval-result? source-string) "(source or) should be a valid result")
+      (is (re-find #"core/defmacro or" source-string) "(source or) should return correct source")
       (reset-env!)))
 
   (deftest source-in-non-core-ns
@@ -122,7 +140,8 @@
   ;; https://clojure.github.io/clojure/clojure.test-api.html
   (defn test-ns-hook []
     (repl/force-init!)
-    (source-in-cljs-core)
+    (source-in-cljs-core-fns)
+    (source-in-cljs-core-macros)
     (source-in-non-core-ns)
     (source-in-custom-ns)))
 

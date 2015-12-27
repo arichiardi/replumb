@@ -68,6 +68,12 @@
   [form]
   (and (seq? form) (= 'ns (first form))))
 
+(defn macro?
+  "Is the input analyzer var (from either cljs.analyzer/resolve-var or
+  cljs.analyzer/resolve-macro-var) a macro?"
+  [var]
+  (:macro var))
+
 (defn extract-namespace
   [source]
   (let [first-form (repl-read-string source)]
@@ -202,12 +208,12 @@
         (load/skip-load? load-map) (load/fake-load-fn! load-map cb)
         (re-matches #"^goog/.*" path) (if-let [goog-path (get-goog-path name)]
                                         (load/read-files-and-callback! verbose?
-                                                                       (load/goog-file-paths-to-try src-paths goog-path)
+                                                                       (load/file-paths-for-closure src-paths goog-path)
                                                                        read-file-fn!
                                                                        cb)
                                         (cb nil))
         :else (load/read-files-and-callback! verbose?
-                                             (load/file-paths-to-try src-paths macros path)
+                                             (load/file-paths-for-load-fn src-paths macros path)
                                              read-file-fn!
                                              cb)))
     (do (when verbose?
@@ -523,18 +529,20 @@
           (common/debug-prn "No :read-file-fn! provided, skipping source fetching..."))
         (cb (common/wrap-success "nil")))))
 
+;; Inspired by cljs.repl/source-fn
 (defn process-source
   [opts cb data sym]
   (let [var (get-var opts (empty-analyzer-env) sym)
         call-back (partial call-back! (merge opts {:no-pr-str-on-value true}) cb data)]
-    (if-let [filepath (or (:file var) (:file (:meta var)))]
-      (let [src-paths (:src-paths opts)
-            ;; see discussion here: https://github.com/ScalaConsultants/replumb/issues/17#issuecomment-163832028
-            ;; if (symbol? filepath) is true, filepath will contain the symbol of a namespace
-            ;; eg. clojure.set
-            paths-to-try (if (symbol? filepath)
-                           (load/file-paths-to-try-from-ns-symbol filepath src-paths)
-                           (map #(str (common/normalize-path %) filepath) src-paths))]
+    (if-let [full-path-or-ns (or (:file var) (:file (:meta var)))]
+      ;; see discussion here: https://github.com/ScalaConsultants/replumb/issues/17#issuecomment-163832028
+      ;; if (symbol? filepath) is true, filepath will contain the symbol of a namespace
+      ;; eg. clojure.set
+      (let [paths-to-try (if-not (symbol? full-path-or-ns)
+                           (load/file-paths (:src-paths opts) full-path-or-ns)
+                           (load/file-paths-for-load-fn (:src-paths opts) ;; this branch tries the conversion ns->file
+                                                        (macro? var)
+                                                        (cljs/ns->relpath full-path-or-ns)))]
         (fetch-source opts var paths-to-try call-back))
       (call-back (common/wrap-success "nil")))))
 
