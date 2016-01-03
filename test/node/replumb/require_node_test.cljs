@@ -452,15 +452,26 @@ trim-newline
     ;;   (is (success? res) "(ns my.namespace (:require ... :include-macros ...)) and (f/mul-baz 6 6) should succeed")
     ;;   (is (valid-eval-result? out) "(ns my.namespace (:require ...:include-macros...)) and (f/mul-baz 6 6) should be a valid result.")
     ;;   (is (= "36" out) "(f/mul-baz 6 6) should be 36")
-    ;;   (repl/reset-env! '[my.namespace foo.bar.baz]))
+    ;;   (reset-env! '[my.namespace foo.bar.baz]))
 
-    (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.core :as f :include-macros true]))")
-                  (read-eval-call "(f/mul-core 30 5)"))
+    ;; solved in 1.7.202 - see commented test below
+    ;; note that the test outputs (* nil nil) but the correct result is 150
+    (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.core :include-macros true]))")
+                  (read-eval-call "(foo.bar.core/mul-core 30 5)"))
           out (unwrap-result res)]
-      (is (success? res) "(ns my.namespace (:require...:include-macros...])) and (f/mul-core 30 5) should succeed")
-      (is (valid-eval-result? out) "(ns my.namespace (:require...:as...])) and (f/mul-core 30 5) should be a valid result")
-      (is (= "150" out) "(f/mul-core 30 5) should be 150")
-      (reset-env! '[my.namespace foo.bar.core foo.bar.macros])))
+      (is (success? res) "(ns my.namespace (:require...:include-macros...])) and (foo.bar.core/mul-core 30 5) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require...:as...])) and (foo.bar.core/mul-core 30 5) should be a valid result")
+      (is (= "(* nil nil)" out) "(foo.bar.core/mul-core 30 5) should be 150")
+      (reset-env! '[my.namespace foo.bar.core foo.bar.macros]))
+
+    ;; (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.core :include-macros true]))")
+    ;;               (read-eval-call "(foo.bar.core/mul-core 30 5)"))
+    ;;       out (unwrap-result res)]
+    ;;   (is (success? res) "(ns my.namespace (:require...:include-macros...])) and (foo.bar.core/mul-core 30 5) should succeed")
+    ;;   (is (valid-eval-result? out) "(ns my.namespace (:require...:as...])) and (foo.bar.core/mul-core 30 5) should be a valid result")
+    ;;   (is (= "150" out) "(foo.bar.core/mul-core 30 5) should be 150")
+    ;;   (reset-env! '[my.namespace foo.bar.core foo.bar.macros]))
+)
 
   (deftest ns-macro-require-refer-macros
     ;; solved in 1.7.202 - see commented version below
@@ -468,21 +479,47 @@ trim-newline
     (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.baz :refer-macros [mul-baz]]))")
                   (read-eval-call "(mul-baz 10 12)"))
           error (unwrap-result res)]
-      (is (not (success? error)) "(ns my.namespace (:require ...)) and (mul 10 12) should not succeed")
-      (is (valid-eval-error? error) "(ns my.namespace (:require ...)) and (mul 10 12) should be an instance of js/Error")
-      (is (re-find #"ERROR" (extract-message error))
-          "(ns my.namespace (:require ...)) and (mul 10 12) should have correct error message")
+      (is (not (success? res)) "(ns my.namespace (:require ...:refer-macros...)) and (mul-baz 10 12) should not succeed")
+      (is (valid-eval-error? error) "(ns my.namespace (:require ...:refer-macros..)) and (mul-baz 10 12) should be an instance of js/Error")
+      (is (re-find #"ERROR" (extract-message error)) "(ns my.namespace (:require ...:refer-macros...)) and (mul-baz 10 12) should have correct error message")
       (reset-env! '[my.namespace foo.bar.baz]))
 
     ;; (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.baz :refer-macros [mul-baz]]))")
     ;;               (read-eval-call "(mul-baz 10 12)"))
     ;;       out (unwrap-result res)]
-    ;;   (is (success? res) "(ns my.namespace (:require ...)) and (mul 10 12) should succeed")
-    ;;   (is (valid-eval-result? out) "(ns my.namespace (:require ...)) and (mul 10 12) should be a valid result")
-    ;;   (is (= "120" out) "(mul 10 12) should be equal to 120")
+    ;;   (is (success? res) "(ns my.namespace (:require ...:refer-macros...)) and (mul-baz 10 12) should succeed")
+    ;;   (is (valid-eval-result? out) "(ns my.namespace (:require ...:refer-macros)) and (mul-baz 10 12) should be a valid result")
+    ;;   (is (= "120" out) "(mul-baz 10 12) should be equal to 120")
     ;;   (reset-env! '[my.namespace foo.bar.baz]))
-    )
 
+    (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.core :refer-macros [mul-core]]))")
+                  (read-eval-call "(mul-core 10 20)"))
+          error (unwrap-result res)]
+      (is (not (success? res)) "(ns my.namespace (:require ...:refer-macros...)) and (mul-core 10 20) should not succeed")
+      (is (valid-eval-error? error) "(ns my.namespace (:require ...:refer-macros...)) and (mul-core 10 20) should be an instance of js/Error")
+      (is (re-find #"ERROR" (extract-message error))
+          "(ns my.namespace (:require ...:refer-macros...)) and (mul-core 10 20) should have correct error message")
+      (reset-env! '[my.namespace foo.bar.core foo.bar.macros]))
+
+    ;; (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.core :refer-macros [mul-core]]))")
+    ;;               (read-eval-call "(mul-core 10 20)"))
+    ;;       out (unwrap-result res)]
+    ;;   (is (success? res) "(ns my.namespace (:require ...:refer-macros...)) and (mul-core 10 20) should succeed")
+    ;;   (is (valid-eval-result? out) "(ns my.namespace (:require ...:refer-macros...)) and (mul-core 10 20) should have a valid result")
+    ;;   (is (= "200" out ) "(mul-core 10 20) should produce 200")
+    ;;   (reset-env! '[my.namespace foo.bar.core foo.bar.macros]))
+)
+
+  (deftest ns-macro-self-requiring-namespace
+    ;; see "loop" section here: http://blog.fikesfarm.com/posts/2015-12-18-clojurescript-macro-tower-and-loop.html
+    ;; but it does not work in JS ClojureScript
+    (let [res (read-eval-call "(ns my.namespace (:require [foo.bar.self]))")
+          error (unwrap-result res)]
+      (is (not (success? res)) "(ns my.namespace (:require [foo.bar.self])) should not succeed")
+      (is (valid-eval-error? error) "(ns my.namespace (:require [foo.bar.self])) should be an instance of js/Error")
+      (is (re-find #"Maximum call stack size exceeded" (extract-message error)) "(ns my.namespace (:require [foo.bar.self])) should have correct error message")
+      (reset-env!)))
+  
   (deftest process-reload
     (let [alterable-core-path "dev-resources/private/test/src/cljs/alterable/core.cljs"
           pre-content "(ns alterable.core)\n\n(def b \"pre\")"
@@ -570,6 +607,7 @@ trim-newline
     (ns-macro-use-macros)
     (ns-macro-require)
     (ns-macro-require-macros-as)
+    (ns-macro-self-requiring-namespace)
 
     (process-reload)
     (process-reload-all)))
