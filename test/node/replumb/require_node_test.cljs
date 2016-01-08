@@ -20,7 +20,7 @@
                  "dev-resources/private/test/src/clj"
                  "dev-resources/private/test/src/cljc"]
       target-opts (nodejs-options src-paths io/read-file!)
-      validated-echo-cb (partial repl/validated-call-back! echo-callback)
+      validated-echo-cb (partial repl/validated-call-back! target-opts echo-callback)
       reset-env! (partial repl/reset-env! target-opts)
       read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)
       read-eval-call-verbose (partial repl/read-eval-call (merge target-opts {:verbose true}) validated-echo-cb)]
@@ -471,7 +471,7 @@ trim-newline
     ;;   (is (valid-eval-result? out) "(ns my.namespace (:require...:as...])) and (foo.bar.core/mul-core 30 5) should be a valid result")
     ;;   (is (= "150" out) "(foo.bar.core/mul-core 30 5) should be 150")
     ;;   (reset-env! '[my.namespace foo.bar.core foo.bar.macros]))
-)
+    )
 
   (deftest ns-macro-require-refer-macros
     ;; solved in 1.7.202 - see commented version below
@@ -508,7 +508,7 @@ trim-newline
     ;;   (is (valid-eval-result? out) "(ns my.namespace (:require ...:refer-macros...)) and (mul-core 10 20) should have a valid result")
     ;;   (is (= "200" out ) "(mul-core 10 20) should produce 200")
     ;;   (reset-env! '[my.namespace foo.bar.core foo.bar.macros]))
-)
+    )
 
   (deftest ns-macro-self-requiring-namespace
     ;; see "loop" section here: http://blog.fikesfarm.com/posts/2015-12-18-clojurescript-macro-tower-and-loop.html
@@ -519,7 +519,7 @@ trim-newline
       (is (valid-eval-error? error) "(ns my.namespace (:require [foo.bar.self])) should be an instance of js/Error")
       (is (re-find #"Maximum call stack size exceeded" (extract-message error)) "(ns my.namespace (:require [foo.bar.self])) should have correct error message")
       (reset-env!)))
-  
+
   (deftest process-reload
     (let [alterable-core-path "dev-resources/private/test/src/cljs/alterable/core.cljs"
           pre-content "(ns alterable.core)\n\n(def b \"pre\")"
@@ -612,8 +612,8 @@ trim-newline
     (process-reload)
     (process-reload-all)))
 
-(let [validated-echo-cb (partial repl/validated-call-back! echo-callback)
-      target-opts (nodejs-options load/no-resource-load-fn!)
+(let [target-opts (nodejs-options load/no-resource-load-fn!)
+      validated-echo-cb (partial repl/validated-call-back! target-opts echo-callback)
       reset-env! (partial repl/reset-env! target-opts)
       read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)]
   (deftest require-when-read-file-return-nil

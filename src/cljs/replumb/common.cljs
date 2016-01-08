@@ -63,8 +63,11 @@
 
 (defn valid-eval-result?
   "Is the string returned from an evaluation valid?"
-  [result]
-  (and (string? result) (not (inline-newline? result))))
+  ([result]
+   (valid-eval-result? {} result))
+  ([opts result]
+   (or (and (not (:no-pr-str-on-value opts)) (string? result) (not (inline-newline? result)))
+       (and (:no-pr-str-on-value opts) (not (nil? result))))))
 
 (defn valid-eval-error?
   "Is the string returned from an evaluation valid?"

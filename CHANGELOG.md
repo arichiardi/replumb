@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.5
+- The new option `:no-pr-str-on-value` avoids converting the result value to string
+- Fix for [issue #85](https://github.com/ScalaConsultants/replumb/issues/85) - source does not work with macros
+- Fix for [issue #81](https://github.com/ScalaConsultants/replumb/issues/81) - missing doc for ns-interns
+
 ## 0.1.4
 - Dir support
 - Apropos support

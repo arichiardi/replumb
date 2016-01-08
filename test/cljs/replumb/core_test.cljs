@@ -20,7 +20,7 @@
   (is (= "This is a result" (unwrap-result successful-map)) "successful-map should contain the correct message")
 
   (is (not (success? unsuccessful-map)) "(success? unsuccessful-map) should be false")
-  (is (not (valid-eval-result? (unwrap-result unsuccessful-map))) "unsuccessful-map should not be an valid result")
+  (is (not (valid-eval-result? (unwrap-result unsuccessful-map))) "unsuccessful-map should not be a valid result")
   (is (valid-eval-error? (unwrap-result unsuccessful-map)) "unsuccessful-map should be an valid error" )
   (is (= "This is an error" (extract-message (unwrap-result unsuccessful-map))) "unsuccessful-map should contain the correct message")
 

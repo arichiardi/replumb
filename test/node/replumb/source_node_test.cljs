@@ -12,8 +12,8 @@
 (let [src-paths ["dev-resources/private/test/node/compiled/out"
                  "dev-resources/private/test/src/cljs"
                  "dev-resources/private/test/src/clj"]
-      validated-echo-cb (partial repl/validated-call-back! echo-callback)
       target-opts (nodejs-options src-paths io/read-file!)
+      validated-echo-cb (partial repl/validated-call-back! target-opts echo-callback)
       reset-env! (partial repl/reset-env! target-opts)
       read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)]
 
@@ -54,11 +54,11 @@
     ;; will be hacked together, this will work. The reason is that we need
     ;; clojure/core.clj on the source path.
     ;; (let [res (read-eval-call "(source when)")
-        ;; source-string (unwrap-result res)]
-      ;; (is (success? res) "(source when) should succeed.")
-      ;; (is (valid-eval-result? source-string) "(source when) should be a valid result")
-      ;; (is (re-find #"core/defmacro when" source-string) "(source when) does not correspond to correct source")
-      ;; (reset-env!))
+    ;; source-string (unwrap-result res)]
+    ;; (is (success? res) "(source when) should succeed.")
+    ;; (is (valid-eval-result? source-string) "(source when) should be a valid result")
+    ;; (is (re-find #"core/defmacro when" source-string) "(source when) does not correspond to correct source")
+    ;; (reset-env!))
 
     (let [res (read-eval-call "(source or)")
           source-string (unwrap-result res)]
@@ -145,8 +145,8 @@
     (source-in-non-core-ns)
     (source-in-custom-ns)))
 
-(let [validated-echo-cb (partial repl/validated-call-back! echo-callback)
-      target-opts (nodejs-options load/no-resource-load-fn!)
+(let [target-opts (nodejs-options load/no-resource-load-fn!)
+      validated-echo-cb (partial repl/validated-call-back! target-opts echo-callback)
       reset-env! (partial repl/reset-env! target-opts)
       read-eval-call-no-resource (partial repl/read-eval-call target-opts validated-echo-cb)
       read-eval-call-nil-read-file-fn (partial repl/read-eval-call (assoc target-opts :read-file-fn! nil) validated-echo-cb)]

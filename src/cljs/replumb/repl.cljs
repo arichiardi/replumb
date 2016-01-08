@@ -320,17 +320,18 @@
       (swap! app-env assoc :last-eval-warning (ana/message env s)))))
 
 (defn validated-call-back!
-  [call-back! res]
+  [opts cb res]
   {:pre [(map? res)
          (find res :form)
          (or (find res :error) (find res :value))
          (or (and (find res :value) (get res :success?))
              (and (find res :error) (not (get res :success?))))
-         (or (and (find res :value) (string? (get res :value)))
+         (or (and (find res :value) (or (and (not (:no-pr-str-on-value opts)) (string? (get res :value)))
+                                        (and (:no-pr-str-on-value opts) (not (nil? res)))))
              (and (find res :error) (instance? js/Error (get res :error))))
          (or (not (find res :warning))
              (and (find res :warning)) (string? (get res :warning)))]}
-  (call-back! res))
+  (cb res))
 
 (defn validated-init-fn!
   [init-fn! res]
@@ -764,18 +765,22 @@
   file is found). It is mutually exclusive with :load-fn! and will be
   ignored in case both are present
 
-  * :src-paths - a vector of paths containing source files.
+  * :src-paths - a vector of paths containing source files
+  * :no-pr-str-on-value - in case of :success? avoid converting the
+  result map :value to string
 
   The second parameter cb, is a 1-arity function which receives the
   result map.
 
   Therefore, given cb (fn [result-map] ...), the main map keys are:
 
-  :success? ;; a boolean indicating if everything went right
-  :value    ;; (if (success? result)) will contain the actual yield of the evaluation
-  :error    ;; (if (not (success? result)) will contain a js/Error
-  :warning  ;; in case a warning was thrown and :warning-as-error is falsey
-  :form     ;; the evaluated form as data structure (not a string)
+  :success? - a boolean indicating if everything went right
+  :value    - (if (:success? result)), this key contains the yielded value as
+              string, unless :no-pr-str-on-value is true, in which case it
+              returns the bare value.
+  :error    - (if-not (:success? result)) will contain a js/Error
+  :warning  - in case a warning was thrown and :warning-as-error is falsey
+  :form     - the evaluated form as data structure (not a string)
 
   The third parameter is the source string to be read and evaluated.
 

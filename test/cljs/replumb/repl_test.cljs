@@ -17,7 +17,7 @@
       target-opts (if (doo/node?)
                     (core/nodejs-options load/fake-load-fn!)
                     (core/browser-options load/fake-load-fn!))
-      validated-echo-cb (partial repl/validated-call-back! echo-callback)
+      validated-echo-cb (partial repl/validated-call-back! target-opts echo-callback)
       reset-env! (partial repl/reset-env! target-opts)
       read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)]
 
@@ -378,11 +378,11 @@ select-keys
       (reset-env!)))
 
   (deftest macros
-;;;;;;;;;;;;;;;;
+    ;;;;;;;;;;;;;;;;
     ;; Implementing examples from Mike Fikes work at:
     ;; http://blog.fikesfarm.com/posts/2015-09-07-messing-with-macros-at-the-repl.html
     ;; (it's not that I don't trust Mike, you know)
-;;;;;;;;;;;;;;;;
+    ;;;;;;;;;;;;;;;;
     (let [res (read-eval-call "(defmacro hello [x] `(inc ~x))")
           out (unwrap-result res)]
       (is (success? res) "(defmacro hello ..) should succeed")
@@ -447,12 +447,29 @@ select-keys
   (deftest load-fn
     (let [load-map-atom (atom {})
           custom-load-fn (fn [load-map cb] (reset! load-map-atom load-map) (cb nil))
-          target-opts (if (doo/node?)
-                        (core/nodejs-options custom-load-fn)
-                        (core/browser-options custom-load-fn))]
-      (let [rs (repl/read-eval-call target-opts validated-echo-cb "(require 'bar.core)")]
+          custom-opts (assoc target-opts :load-fn! custom-load-fn)]
+      (let [rs (repl/read-eval-call custom-opts validated-echo-cb "(require 'bar.core)")]
         (is (= 'bar.core (:name @load-map-atom)) "Loading map with custom load-fn should have correct :name")
         (is (not (:macros @load-map-atom)) "Loading map with custom load-fn should have correct :macros")
         (is (= "bar/core" (:path @load-map-atom)) "Loading map with custom load-fn should have correct :path")
         (reset! load-map-atom {})
-        (reset-env! '[bar.core])))))
+        (reset-env! '[bar.core]))))
+
+  (deftest no-pr-str-on-value
+    (let [custom-opts (assoc target-opts :no-pr-str-on-value true)
+          validated-echo-cb (partial repl/validated-call-back! custom-opts echo-callback)
+          res (repl/read-eval-call custom-opts validated-echo-cb "(js-obj :foo :bar)")
+          out (unwrap-result res)]
+      (is (success? res) "Executing (js-obj :foo :bar) and :no-pr-str-on-value true should succeed")
+      (is (valid-eval-result? custom-opts out) "Executing (js-obj :foo :bar) and :no-pr-str-on-value true should have a valid result")
+      (is (object? out) "Executing (js-obj :foo :bar) and :no-pr-str-on-value true shoud return a JS object")
+      (reset-env!))
+
+    (let [custom-opts (assoc target-opts :no-pr-str-on-value true)
+          validated-echo-cb (partial repl/validated-call-back! custom-opts echo-callback)
+          res (repl/read-eval-call custom-opts validated-echo-cb "#js [:foo :bar]")
+          out (unwrap-result res)]
+      (is (success? res) "Executing #js [:foo :bar] and :no-pr-str-on-value true should succeed")
+      (is (valid-eval-result? custom-opts out) "Executing #js [:foo :bar]) and :no-pr-str-on-value true should have a valid result")
+      (is (array? out) "Executing #js [:foo :bar] and :no-pr-str-on-value true shoud return a JS object")
+      (reset-env!))))
