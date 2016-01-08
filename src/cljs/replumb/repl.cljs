@@ -228,7 +228,7 @@
 (def valid-opts-set
   "Set of valid option used for external input validation."
   #{:verbose :warning-as-error :target :init-fn!
-    :load-fn! :read-file-fn! :src-paths})
+    :no-pr-str-on-value :load-fn! :read-file-fn! :src-paths})
 
 (defn valid-opts
   "Validate the input user options. Returns a new map without invalid
