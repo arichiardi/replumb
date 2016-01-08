@@ -1,4 +1,4 @@
-(defproject replumb/replumb "0.1.4"
+(defproject replumb/replumb "0.1.5-SNAPSHOT"
   :description "ClojureScript plumbing for your bootstrapped REPLs."
   :url "https://github.com/clojurex/replumb"
   :license {:name "Eclipse Public License"
