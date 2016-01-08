@@ -145,6 +145,48 @@ trim-newline
       (is (= expected result) "(require ...) and (find-doc \"[^(]newline[^s*]\") should return valid docstring")
       (reset-env! '[clojure.string goog.string goog.string.StringBuffer])))
 
+  (deftest process-load-file
+    (let [res (read-eval-call "(load-file \"foo/load.clj\")")
+          result (unwrap-result res)]
+      (is (success? res) "(load-file \"foo/load.clj\") should succeed")
+      (is (valid-eval-result? result) "(load-file \"foo/load.clj\") be a valid result")
+      (is (= "#'foo.load/c" result) "(load-file \"foo/load.clj\") should return #'foo.load/c (last evaluated expression)")
+      (is (= (repl/current-ns) 'cljs.user) "(load-file \"foo/load.clj\") should not change namespace")
+      (reset-env! '[foo.load foo.bar.baz clojure.string goog.string goog.string.StringBuffer]))
+
+    (let [res (do (read-eval-call "(load-file \"foo/load.clj\")")
+                  (read-eval-call "(in-ns 'foo.load)")
+                  (read-eval-call "(+ (b) (c 49))"))
+          result (unwrap-result res)]
+      (is (success? res) "(load-file ...), (in-ns ...) and (+ (b) (c 49)) should succeed")
+      (is (valid-eval-result? result) "(load-file ...), (in-ns ...) and (+ (b) (c 49)) be a valid result")
+      (is (= "100" result) "(load-file ...), (in-ns ...) and (+ (b) (c 49)) should return 100")
+      (reset-env! '[foo.load foo.bar.baz clojure.string goog.string goog.string.StringBuffer]))
+
+    (let [res (read-eval-call "(load-file \"foo/probably-non-existing-file.clj\")")
+          error (unwrap-result res)]
+      (is (not (success? res)) "(load-file \"foo/probably-non-existing-file.clj\") should not succeed")
+      (is (valid-eval-error? error) "(load-file \"foo/probably-non-existing-file.clj\") should be an instance of js/Error")
+      (is (re-find #"Could not load file foo/probably-non-existing-file.clj" (extract-message error))
+          "(load-file \"foo/probably-non-existing-file.clj\") should have correct error message")
+      (reset-env!))
+
+    (let [res (read-eval-call "(load-file \"foo/error_in_file.cljs\")")
+          error (unwrap-result res)]
+      (is (not (success? res)) "(load-file \"foo/error-in-file.cljs\") should not succeed")
+      (is (valid-eval-error? error) "(load-file \"foo/error-in-file.cljs\") should be an instance of js/Error")
+      (is (re-find #"ERROR - Cannot read property 'call' of undefined" (extract-message error))
+          "(load-file \"foo/error-in-file.cljs\") should have correct error message")
+      (reset-env! '[foo.error-in-file]))
+
+    (let [res (read-eval-call "(load-file \"foo/load_require.cljs\")")
+          error (unwrap-result res)]
+      (is (not (success? res)) "(load-file \"foo/load_require.cljs\") should not succeed")
+      (is (valid-eval-error? error) "(load-file \"foo/load_require.cljs\") should be an instance of js/Error")
+      (is (re-find #"ERROR - Cannot read property 'call' of undefined" (extract-message error))
+          "(load-file \"foo/load_require.cljs\") should have correct error message")
+      (reset-env! '[foo.load-require])))
+
   (deftest process-require
     ;; AR - Test for "No *load-fn* when requiring a namespace in browser #35"
     ;; Note there these are tests with a real *load-fn*
@@ -587,30 +629,7 @@ trim-newline
         (is (= "\"post\"" out) "(require 'alterable.core :reload) and alterable.core/b should return \"post\"")
         (reset-env! '[alterable.core alterable.utils]))
       (io/delete-file! alterable-core-path)
-      (io/delete-file! alterable-utils-path)))
-
-  ;; AR - we need to force the order so that we can force re-init at the beginning
-  (defn test-ns-hook []
-    (repl/force-init!)
-    (require+doc)
-    (require+dir)
-    (require+apropos)
-    (require+find-doc)
-    (process-require)
-    (process-goog-import)
-    (ns-macro)
-
-    (ns-macro-require-refer-macros)
-    (ns-macro-require-include-macros)
-    (ns-macro-require-macros)
-    (ns-macro-require-macros-refer)
-    (ns-macro-use-macros)
-    (ns-macro-require)
-    (ns-macro-require-macros-as)
-    (ns-macro-self-requiring-namespace)
-
-    (process-reload)
-    (process-reload-all)))
+      (io/delete-file! alterable-utils-path))))
 
 (let [target-opts (nodejs-options load/no-resource-load-fn!)
       validated-echo-cb (partial repl/validated-call-back! target-opts echo-callback)
@@ -618,9 +637,45 @@ trim-newline
       read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)]
   (deftest require-when-read-file-return-nil
     (let [res (do (read-eval-call "(require 'clojure.string)")
-                  (read-eval-call "(doc clojure.string/trim)"))
+                  (read-eval-call "(source clojure.string/trim)"))
           out (unwrap-result res)]
-      (is (success? res) "(doc clojure.string/trim) should succeed.")
+      (is (success? res) "(source clojure.string/trim) should succeed.")
       (is (valid-eval-result? out) "(source clojure.string/trim) should be a valid result")
       (is (= "nil" out) "(source clojure.string/trim) should return nil")
-      (reset-env! '[clojure.string goog.string goog.string.StringBuffer]))))
+      (reset-env! '[clojure.string goog.string goog.string.StringBuffer])))
+
+  (deftest load-file-when-read-file-retuns-nil
+    (let [res (read-eval-call "(load-file \"foo/load.clj\")")
+          result (unwrap-result res)]
+      (is (success? res) "(load-file \"foo/load.clj\") should succeed")
+      (is (valid-eval-result? result) "(load-file \"foo/load.clj\") be a valid result")
+      (is (= "nil" result) "(load-file \"foo/load.clj\") should return nil")
+      (is (= (repl/current-ns) 'cljs.user) "(load-file \"foo/load.clj\") should not change namespace")
+      (reset-env! '[foo.load]))))
+
+;; AR - we need to force the order so that we can force re-init at the beginning
+(defn test-ns-hook []
+  (repl/force-init!)
+  (require+doc)
+  (require+dir)
+  (require+apropos)
+  (require+find-doc)
+  (process-load-file)
+  (process-require)
+  (process-goog-import)
+  (ns-macro)
+
+  (ns-macro-require-refer-macros)
+  (ns-macro-require-include-macros)
+  (ns-macro-require-macros)
+  (ns-macro-require-macros-refer)
+  (ns-macro-use-macros)
+  (ns-macro-require)
+  (ns-macro-require-macros-as)
+  (ns-macro-self-requiring-namespace)
+
+  (process-reload)
+  (process-reload-all)
+
+  (require-when-read-file-return-nil)
+  (load-file-when-read-file-retuns-nil))
