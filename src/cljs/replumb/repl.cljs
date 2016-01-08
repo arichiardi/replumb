@@ -517,11 +517,12 @@
     (cljs/eval st
                expr
                (base-eval-opts! opts)
-               (fn [res]
-                 (let [[opts msg] (if res
-                                    [(assoc opts :no-pr-str-on-value true) (common/extract-message res true true)]
-                                    [opts res])]
-                   (call-back! opts cb data (common/wrap-success msg)))))
+               (fn [{:keys [value]}]
+                 ;; AR the returned :value is a js/Error for pst of course
+                 (let [msg (if value
+                             (common/extract-message value true true)
+                             "nil")]
+                   (call-back! (assoc opts :no-pr-str-on-value true) cb data (common/wrap-success msg)))))
     (call-back! opts cb data (common/wrap-success nil))))
 
 (defn process-in-ns
@@ -530,12 +531,10 @@
    st
    ns-string
    (base-eval-opts! opts)
-   (fn [result]
-     (if (and (map? result) (:error result))
+   (fn [{:keys [error value] :as result}]
+     (if error
        (call-back! opts cb data result)
-       (let [ns-symbol result]
-         (when (:verbose opts)
-           (common/debug-prn "in-ns argument is symbol? " (symbol? ns-symbol)))
+       (let [ns-symbol value]
          (if-not (symbol? ns-symbol)
            (call-back! opts cb data (common/error-argument-must-be-symbol "in-ns" ex-info-data))
            (if (some (partial = ns-symbol) (ast/known-namespaces @st))
@@ -547,13 +546,8 @@
                 st
                 ns-form
                 (base-eval-opts! opts)
-                (fn [error]
-                  (call-back! opts
-                              cb
-                              (merge data {:on-success-fn! #(swap! app-env assoc :current-ns ns-symbol)})
-                              (if error
-                                (common/wrap-error error)
-                                (common/wrap-success nil)))))))))))))
+                (partial call-back! opts cb
+                         (merge data {:on-success-fn! #(swap! app-env assoc :current-ns ns-symbol)})))))))))))
 
 (defn fetch-source
   [{:keys [verbose read-file-fn!]} var paths-to-try cb]
