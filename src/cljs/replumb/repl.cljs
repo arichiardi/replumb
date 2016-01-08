@@ -320,17 +320,18 @@
       (swap! app-env assoc :last-eval-warning (ana/message env s)))))
 
 (defn validated-call-back!
-  [call-back! res]
+  [opts cb res]
   {:pre [(map? res)
          (find res :form)
          (or (find res :error) (find res :value))
          (or (and (find res :value) (get res :success?))
              (and (find res :error) (not (get res :success?))))
-         (or (and (find res :value) (string? (get res :value)))
+         (or (and (find res :value) (or (and (not (:no-pr-str-on-value opts)) (string? (get res :value)))
+                                        (and (:no-pr-str-on-value opts) (not (nil? res)))))
              (and (find res :error) (instance? js/Error (get res :error))))
          (or (not (find res :warning))
              (and (find res :warning)) (string? (get res :warning)))]}
-  (call-back! res))
+  (cb res))
 
 (defn validated-init-fn!
   [init-fn! res]
