@@ -174,7 +174,7 @@ Contributions are welcome, any of them. Have a look at ```CONTRIBUTING.md``` for
 
 Distributed under the Eclipse Public License, the same as Clojure.
 
-Copyright (C) 2015 Scalac Sp. z o.o.
+Copyright (C) 2015-16 Scalac Sp. z o.o.
 
 Scalac [scalac.io](http://scalac.io/?utm_source=scalac_github&utm_campaign=scalac1&utm_medium=web) is a full-stack team of great functional developers focused around Scala/Clojure backed by great frontend and mobile developers.
 
