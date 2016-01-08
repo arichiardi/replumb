@@ -55,16 +55,20 @@
   will be ignored in case both are present
 
   * `:src-paths`  a vector of paths containing source files
+  * `:no-pr-str-on-value`  in case of `:success?` avoid converting the
+  result map `:value` to string
 
   The second parameter, `callback`, should be a 1-arity function which receives
   the result map, whose result keys will be:
 
   ```
-  :success?  ;; a boolean indicating if everything went right
-  :value     ;; (if (success? result)) will contain the actual yield of the evaluation
-  :error     ;; (if (not (success? result)) will contain a js/Error
-  :warning   ;; in case a warning was thrown and :warning-as-error is falsey
-  :form      ;; the evaluated form as data structure (not a string)
+  :success?  a boolean indicating if everything went alright
+  :value     (if (:success? result)), this key contains the yielded value as
+             string, unless :no-pr-str-on-value is true, in which case it
+             returns the bare value.
+  :error     (if-not (:success? result)) will contain a js/Error
+  :warning   in case a warning was thrown and :warning-as-error is falsey
+  :form      the evaluated form as data structure (not string)}
   ```
 
   The third parameter is the source string to be read and evaluated.
