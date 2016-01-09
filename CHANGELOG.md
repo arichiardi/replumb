@@ -1,7 +1,10 @@
 # Changelog
 
 ## 0.1.5
+- Clojurescript 1.7.228 support
+- Load-file support (whole file sent to `cljs.js.eval-str`, whicn can be)
 - The new option `:no-pr-str-on-value` avoids converting the result value to string
+- Upstream fix for [issue #91](https://github.com/ScalaConsultants/replumb/issues/91) - :refer-macros fails when implicit
 - Fix for [issue #85](https://github.com/ScalaConsultants/replumb/issues/85) - source does not work with macros
 - Fix for [issue #81](https://github.com/ScalaConsultants/replumb/issues/81) - missing doc for ns-interns
 
