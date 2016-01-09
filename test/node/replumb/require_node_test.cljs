@@ -478,79 +478,41 @@ trim-newline
       (reset-env! '[my.namespace foo.bar.core foo.bar.macros])))
 
   (deftest ns-macro-require-include-macros
-    ;; solved in 1.7.202 - see commented test below
-    ;; the issue in replumb is https://github.com/ScalaConsultants/replumb/issues/91
+    ;; Was https://github.com/ScalaConsultants/replumb/issues/91
     (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.baz :include-macros true]))")
                   (read-eval-call "(foo.bar.baz/mul-baz 6 6)"))
-          error (unwrap-result res)]
-      (is (not (success? res)) "(ns my.namespace (:require ... :include-macros ...)) and (foo.bar.baz/mul-baz 6 6) should not succeed")
-      (is (valid-eval-error? error) "(ns my.namespace (:require ...:include-macros...)) and (foo.bar.baz/mul-baz 6 6) should be an instance of jsError")
-      (is (re-find #"Cannot read property 'call' of undefined" (extract-message error)) "(ns my.namespace (:require ...:include-macros...)) and (foo.bar.baz/mul-baz 6 6) should have correct error message.")
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:require ... :include-macros ...)) and (f/mul-baz 6 6) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require ...:include-macros...)) and (f/mul-baz 6 6) should be a valid result.")
+      (is (= "36" out) "(f/mul-baz 6 6) should be 36")
       (reset-env! '[my.namespace foo.bar.baz]))
 
-    ;; (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.baz :include-macros true]))")
-    ;;               (read-eval-call "(foo.bar.baz/mul-baz 6 6)"))
-    ;;       out (unwrap-result res)]
-    ;;   (is (success? res) "(ns my.namespace (:require ... :include-macros ...)) and (f/mul-baz 6 6) should succeed")
-    ;;   (is (valid-eval-result? out) "(ns my.namespace (:require ...:include-macros...)) and (f/mul-baz 6 6) should be a valid result.")
-    ;;   (is (= "36" out) "(f/mul-baz 6 6) should be 36")
-    ;;   (reset-env! '[my.namespace foo.bar.baz]))
-
-    ;; solved in 1.7.202 - see commented test below
     ;; note that the test outputs (* nil nil) but the correct result is 150
     (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.core :include-macros true]))")
                   (read-eval-call "(foo.bar.core/mul-core 30 5)"))
           out (unwrap-result res)]
       (is (success? res) "(ns my.namespace (:require...:include-macros...])) and (foo.bar.core/mul-core 30 5) should succeed")
       (is (valid-eval-result? out) "(ns my.namespace (:require...:as...])) and (foo.bar.core/mul-core 30 5) should be a valid result")
-      (is (= "(* nil nil)" out) "(foo.bar.core/mul-core 30 5) should be 150")
-      (reset-env! '[my.namespace foo.bar.core foo.bar.macros]))
-
-    ;; (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.core :include-macros true]))")
-    ;;               (read-eval-call "(foo.bar.core/mul-core 30 5)"))
-    ;;       out (unwrap-result res)]
-    ;;   (is (success? res) "(ns my.namespace (:require...:include-macros...])) and (foo.bar.core/mul-core 30 5) should succeed")
-    ;;   (is (valid-eval-result? out) "(ns my.namespace (:require...:as...])) and (foo.bar.core/mul-core 30 5) should be a valid result")
-    ;;   (is (= "150" out) "(foo.bar.core/mul-core 30 5) should be 150")
-    ;;   (reset-env! '[my.namespace foo.bar.core foo.bar.macros]))
-    )
+      (is (= "150" out) "(foo.bar.core/mul-core 30 5) should be 150")
+      (reset-env! '[my.namespace foo.bar.core foo.bar.macros])))
 
   (deftest ns-macro-require-refer-macros
-    ;; solved in 1.7.202 - see commented version below
-    ;; the issue in replumb is https://github.com/ScalaConsultants/replumb/issues/91
+    ;; Was https://github.com/ScalaConsultants/replumb/issues/91
     (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.baz :refer-macros [mul-baz]]))")
                   (read-eval-call "(mul-baz 10 12)"))
-          error (unwrap-result res)]
-      (is (not (success? res)) "(ns my.namespace (:require ...:refer-macros...)) and (mul-baz 10 12) should not succeed")
-      (is (valid-eval-error? error) "(ns my.namespace (:require ...:refer-macros..)) and (mul-baz 10 12) should be an instance of js/Error")
-      (is (re-find #"ERROR" (extract-message error)) "(ns my.namespace (:require ...:refer-macros...)) and (mul-baz 10 12) should have correct error message")
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:require ...:refer-macros...)) and (mul-baz 10 12) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require ...:refer-macros)) and (mul-baz 10 12) should be a valid result")
+      (is (= "120" out) "(mul-baz 10 12) should be equal to 120")
       (reset-env! '[my.namespace foo.bar.baz]))
-
-    ;; (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.baz :refer-macros [mul-baz]]))")
-    ;;               (read-eval-call "(mul-baz 10 12)"))
-    ;;       out (unwrap-result res)]
-    ;;   (is (success? res) "(ns my.namespace (:require ...:refer-macros...)) and (mul-baz 10 12) should succeed")
-    ;;   (is (valid-eval-result? out) "(ns my.namespace (:require ...:refer-macros)) and (mul-baz 10 12) should be a valid result")
-    ;;   (is (= "120" out) "(mul-baz 10 12) should be equal to 120")
-    ;;   (reset-env! '[my.namespace foo.bar.baz]))
 
     (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.core :refer-macros [mul-core]]))")
                   (read-eval-call "(mul-core 10 20)"))
-          error (unwrap-result res)]
-      (is (not (success? res)) "(ns my.namespace (:require ...:refer-macros...)) and (mul-core 10 20) should not succeed")
-      (is (valid-eval-error? error) "(ns my.namespace (:require ...:refer-macros...)) and (mul-core 10 20) should be an instance of js/Error")
-      (is (re-find #"ERROR" (extract-message error))
-          "(ns my.namespace (:require ...:refer-macros...)) and (mul-core 10 20) should have correct error message")
-      (reset-env! '[my.namespace foo.bar.core foo.bar.macros]))
-
-    ;; (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.core :refer-macros [mul-core]]))")
-    ;;               (read-eval-call "(mul-core 10 20)"))
-    ;;       out (unwrap-result res)]
-    ;;   (is (success? res) "(ns my.namespace (:require ...:refer-macros...)) and (mul-core 10 20) should succeed")
-    ;;   (is (valid-eval-result? out) "(ns my.namespace (:require ...:refer-macros...)) and (mul-core 10 20) should have a valid result")
-    ;;   (is (= "200" out ) "(mul-core 10 20) should produce 200")
-    ;;   (reset-env! '[my.namespace foo.bar.core foo.bar.macros]))
-    )
+          out (unwrap-result res)]
+      (is (success? res) "(ns my.namespace (:require ...:refer-macros...)) and (mul-core 10 20) should succeed")
+      (is (valid-eval-result? out) "(ns my.namespace (:require ...:refer-macros...)) and (mul-core 10 20) should have a valid result")
+      (is (= "200" out ) "(mul-core 10 20) should produce 200")
+      (reset-env! '[my.namespace foo.bar.core foo.bar.macros])))
 
   (deftest ns-macro-self-requiring-namespace
     ;; see "loop" section here: http://blog.fikesfarm.com/posts/2015-12-18-clojurescript-macro-tower-and-loop.html
@@ -566,6 +528,7 @@ trim-newline
     (let [alterable-core-path "dev-resources/private/test/src/cljs/alterable/core.cljs"
           pre-content "(ns alterable.core)\n\n(def b \"pre\")"
           post-content "(ns alterable.core)\n\n(def b \"post\")"]
+
       ;; Writing "pre" version of alterable.core
       (io/write-file! alterable-core-path pre-content)
       (let [res (do (read-eval-call "(require 'alterable.core)")
@@ -587,7 +550,6 @@ trim-newline
         (is (= 'cljs.user (repl/current-ns)) "(require 'alterable.core :reload) and alterable.core/b should not change namespace")
         (is (= "\"post\"" out) "(require 'alterable.core :reload) and alterable.core/b should return \"post\"")
         (reset-env! '[alterable.core]))
-
       (io/delete-file! alterable-core-path)))
 
   (deftest process-reload-all
@@ -635,6 +597,7 @@ trim-newline
       validated-echo-cb (partial repl/validated-call-back! target-opts echo-callback)
       reset-env! (partial repl/reset-env! target-opts)
       read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)]
+
   (deftest require-when-read-file-return-nil
     (let [res (do (read-eval-call "(require 'clojure.string)")
                   (read-eval-call "(source clojure.string/trim)"))

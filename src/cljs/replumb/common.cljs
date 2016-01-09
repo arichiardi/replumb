@@ -16,10 +16,10 @@
 
 (defn extract-message
   "Iteratively extracts messages inside (nested #error objects), returns
-  a string. If the boolean `exclude-error-msg?` is true, the \"ERROR\"
-  only message will be included in the final string. If the boolean
-  `print-stack?` is true, the stack will be added to the final
-  string. They both default to false.
+  a string. If the boolean `exclude-error-msg?` is true, only the
+  message marked with \"ERROR\" will be included in the final string. If
+  the boolean `print-stack?` is true, the stack will be added to the
+  final string. They both default to false.
 
   ** Be sure to pass a js/Error object here **"
   ([err]
