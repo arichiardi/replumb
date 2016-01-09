@@ -443,23 +443,36 @@
     (set! *1 value)))
 
 (defn eval-str*
-  [eval-opts user-opts cb data source expression-form]
-  (let [name (:file-name eval-opts)]
+  "Custom version of cljs.js/eval-str. The only difference is in the
+  spitting of eval-opts, which is the map which the actual
+  cljs.js/eval-str needs and usually built by base-eval-opts!, and
+  user-opts, passed through read-eval-call (same keys supported).
+
+  Additionally, eval-opts might contain:
+
+  * :file-name In case of file loading, indicates its name
+  * :on-success-fn! 1-arity function that will be executed on success,
+  the input is the evaluation result
+  * :on-error-fn! 1-arity function that will be executed on error, the
+  input is the evaluation result
+  * :side-effect-fn! 1-arity function that if present will be executed
+  for both success and error, effectively disabling the individual
+  on-success-fn! and on-error-fn!. The input is the evaluation result"
+  [eval-opts user-opts cb data source]
+  (let [{:keys [file-name on-success-fn! on-error-fn! side-effect-fn!]} eval-opts]
     (cljs/eval-str st
-                   source
-                   (str name source)
-                   ;; opts (map)
-                   eval-opts
-                   (fn [res]
-                     (when (:verbose user-opts)
-                       (common/debug-prn "Evaluation returned: " res))
-                     (call-back! user-opts cb
-                                 (merge data
-                                        {:on-success-fn! #(do
-                                                            (process-1-2-3 data expression-form (:value res))
-                                                            (when-not name
-                                                              (swap! app-env assoc :current-ns (:ns res))))})
-                                 res)))))
+      source
+      (if file-name file-name source)
+      eval-opts
+      (fn [res]
+        (when (:verbose user-opts)
+          (common/debug-prn "Evaluation returned: " res))
+        (call-back! user-opts cb
+                    (cond-> data
+                      on-success-fn!  (assoc :on-success-fn! (fn [] (on-success-fn! res)))
+                      on-error-fn!  (assoc :on-error-fn! (fn [] (on-error-fn! res)))
+                      side-effect-fn! (assoc :side-effect-fn! (fn [] (side-effect-fn! res))))
+                    res)))))
 
 (defn process-require
   [opts cb data kind specs]
@@ -645,8 +658,10 @@
                                      read-file-fn!
                                      (fn [{:keys [source] :as result}]
                                        (if result
-                                         (let [eval-opts (load-eval-opts! opts file-name)]
-                                           (eval-str* eval-opts opts cb data source (last-form source)))
+                                         (eval-str* (assoc (load-eval-opts! opts file-name)
+                                                           :on-success-fn! (fn [eval-res]
+                                                                             (process-1-2-3 data (last-form source) (:value eval-res))))
+                                                    opts cb data source)
                                          (call-back (common/wrap-error
                                                      (ex-info (str "Could not load file " file-name) ex-info-data))))))
       (do (when verbose
@@ -853,7 +868,12 @@
       (binding [ana/*cljs-warning-handlers* [(partial custom-warning-handler opts cb)]]
         (if (repl-special? expression-form)
           (process-repl-special opts cb data expression-form)
-          (eval-str* (base-eval-opts! opts) opts cb data source expression-form))))
+          (eval-str* (assoc (base-eval-opts! opts)
+                            :on-success-fn! (fn [eval-res]
+                                              (do
+                                                (process-1-2-3 data expression-form (:value eval-res))
+                                                (swap! app-env assoc :current-ns (:ns eval-res)))))
+                     opts cb data source))))
     (catch :default e
       (when (:verbose opts)
         (common/debug-prn "Exception caught in read-eval-call: " (.-stack e)))
