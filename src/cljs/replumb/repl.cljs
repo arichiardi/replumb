@@ -108,12 +108,12 @@
   [form]
   (and (seq? form) (replumb-repl-special-set (first form))))
 
-(defn make-base-eval-opts!
+(defn base-eval-opts!
   "Gets the base set of evaluation options. The 1-arity function
   specifies opts that override default. No check here if opts are
   valid."
   ([]
-   (make-base-eval-opts! {}))
+   (base-eval-opts! {}))
   ([opts]
    {:ns (:current-ns @app-env)
     :context :expr
@@ -123,6 +123,12 @@
     :eval cljs/js-eval
     :verbose (or (:verbose opts) false)
     :static-fns false}))
+
+(defn load-eval-opts!
+  [opts file-name]
+  (-> (base-eval-opts! opts)
+      (dissoc :context)
+      (assoc :file-name file-name)))
 
 (defn self-require?
   [specs]
@@ -428,6 +434,46 @@
 ;;; Processing fns - from mfikes/plank ;;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn process-1-2-3
+  [data expression-form value]
+  (when-not (or ('#{*1 *2 *3 *e} expression-form)
+                (ns-form? expression-form))
+    (set! *3 *2)
+    (set! *2 *1)
+    (set! *1 value)))
+
+(defn eval-str*
+  "Custom version of cljs.js/eval-str. The only difference is in the
+  spitting of eval-opts, which is the map which the actual
+  cljs.js/eval-str needs and usually built by base-eval-opts!, and
+  user-opts, passed through read-eval-call (same keys supported).
+
+  Additionally, eval-opts might contain:
+
+  * :file-name In case of file loading, indicates its name
+  * :on-success-fn! 1-arity function that will be executed on success,
+  the input is the evaluation result
+  * :on-error-fn! 1-arity function that will be executed on error, the
+  input is the evaluation result
+  * :side-effect-fn! 1-arity function that if present will be executed
+  for both success and error, effectively disabling the individual
+  on-success-fn! and on-error-fn!. The input is the evaluation result"
+  [eval-opts user-opts cb data source]
+  (let [{:keys [file-name on-success-fn! on-error-fn! side-effect-fn!]} eval-opts]
+    (cljs/eval-str st
+      source
+      (if file-name file-name source)
+      eval-opts
+      (fn [res]
+        (when (:verbose user-opts)
+          (common/debug-prn "Evaluation returned: " res))
+        (call-back! user-opts cb
+                    (cond-> data
+                      on-success-fn!  (assoc :on-success-fn! (fn [] (on-success-fn! res)))
+                      on-error-fn!  (assoc :on-error-fn! (fn [] (on-error-fn! res)))
+                      side-effect-fn! (assoc :side-effect-fn! (fn [] (side-effect-fn! res))))
+                    res)))))
+
 (defn process-require
   [opts cb data kind specs]
   ;; TODO - cannot find a way to handle (require something) correctly, note no quote
@@ -442,7 +488,7 @@
         (common/debug-prn "Processing" kind "via" (pr-str ns-form)))
       (cljs/eval st
                  ns-form
-                 (make-base-eval-opts! opts)
+                 (base-eval-opts! opts)
                  (fn [{error :error}]
                    (call-back! opts cb
                                (merge data
@@ -470,7 +516,7 @@
   (if-let [expr (or expr '*e)]
     (cljs/eval st
                expr
-               (make-base-eval-opts! opts)
+               (base-eval-opts! opts)
                (fn [res]
                  (let [[opts msg] (if res
                                     [(assoc opts :no-pr-str-on-value true) (common/extract-message res true true)]
@@ -483,7 +529,7 @@
   (cljs/eval
    st
    ns-string
-   (make-base-eval-opts! opts)
+   (base-eval-opts! opts)
    (fn [result]
      (if (and (map? result) (:error result))
        (call-back! opts cb data result)
@@ -500,7 +546,7 @@
                (cljs/eval
                 st
                 ns-form
-                (make-base-eval-opts! opts)
+                (base-eval-opts! opts)
                 (fn [error]
                   (call-back! opts
                               cb
@@ -592,6 +638,36 @@
       (call-back (common/wrap-success (s/join (map #(with-out-str (repl/print-doc %)) ms))))
       (call-back (common/wrap-success "nil")))))
 
+(defn last-form
+  [source]
+  (let [rdr (rt/string-push-back-reader source)
+        eof (js-obj)
+        read #(r/read {:eof eof} rdr)]
+    (loop [first-form (read)
+           second-form (read)]
+      (if (identical? eof second-form)
+        first-form
+        (recur second-form (read))))))
+
+(defn process-load-file
+  [{:keys [verbose read-file-fn! src-paths] :as opts} cb data file-name]
+  (let [call-back (partial call-back! opts cb data)]
+    (if read-file-fn!
+      (load/read-files-and-callback! verbose
+                                     (load/file-paths src-paths file-name)
+                                     read-file-fn!
+                                     (fn [{:keys [source] :as result}]
+                                       (if result
+                                         (eval-str* (assoc (load-eval-opts! opts file-name)
+                                                           :on-success-fn! (fn [eval-res]
+                                                                             (process-1-2-3 data (last-form source) (:value eval-res))))
+                                                    opts cb data source)
+                                         (call-back (common/wrap-error
+                                                     (ex-info (str "Could not load file " file-name) ex-info-data))))))
+      (do (when verbose
+            (common/debug-prn "No :read-file-fn! provided, skipping file loading..."))
+          (call-back (common/wrap-success nil))))))
+
 (defn process-repl-special
   [opts cb data expression-form]
   (let [argument (second expression-form)]
@@ -606,15 +682,7 @@
       dir (process-dir opts cb data argument)
       apropos (process-apropos opts cb data argument)
       find-doc (process-find-doc opts cb data argument)
-      load-file (call-back! opts cb data (common/error-keyword-not-supported "load-file" ex-info-data))))) ;; (process-load-file argument opts)
-
-(defn process-1-2-3
-  [data expression-form value]
-  (when-not (or ('#{*1 *2 *3 *e} expression-form)
-                (ns-form? expression-form))
-    (set! *3 *2)
-    (set! *2 *1)
-    (set! *1 value)))
+      load-file (process-load-file opts cb data argument))))
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;;; Initialization ;;;
@@ -800,19 +868,12 @@
       (binding [ana/*cljs-warning-handlers* [(partial custom-warning-handler opts cb)]]
         (if (repl-special? expression-form)
           (process-repl-special opts cb data expression-form)
-          (cljs/eval-str st
-                         source
-                         source
-                         ;; opts (map)
-                         (make-base-eval-opts! opts)
-                         (fn [res]
-                           (when (:verbose opts)
-                             (common/debug-prn "Evaluation returned: " res))
-                           (call-back! opts cb
-                                       (merge data
-                                              {:on-success-fn! #(do (process-1-2-3 data expression-form (:value res))
-                                                                    (swap! app-env assoc :current-ns (:ns res)))})
-                                       res))))))
+          (eval-str* (assoc (base-eval-opts! opts)
+                            :on-success-fn! (fn [eval-res]
+                                              (do
+                                                (process-1-2-3 data expression-form (:value eval-res))
+                                                (swap! app-env assoc :current-ns (:ns eval-res)))))
+                     opts cb data source))))
     (catch :default e
       (when (:verbose opts)
         (common/debug-prn "Exception caught in read-eval-call: " (.-stack e)))
