@@ -637,19 +637,18 @@
         (recur second-form (read))))))
 
 (defn process-load-file
-  [{:keys [verbose read-file-fn! src-paths] :as opts} cb data filename]
+  [{:keys [verbose read-file-fn! src-paths] :as opts} cb data file-name]
   (let [call-back (partial call-back! opts cb data)]
     (if read-file-fn!
       (load/read-files-and-callback! verbose
-                                     (load/file-paths src-paths filename)
+                                     (load/file-paths src-paths file-name)
                                      read-file-fn!
-                                     (fn [result]
+                                     (fn [{:keys [source] :as result}]
                                        (if result
-                                         (let [eval-opts (load-eval-opts! opts filename)
-                                               src (:source result)]
-                                           (eval-str* eval-opts opts cb data src (last-form src)))
+                                         (let [eval-opts (load-eval-opts! opts file-name)]
+                                           (eval-str* eval-opts opts cb data source (last-form source)))
                                          (call-back (common/wrap-error
-                                                     (ex-info (str "Could not load file " filename) ex-info-data))))))
+                                                     (ex-info (str "Could not load file " file-name) ex-info-data))))))
       (do (when verbose
             (common/debug-prn "No :read-file-fn! provided, skipping file loading..."))
           (call-back (common/wrap-success nil))))))
