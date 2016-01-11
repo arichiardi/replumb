@@ -387,7 +387,7 @@ select-keys
           out (unwrap-result res)]
       (is (success? res) "(defmacro hello ..) should succeed")
       (is (valid-eval-result? out) "(defmacro hello ..) should have a valid result")
-      (is (= "true" out) "(defmacro hello ..) shoud return true")
+      (is (= "true" out) "(defmacro hello ..) should return true")
       (reset-env!))
 
     (let [res (do (read-eval-call "(defmacro hello [x] `(inc ~x))")
@@ -395,7 +395,7 @@ select-keys
           out (unwrap-result res)]
       (is (success? res) "Executing (defmacro hello ..) as function should succeed")
       (is (valid-eval-result? out) "Executing (defmacro hello ..) as function should have a valid result")
-      (is (= "(inc 13)" out) "Executing (defmacro hello ..) as function shoud return (inc 13)")
+      (is (= "(inc 13)" out) "Executing (defmacro hello ..) as function should return (inc 13)")
       (reset-env!))
 
     (let [res (do (read-eval-call "(ns foo.core$macros)")
@@ -404,7 +404,7 @@ select-keys
           out (unwrap-result res)]
       (is (success? res) "Executing (foo.core/hello ..) as function should succeed")
       (is (valid-eval-result? out) "Executing (foo.core/hello ..) hello ..) as function should have a valid result")
-      (is (= "6" out) "Executing (foo.core/hello ..) hello ..) as function shoud return 6")
+      (is (= "6" out) "Executing (foo.core/hello ..) hello ..) as function should return 6")
       (reset-env! '[foo.core]))
 
     (let [res (do (read-eval-call "(ns foo.core$macros)")
@@ -415,7 +415,7 @@ select-keys
           out (unwrap-result res)]
       (is (success? res) "Executing (foo.core/hello ..) as function should succeed")
       (is (valid-eval-result? out) "Executing (foo.core/hello ..) hello ..) as function should have a valid result")
-      (is (= "6" out) "Executing (foo.core/hello ..) hello ..) as function shoud return 6")
+      (is (= "6" out) "Executing (foo.core/hello ..) hello ..) as function should return 6")
       (reset-env! '[foo.core another.ns])))
 
   (deftest tagged-literals
@@ -436,7 +436,7 @@ select-keys
           out (unwrap-result res)]
       (is (success? res) "Reading #inst should succeed")
       (is (valid-eval-result? out) "Reading #inst should have a valid result")
-      (is (= "#inst \"2010-11-12T18:14:15.666-00:00\"" out) "Reading #inst shoud return the object"))
+      (is (= "#inst \"2010-11-12T18:14:15.666-00:00\"" out) "Reading #inst should return the object"))
 
     (let [res (read-eval-call "#uuid \"550e8400-e29b-41d4-a716-446655440000\"")
           out (unwrap-result res)]
@@ -462,7 +462,7 @@ select-keys
           out (unwrap-result res)]
       (is (success? res) "Executing (js-obj :foo :bar) and :no-pr-str-on-value true should succeed")
       (is (valid-eval-result? custom-opts out) "Executing (js-obj :foo :bar) and :no-pr-str-on-value true should have a valid result")
-      (is (object? out) "Executing (js-obj :foo :bar) and :no-pr-str-on-value true shoud return a JS object")
+      (is (object? out) "Executing (js-obj :foo :bar) and :no-pr-str-on-value true should return a JS object")
       (reset-env!))
 
     (let [custom-opts (assoc target-opts :no-pr-str-on-value true)
@@ -471,5 +471,5 @@ select-keys
           out (unwrap-result res)]
       (is (success? res) "Executing #js [:foo :bar] and :no-pr-str-on-value true should succeed")
       (is (valid-eval-result? custom-opts out) "Executing #js [:foo :bar]) and :no-pr-str-on-value true should have a valid result")
-      (is (array? out) "Executing #js [:foo :bar] and :no-pr-str-on-value true shoud return a JS object")
+      (is (array? out) "Executing #js [:foo :bar] and :no-pr-str-on-value true should return a JS object")
       (reset-env!))))

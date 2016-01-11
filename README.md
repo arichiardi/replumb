@@ -108,7 +108,7 @@ the `result` map, whose result keys will be:
 
  
     {:success?  a boolean indicating if everything went alright
-     :value`    (if (:success? result)), this key contains the yielded value as
+     :value     (if (:success? result)), this key contains the yielded value as
                 string, unless :no-pr-str-on-value is true, in which case it
                 returns the bare value. 
      :error     (if-not (:success? result)) will contain a js/Error
