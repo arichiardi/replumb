@@ -487,7 +487,6 @@ trim-newline
       (is (= "36" out) "(f/mul-baz 6 6) should be 36")
       (reset-env! '[my.namespace foo.bar.baz]))
 
-    ;; note that the test outputs (* nil nil) but the correct result is 150
     (let [res (do (read-eval-call "(ns my.namespace (:require [foo.bar.core :include-macros true]))")
                   (read-eval-call "(foo.bar.core/mul-core 30 5)"))
           out (unwrap-result res)]
