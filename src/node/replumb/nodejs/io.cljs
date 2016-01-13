@@ -1,5 +1,6 @@
 (ns replumb.nodejs.io
-  (:require [cljs.nodejs :as nodejs]))
+  (:require [cljs.nodejs :as nodejs]
+            [replumb.common :as common]))
 
 (def require-fs
   "Delay containing the call to \"require fs\". It returns the File
@@ -71,3 +72,29 @@
      (.unlinkSync fs-module file-path)
      (catch :default e
        (println (.-stack e))))))
+
+(defn file-exists?
+  "Check if the file on the given path exists. It is synchronous."
+  ([path]
+   (file-exists? (force require-fs) path))
+  ([fs-module path]
+   (try
+     (not (nil? (.statSync fs-module path)))
+     (catch :default e
+       ;; ENOENT -> No such file or directory, see https://nodejs.org/api/errors.html
+       (if (re-find #"ENOENT" (common/extract-message e))
+         false
+         (println (.-stack e)))))))
+
+(defn safely-delete!
+  "Before deleting, checks if the file exists."
+  [path]
+  (when (file-exists? path)
+    (delete-file! path)))
+
+(defn rename-file
+  "Renames synchronously a file."
+  ([old-path new-path]
+   (rename-file (force require-fs) old-path new-path))
+  ([fs-module old-path new-path]
+   (.renameSync fs-module old-path new-path)))

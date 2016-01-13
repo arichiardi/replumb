@@ -54,7 +54,16 @@
   if no file is found). It is mutually exclusive with `:load-fn!` and
   will be ignored in case both are present
 
-  * `:src-paths`  a vector of paths containing source files
+  * `:write-file-fn!` a synchronous 2-arity function with signature
+  `[file-path data]` that accepts a file-path and data to write.
+
+  * `:src-paths` - a vector of paths containing source files
+
+  * `:cache` - a map containing two optional values: the first, `:path`,
+  indicates the path of the cached files. The second, `:src-paths-lookup?`,
+  indicates whether search the cached files in `:src-paths`. If both present,
+  `:path` will have the priority but both will be inspected.
+
   * `:no-pr-str-on-value`  in case of `:success?` avoid converting the
   result map `:value` to string
 
@@ -163,14 +172,21 @@
   `read-file-fn!`, an asynchronous 2-arity function with signature
   `[file-path src-cb]` where src-cb is itself a function `(fn [source]
   ...)` that needs to be called with the file content as string (`nil`
-  if no file is found)."
+  if no file is found).
+
+  The 3-arity function receives additionally a third parameter `write-file-fn!`,
+  a synchronous 2-arity function with signature `[file-path data]` that accepts
+  a file-path and data to write."
   ([load-fn!]
    {:target :default
     :load-fn! load-fn!})
   ([src-paths read-file-fn!]
+   (browser-options src-paths read-file-fn! nil))
+  ([src-paths read-file-fn! write-file-fn!]
    {:target :default
     :read-file-fn! read-file-fn!
-    :src-paths src-paths}))
+    :src-paths src-paths
+    :write-file-fn! write-file-fn!}))
 
 (defn ^:export nodejs-options
   "Creates the Node.js option map for read-eval-call.
@@ -203,11 +219,18 @@
   `read-file-fn!`, an asynchronous 2-arity function with signature
   `[file-path src-cb]` where src-cb is itself a function `(fn [source]
   ...)` that needs to be called with the file content as string (`nil`
-  if no file is found)."
+  if no file is found).
+
+  The 3-arity function receives additionally a third parameter `write-file-fn!`,
+  a synchronous 2-arity function with signature `[file-path data]` that accepts
+  a file-path and data to write."
   ([load-fn!]
    {:target :nodejs
     :load-fn! load-fn!})
   ([src-paths read-file-fn!]
+   (nodejs-options src-paths read-file-fn! nil))
+  ([src-paths read-file-fn! write-file-fn!]
    {:target :nodejs
     :read-file-fn! read-file-fn!
-    :src-paths src-paths}))
+    :src-paths src-paths
+    :write-file-fn! write-file-fn!}))
