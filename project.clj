@@ -5,7 +5,8 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "1.7.228"]
-                 [org.clojure/tools.reader "1.0.0-alpha2"]]
+                 [org.clojure/tools.reader "1.0.0-alpha2"]
+                 [com.cognitect/transit-cljs "0.8.220"]]
 
   :plugins [[lein-cljsbuild "1.1.1"]
             [lein-codox "0.9.0"]]
