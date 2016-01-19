@@ -4,9 +4,9 @@
   <img src="https://raw.githubusercontent.com/ScalaConsultants/replumb/master/images/replumb_logo_bg.jpg" alt="Replumb Logo"/>
 </p>
 
-Replum (*'rɛplʌm*) is a plumbing library for your [self-hosted](https://en.m.wikipedia.org/wiki/Self-hosting_compiler) ClojureScript Read-Eval-Print-Loops. Live demo available at [clojurescript.io](http://clojurescript.io).
+Replumb (*'rɛplʌm*) is a plumbing library for your [self-hosted](https://en.m.wikipedia.org/wiki/Self-hosting_compiler) ClojureScript Read-Eval-Print-Loops. Live demo available at [clojurescript.io](http://clojurescript.io).
 
-This library tries to ease the burden of talking direcly to ClojureScript ```cljs.js``` and puts together [pieces](https://github.com/kanaka/cljs-bootstrap) [of](https://github.com/mfikes/planck) [work](https://github.com/mfikes/replete) contributed by the ClojureScript community at disparate points in time on the [`cljs-in-cljs`](https://github.com/clojure/clojurescript/wiki/Bootstrapping-the-Compiler#cljs-in-cljs-from-2012) subject. It aspires to be a common starting point for custom REPLs and/or REPL-ish apps (educational interactive environments for instance).
+This library tries to ease the burden of talking directly to ClojureScript ```cljs.js``` and puts together [pieces](https://github.com/kanaka/cljs-bootstrap) [of](https://github.com/mfikes/planck) [work](https://github.com/mfikes/replete) contributed by the ClojureScript community at disparate points in time on the [`cljs-in-cljs`](https://github.com/clojure/clojurescript/wiki/Bootstrapping-the-Compiler#cljs-in-cljs-from-2012) subject. It aspires to be a common starting point for custom REPLs and/or REPL-ish apps (educational interactive environments for instance).
 
 ### Thanks
 
