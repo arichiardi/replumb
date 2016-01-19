@@ -513,15 +513,15 @@ trim-newline
       (is (= "200" out ) "(mul-core 10 20) should produce 200")
       (reset-env! '[my.namespace foo.bar.core foo.bar.macros])))
 
-  (deftest ns-macro-self-requiring-namespace
-    ;; see "loop" section here: http://blog.fikesfarm.com/posts/2015-12-18-clojurescript-macro-tower-and-loop.html
-    ;; but it does not work in JS ClojureScript
-    (let [res (read-eval-call "(ns my.namespace (:require [foo.bar.self]))")
-          error (unwrap-result res)]
-      (is (not (success? res)) "(ns my.namespace (:require [foo.bar.self])) should not succeed")
-      (is (valid-eval-error? error) "(ns my.namespace (:require [foo.bar.self])) should be an instance of js/Error")
-      (is (re-find #"Maximum call stack size exceeded" (extract-message error)) "(ns my.namespace (:require [foo.bar.self])) should have correct error message")
-      (reset-env!)))
+  ;; (deftest ns-macro-self-requiring-namespace
+  ;;   ;; see "loop" section here: http://blog.fikesfarm.com/posts/2015-12-18-clojurescript-macro-tower-and-loop.html
+  ;;   ;; but it does not work in JS ClojureScript
+  ;;   (let [res (read-eval-call "(ns my.namespace (:require [foo.bar.self]))")
+  ;;         error (unwrap-result res)]
+  ;;     (is (not (success? res)) "(ns my.namespace (:require [foo.bar.self])) should not succeed")
+  ;;     (is (valid-eval-error? error) "(ns my.namespace (:require [foo.bar.self])) should be an instance of js/Error")
+  ;;     (is (re-find #"Maximum call stack size exceeded" (extract-message error)) "(ns my.namespace (:require [foo.bar.self])) should have correct error message")
+  ;;     (reset-env!)))
 
   (deftest process-reload
     (let [alterable-core-path "dev-resources/private/test/src/cljs/alterable/core.cljs"
@@ -634,7 +634,7 @@ trim-newline
   (ns-macro-use-macros)
   (ns-macro-require)
   (ns-macro-require-macros-as)
-  (ns-macro-self-requiring-namespace)
+  ;; (ns-macro-self-requiring-namespace)
 
   (process-reload)
   (process-reload-all)
