@@ -472,4 +472,19 @@ select-keys
       (is (success? res) "Executing #js [:foo :bar] and :no-pr-str-on-value true should succeed")
       (is (valid-eval-result? custom-opts out) "Executing #js [:foo :bar]) and :no-pr-str-on-value true should have a valid result")
       (is (array? out) "Executing #js [:foo :bar] and :no-pr-str-on-value true should return a JS object")
-      (reset-env!))))
+      (reset-env!)))
+
+  (deftest context-value
+    (let [res (read-eval-call "2 3")
+          error (unwrap-result res)]
+      (is (not (success? res)) "\"2 3\" with :context set to :expr should not succeed")
+      (is (valid-eval-error? error) "\"2 3\" with :context set to :expr should be an instance of jsError")
+      (is (re-find #"ERROR - .* is not a function" (extract-message error)) "\"2 3\" with :context set to :expr should have a valid error message."))
+
+    (let [custom-opts (assoc target-opts :context :statement)
+          validated-echo-cb (partial repl/validated-call-back! custom-opts echo-callback)
+          res (repl/read-eval-call custom-opts validated-echo-cb "2 3")
+          out (unwrap-result res)]
+      (is (success? res) "\"2 3\" with :context set to :statement should succeed")
+      (is (valid-eval-result? custom-opts out) "\"2 3\" with :context set to :statement should have a valid result")
+      (is (= "nil" out) "\"2 3\" with :context set to :statement should yield nil."))))
