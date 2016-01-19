@@ -177,6 +177,7 @@ Tell us about your amazing Replumb project!
 | Author               | Link | Repo
 |---------------------------|------|------|
 | [@joakin](https://github.com/joakin) | [Web repl + notebook](http://chimeces.com/cljs-browser-repl/) | [cljs-browser-repl](https://github.com/joakin/cljs-browser-repl) |
+| [@jaredly](https://github.com/jaredly) | [Repl w/ autocomplete, parinfer, and more](http://jaredforsyth.com/reepl/) | [Reepl](https://github.com/jaredly/reepl) |
 
 ### License
 
