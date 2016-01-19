@@ -170,6 +170,14 @@ The [wiki](https://github.com/ScalaConsultants/replumb/wiki) is also good (growi
 
 Contributions are welcome, any of them. Have a look at ```CONTRIBUTING.md``` for details.
 
+### Community
+
+Tell us about your amazing Replumb project!
+
+| Author               | Link | Repo
+|---------------------------|------|------|
+| [@joakin](https://github.com/joakin) | [Web repl + notebook](http://chimeces.com/cljs-browser-repl/) | [cljs-browser-repl](https://github.com/joakin/cljs-browser-repl) |
+
 ### License
 
 Distributed under the Eclipse Public License, the same as Clojure.
