@@ -67,6 +67,9 @@
   * `:no-pr-str-on-value`  in case of `:success?` avoid converting the
   result map `:value` to string
 
+  * :context - indicates the :context that will be passed to cljs/eval-str.
+  Defaults to :expr
+
   The second parameter, `callback`, should be a 1-arity function which receives
   the result map, whose result keys will be:
 
