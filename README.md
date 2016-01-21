@@ -4,9 +4,9 @@
   <img src="https://raw.githubusercontent.com/ScalaConsultants/replumb/master/images/replumb_logo_bg.jpg" alt="Replumb Logo"/>
 </p>
 
-Replum (*'rɛplʌm*) is a plumbing library for your [self-hosted](https://en.m.wikipedia.org/wiki/Self-hosting_compiler) ClojureScript Read-Eval-Print-Loops. Live demo available at [clojurescript.io](http://clojurescript.io).
+Replumb (*'rɛplʌm*) is a plumbing library for your [self-hosted](https://en.m.wikipedia.org/wiki/Self-hosting_compiler) ClojureScript Read-Eval-Print-Loops. Live demo available at [clojurescript.io](http://clojurescript.io).
 
-This library tries to ease the burden of talking direcly to ClojureScript ```cljs.js``` and puts together [pieces](https://github.com/kanaka/cljs-bootstrap) [of](https://github.com/mfikes/planck) [work](https://github.com/mfikes/replete) contributed by the ClojureScript community at disparate points in time on the [`cljs-in-cljs`](https://github.com/clojure/clojurescript/wiki/Bootstrapping-the-Compiler#cljs-in-cljs-from-2012) subject. It aspires to be a common starting point for custom REPLs and/or REPL-ish apps (educational interactive environments for instance).
+This library tries to ease the burden of talking directly to ClojureScript ```cljs.js``` and puts together [pieces](https://github.com/kanaka/cljs-bootstrap) [of](https://github.com/mfikes/planck) [work](https://github.com/mfikes/replete) contributed by the ClojureScript community at disparate points in time on the [`cljs-in-cljs`](https://github.com/clojure/clojurescript/wiki/Bootstrapping-the-Compiler#cljs-in-cljs-from-2012) subject. It aspires to be a common starting point for custom REPLs and/or REPL-ish apps (educational interactive environments for instance).
 
 ### Thanks
 
@@ -25,7 +25,7 @@ After that directly call ```replumb.core``` functions:
   (:require ...
             [replumb.core :as replumb]
             [replumb.browser.io :as io]))
-            
+
 (defn handle-result!
   [console result]
   (let [write-fn (if (replumb/success? result) console/write-return! console/write-exception!)]
@@ -36,7 +36,7 @@ After that directly call ```replumb.core``` functions:
   (replumb/read-eval-call repl-opts
                           (partial handle-result! console)
                           user-input))
-                          
+
 (defn cljs-console-did-mount
   [console-opts]
   (js/$
@@ -99,18 +99,27 @@ protocol:
 if no file is found). It is mutually exclusive with `:load-fn!` and
 will be ignored in case both are present
 
+* `:write-file-fn!` a synchronous 2-arity function with signature
+`[file-path data]` that accepts a file-path and data to write.
+
 * `:src-paths`  a vector of paths containing source files
+
+* `:cache` - a map containing two optional values: the first, `:path`, indicates
+the path of the cached files. The second, `:src-paths-lookup?`, indicates
+whether look for cached files in `:src-paths`. If both present, `:path` will
+have the priority but both will be inspected.
+
 * `:no-pr-str-on-value`  in case of `:success?` avoid converting the return
  `:value` to string
 
 The second parameter, `callback`, should be a 1-arity function which receives
 the `result` map, whose result keys will be:
 
- 
+
     {:success?  a boolean indicating if everything went alright
      :value     (if (:success? result)), this key contains the yielded value as
                 string, unless :no-pr-str-on-value is true, in which case it
-                returns the bare value. 
+                returns the bare value.
      :error     (if-not (:success? result)) will contain a js/Error
      :warning   in case a warning was thrown and :warning-as-error is falsey
      :form      the evaluated form as data structure (not string)}
@@ -119,7 +128,7 @@ The third parameter is the source string to be read and evaluated.
 
 It initializes the repl harness either on first execution or if an option in
 `#{:src-paths :init-fn!}` changes from the previous `read-eval-call`.
-  
+
 See the [```browser-repl```](https://github.com/ScalaConsultants/replumb/blob/master/repl-demo/browser/cljs/replumb_repl/console.cljs)
 for an actual implementation using [```jq-console```](https://github.com/replit/jq-console).
 

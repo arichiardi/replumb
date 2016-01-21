@@ -1,7 +1,9 @@
 (ns replumb.load
   (:require [cljs.js :as cljs]
             [clojure.string :as string]
-            [replumb.common :as common]))
+            [replumb.common :as common]
+            [replumb.cache :as cache]
+            [cljs.reader :as edn]))
 
 (defn fake-load-fn!
   "This load function just calls:
@@ -21,6 +23,13 @@
   extension."
   [file-name]
   (if (string/ends-with? file-name ".js") :js :clj))
+
+(defn read-cache-source
+  "Read the cache source depending on whether is a edn or json file"
+  [cache-path cache-source]
+  (if (string/ends-with? cache-path ".edn")
+    (edn/read-string cache-source)
+    (cache/transit-json->cljs cache-source)))
 
 (defn extensions
   "Returns the correct file extensions to try (no dot prefix), following
@@ -51,6 +60,44 @@
                                   (read-files-and-callback! verbose? (rest file-names) read-file-fn! load-fn-cb))))))
     (load-fn-cb nil)))
 
+(defn read-files-from-cache-and-callback!
+  "Loops over cached-file-names in order to retrieve them. It needs to find
+  both the related .js file and .cache.json file, otherwise keeps looping.
+  If it does not find the cached files calls read-files-and-callback! and
+  tries to load the unevaluated ones.
+  This function does not check whether parameters are nil, please do it in
+  the caller."
+  [verbose? file-names read-file-fn! load-fn-cb cached-file-names]
+  (if-let [[js-path cache-path] (first cached-file-names)]
+    (let [try-next-files-pair #(read-files-from-cache-and-callback! verbose?
+                                                                    file-names
+                                                                    read-file-fn!
+                                                                    load-fn-cb
+                                                                    (rest cached-file-names))]
+      (when verbose?
+        (common/debug-prn "Reading" js-path "..."))
+      (read-file-fn! js-path
+                     (fn [js-source]
+                       (if (and js-source (cache/cached-js-valid? js-source))
+                         (do
+                           (when verbose?
+                             (common/debug-prn "Reading" cache-path "..."))
+                           (read-file-fn! cache-path
+                                          (fn [cache-source]
+                                            (if cache-source
+                                              (do
+                                                (when verbose?
+                                                  (common/debug-prn (str "Retrieved from cache " js-path " and " cache-path)))
+                                                (load-fn-cb {:lang (filename->lang js-path)
+                                                             :source js-source
+                                                             :cache (read-cache-source cache-path cache-source)}))
+                                              (try-next-files-pair)))))
+                         (try-next-files-pair)))))
+    (do
+      (when verbose?
+        (common/debug-prn "Cannot load cache files..."))
+      (read-files-and-callback! verbose? file-names read-file-fn! load-fn-cb))))
+
 (defn file-paths
   "Produces a sequence of file paths based on src-paths and file-path (a
   path already including one or more \"/\" and an extension)."
@@ -67,6 +114,21 @@
   (for [extension (extensions macros)
         src-path (file-paths src-paths file-path-without-ext)]
     (str src-path "." extension)))
+
+(defn cache-file-paths-for-load-fn
+  "Produces a sequence of pairs containing the file paths to try reading for
+  evaluation caching.
+  The first file is always a \".js\" file while the second is the cache file
+  and can be a \".json\" or \".edn\" file."
+  [cache-paths macros file-path-without-ext]
+  (for [extension (cons "" (map #(str "." %) (extensions macros)))
+        ;; try both json and edn files
+        cache-extension [".cache.json" ".cache.edn"]
+        ;; try both eg. clojure/set and clojure_SLASH_set
+        src-path (into (file-paths cache-paths file-path-without-ext)
+                       (file-paths cache-paths
+                                   (cache/cache-prefix-for-path file-path-without-ext macros)))]
+    [(str src-path ".js" ) (str src-path extension cache-extension)]))
 
 (defn file-paths-for-closure
   "Produces a sequence of filenames to try reading crafted for goog

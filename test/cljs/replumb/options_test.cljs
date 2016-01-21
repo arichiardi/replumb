@@ -11,7 +11,9 @@
               :init-fn! "fn"
               :read-file-fn! "fn"
               :src-paths ["src/one" "src/two"]
-              :no-pr-str-on-value true}]
+              :no-pr-str-on-value true
+              :write-file-fn! "fn"
+              :cache {:path "cache/path" :src-paths-lookup? true}}]
     (is (every? valid-opts-set (keys (valid-opts opts))) "Please always add valid options to valid-opts-set")))
 
 (deftest options-target
