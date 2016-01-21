@@ -112,6 +112,9 @@ have the priority but both will be inspected.
 * `:no-pr-str-on-value`  in case of `:success?` avoid converting the return
  `:value` to string
 
+* `:context` - indicates the evaluation context that will be passed to
+`cljs/eval-str`. Defaults to `:expr`.
+
 The second parameter, `callback`, should be a 1-arity function which receives
 the `result` map, whose result keys will be:
 

@@ -13,7 +13,8 @@
               :src-paths ["src/one" "src/two"]
               :no-pr-str-on-value true
               :write-file-fn! "fn"
-              :cache {:path "cache/path" :src-paths-lookup? true}}]
+              :cache {:path "cache/path" :src-paths-lookup? true}
+              :context :statement}]
     (is (every? valid-opts-set (keys (valid-opts opts))) "Please always add valid options to valid-opts-set")))
 
 (deftest options-target

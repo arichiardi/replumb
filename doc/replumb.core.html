@@ -93,6 +93,8 @@ nil.
   <p><code>:cache</code> - a map containing two optional values: the first, <code>:path</code>, indicates the path of the cached files. The second, <code>:src-paths-lookup?</code>, indicates whether search the cached files in <code>:src-paths</code>. If both present, <code>:path</code> will have the priority but both will be inspected.</p></li>
   <li>
   <p><code>:no-pr-str-on-value</code> in case of <code>:success?</code> avoid converting the result map <code>:value</code> to string</p></li>
+  <li>
+  <p><code>:context</code> - indicates the evaluation context that will be passed to <code>cljs/eval-str</code>. Defaults to <code>:expr</code>.</p></li>
 </ul>
 <p>The second parameter, <code>callback</code>, should be a 1-arity function which receives the result map, whose result keys will be:</p>
 <pre><code>:success?  a boolean indicating if everything went alright

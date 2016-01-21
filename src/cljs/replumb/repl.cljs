@@ -147,7 +147,7 @@
    (base-eval-opts! {}))
   ([opts]
    {:ns (:current-ns @app-env)
-    :context :expr
+    :context (or (:context opts) :expr)
     :source-map false
     :def-emits-var true
     :load (:load-fn! opts)
@@ -278,7 +278,7 @@
   "Set of valid option used for external input validation."
   #{:verbose :warning-as-error :target :init-fn!
     :no-pr-str-on-value :load-fn! :read-file-fn!
-    :write-file-fn! :src-paths :cache})
+    :write-file-fn! :src-paths :cache :context})
 
 (defn valid-opts
   "Validate the input user options. Returns a new map without invalid
@@ -881,6 +881,9 @@
 
   * :no-pr-str-on-value - in case of :success? avoid converting the
   result map :value to string
+
+  * :context - indicates the evaluation context that will be passed to
+  cljs/eval-str. Defaults to :expr.
 
   The second parameter cb, is a 1-arity function which receives the
   result map.
