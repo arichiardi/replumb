@@ -230,6 +230,23 @@
                    provide provides]
                [(symbol provide) (str "goog/" (second (re-find #"(.*)\.js$" path)))]))))
 
+(defn file-path-from-goog-dependencies
+  "Retrives the path for a file from (.-dependencies_.nameToPath js/goog). If
+  not found will returns nil."
+  [name]
+  (when-let [path (aget (.-dependencies_.nameToPath js/goog) (str name))]
+    (->> path
+         (drop 3)      ; strip "../" because the path is relative to the goog folder
+         (drop-last 3) ; strip ".js" because the path already contains the js (which will be added later)
+         (apply str))))
+
+(defn file-path-from-foreign-libs
+  "Retrieves the path for a file from the user provided :foreign-libs option.
+  If not found, returns nil."
+  [name foreign-libs]
+  (when-let [foreign-libs (seq (filter #(= name (first (:provides %))) foreign-libs))]
+    (->> foreign-libs first :file (drop-last 3) (apply str))))
+
 (defn make-load-fn
   "Makes a load function that will read from a sequence of src-paths
   using a supplied read-file-fn!. It returns a cljs.js-compatible
@@ -244,7 +261,7 @@
   will consider cached files as follow: if :path is present, it will try to load
   the cached files from the given path. If :src-paths-lookup? is present, it
   will try to load the cached files from src-paths."
-  [{:keys [verbose src-paths read-file-fn! cache :as user-opts]}]
+  [{:keys [verbose src-paths read-file-fn! cache foreign-libs :as user-opts]}]
   (if (and read-file-fn! (sequential? src-paths) (every? string? src-paths))
     (fn [{:keys [name macros path] :as load-map} cb]
       (cond
@@ -255,7 +272,14 @@
                                                                       read-file-fn!
                                                                       cb)
                                        (cb nil))
-       :else (let [args [verbose (load/file-paths-for-load-fn src-paths macros path) read-file-fn! cb]
+       ;; first we check if we can retrieve the path from (.-dependencies_.nameToPath js/goog)
+       ;; (it's the case when the "js" file is in the compilation set)
+       ;; then also check in the user provided :foreign-libs option (for libraries not known
+       ;; at compile time - we need to indicate the ns->file mapping)
+       :else (let [path (or (file-path-from-goog-dependencies (str name))
+                            (file-path-from-foreign-libs (str name) foreign-libs)
+                            path)
+                   args [verbose (load/file-paths-for-load-fn src-paths macros path) read-file-fn! cb]
                    cache-path (:path cache)
                    src-paths-lookup? (:src-paths-lookup? cache)]
                (if (or cache-path src-paths-lookup?)
@@ -278,7 +302,8 @@
   "Set of valid option used for external input validation."
   #{:verbose :warning-as-error :target :init-fn!
     :no-pr-str-on-value :load-fn! :read-file-fn!
-    :write-file-fn! :src-paths :cache :context})
+    :write-file-fn! :src-paths :cache :context
+    :foreign-libs})
 
 (defn valid-opts
   "Validate the input user options. Returns a new map without invalid
@@ -884,6 +909,9 @@
 
   * :context - indicates the evaluation context that will be passed to
   cljs/eval-str. Defaults to :expr.
+
+  * `:foreign-libs` - a way to include foreign libraries. The format is analogous
+  to the compiler option. For more info visit https://github.com/clojure/clojurescript/wiki/Compiler-Options#foreign-libs
 
   The second parameter cb, is a 1-arity function which receives the
   result map.

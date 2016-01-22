@@ -18,7 +18,8 @@
 (let [src-paths ["dev-resources/private/test/node/compiled/out"
                  "dev-resources/private/test/src/cljs"
                  "dev-resources/private/test/src/clj"
-                 "dev-resources/private/test/src/cljc"]
+                  "dev-resources/private/test/src/cljc"
+                  "dev-resources/private/test/src/js"]
       target-opts (nodejs-options src-paths io/read-file!)
       validated-echo-cb (partial repl/validated-call-back! target-opts echo-callback)
       reset-env! (partial repl/reset-env! target-opts)
@@ -235,6 +236,27 @@ trim-newline
         (is (= 'cljs.user (repl/current-ns)) "(require '[foo.bar.baz :refer [const-a]]) and const-a should not change namespace")
         (is (= "1024" out) "(require '[foo.bar.baz :refer [const-a]]) and const-a should return 1024")
         (reset-env! '[foo.bar.baz])))
+
+  (deftest process-js-require
+    (let [res (read-eval-call "(require 'yq)")
+          error (unwrap-result res)]
+      (is (not (success? res)) "(require 'yq) should not succeed")
+      (is (valid-eval-error? error) "(require 'yq) should be an instance of js/Error")
+      (is (re-find #"No such namespace: yq" (extract-message error)) "(require 'yq) should have a valid error message."))
+
+    (let [target-opts (merge (nodejs-options src-paths io/read-file!)
+                             {:foreign-libs [{:file "yayquery.js"
+                                              :provides ["yq"]}]})
+          validated-echo-cb (partial repl/validated-call-back! target-opts echo-callback)
+          reset-env! (partial repl/reset-env! target-opts)
+          read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)
+          res (do (read-eval-call "(require 'yq)")
+                  (read-eval-call "(.. js/yq yayQuery getMessage)"))
+          out (unwrap-result res)]
+      (is (success? res) "(require 'yq) and (.. js/yq yayQuery getMessage) should succeed")
+      (is (valid-eval-result? out) "(require 'yq) and (.. js/yq yayQuery getMessage) should be a valid result")
+      (is (= "\"Hello, world!\"" out) "(require 'yq) and (.. js/yq yayQuery getMessage) should return \"Hello, world!\"")
+      (reset-env! '[yq])))
 
   (deftest process-goog-import
     ;; AR - requiring clojure.string in turns imports goog.string
@@ -624,6 +646,7 @@ trim-newline
   (require+find-doc)
   (process-load-file)
   (process-require)
+  (process-js-require)
   (process-goog-import)
   (ns-macro)
 

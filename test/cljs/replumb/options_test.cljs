@@ -14,7 +14,9 @@
               :no-pr-str-on-value true
               :write-file-fn! "fn"
               :cache {:path "cache/path" :src-paths-lookup? true}
-              :context :statement}]
+              :context :statement
+              :foreign-libs [{:file "processing.js"
+                              :provides ["org.processingjs.Processing"]}]}]
     (is (every? valid-opts-set (keys (valid-opts opts))) "Please always add valid options to valid-opts-set")))
 
 (deftest options-target
