@@ -92,9 +92,15 @@
   (when (file-exists? path)
     (delete-file! path)))
 
-(defn rename-file
+(defn rename-file!
   "Renames synchronously a file."
   ([old-path new-path]
-   (rename-file (force require-fs) old-path new-path))
+   (rename-file! (force require-fs) old-path new-path))
   ([fs-module old-path new-path]
    (.renameSync fs-module old-path new-path)))
+
+(defn safely-rename-file!
+  "Before renaming, checks if the file exists."
+  [old-path new-path]
+  (when (file-exists? old-path)
+    (rename-file! old-path new-path)))
