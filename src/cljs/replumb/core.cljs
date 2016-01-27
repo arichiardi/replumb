@@ -70,6 +70,9 @@
   * `:context` - indicates the evaluation context that will be passed to
   `cljs/eval-str`. Defaults to `:expr`.
 
+  * `:foreign-libs` - a way to include foreign libraries. The format is analogous
+  to the compiler option. For more info visit https://github.com/clojure/clojurescript/wiki/Compiler-Options#foreign-libs
+
   The second parameter, `callback`, should be a 1-arity function which receives
   the result map, whose result keys will be:
 

@@ -95,6 +95,8 @@ nil.
   <p><code>:no-pr-str-on-value</code> in case of <code>:success?</code> avoid converting the result map <code>:value</code> to string</p></li>
   <li>
   <p><code>:context</code> - indicates the evaluation context that will be passed to <code>cljs/eval-str</code>. Defaults to <code>:expr</code>.</p></li>
+  <li>
+  <p><code>:foreign-libs</code> - a way to include foreign libraries. The format is analogous to the compiler option. For more info visit <a href="https://github.com/clojure/clojurescript/wiki/Compiler-Options#foreign-libs">https://github.com/clojure/clojurescript/wiki/Compiler-Options#foreign-libs</a></p></li>
 </ul>
 <p>The second parameter, <code>callback</code>, should be a 1-arity function which receives the result map, whose result keys will be:</p>
 <pre><code>:success?  a boolean indicating if everything went alright
