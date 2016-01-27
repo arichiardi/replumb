@@ -513,6 +513,16 @@ trim-newline
       (is (= "200" out ) "(mul-core 10 20) should produce 200")
       (reset-env! '[my.namespace foo.bar.core foo.bar.macros])))
 
+  (deftest cljs-tools-reader-issue
+    ;; https://github.com/ScalaConsultants/replumb/issues/134
+    (let [res (read-eval-call "(require 'cljs.tools.reader)")
+          out (unwrap-result res)]
+      (println out)
+      (is (success? res) "(require 'cljs.tools.reader) should succeed.")
+      (is (valid-eval-result? out) "(require 'cljs.tools.reader) should be a valid result")
+      (is (= 1 2))
+      (reset-env! '[cljs.tools.reader])))
+
   ;; (deftest ns-macro-self-requiring-namespace
   ;;   ;; see "loop" section here: http://blog.fikesfarm.com/posts/2015-12-18-clojurescript-macro-tower-and-loop.html
   ;;   ;; but it does not work in JS ClojureScript
