@@ -1,0 +1,71 @@
+.console-container {
+    position: relative;
+    height: 220px;
+    border-radius: 5px;
+    -moz-border-radius: 5px;
+    border: 1px solid #d5ceb4;
+}
+
+/* The inner console element. */
+/* .jqconsole { */
+/*   background-color: black;; */
+/* } */
+
+.jqconsole-prompt {
+  color: black;
+}
+
+.jqconsole-old-prompt {
+   color: #9A7C7D;
+   font-weight: normal;
+}
+
+.jqconsole-output {
+  font-weight: lighter;
+  font-family: monospace;
+  color: dark-grey;
+}
+
+.jqconsole-return {
+  font-size: small;
+  font-weight: lighter;
+  font-family: monospace;
+  color: #CB2531;
+}
+
+.jqconsole-error {
+   font-size: small;
+   font-weight: lighter;
+   font-family: monospace;
+   color: #E6959B;
+}
+
+/* The cursor. */
+.jqconsole-cursor {
+   font-weight: normal;
+   font-family: monospace;
+   background-color: #CB2531;
+}
+
+/* The cursor color when the console looses focus. */
+.jqconsole-blurred .jqconsole-cursor {
+  font-weight: normal;
+  font-family: monospace;
+  background-color: #E6959B;
+}
+
+/*.brace {
+/*   color: #00FFFF; */
+/* } */
+/* .paren { */
+/*   color: #FF00FF; */
+/* } */
+/* .bracket { */
+/*   color: #FFFF00; */
+/* } */
+/* .dquote { */
+/*   color: #FF8888; */
+/* } */
+/* .jqconsole-composition { */
+/*   background-color: red; */
+/* } */

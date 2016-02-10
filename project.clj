@@ -11,11 +11,18 @@
   :plugins [[lein-cljsbuild "1.1.1"]
             [lein-codox "0.9.0"]]
 
-  :clean-targets ^{:protect false} ["dev-resources/public/js/compiled" "dev-resources/private/test/browser/compiled"
-                                    "dev-resources/private/test/node/compiled" "dev-resources/private/node"
+  :clean-targets ^{:protect false} ["dev-resources/public/js/compiled"                 ;; dev
+                                    "dev-resources/private/browser/js/compiled"        ;; browser-repl
+                                    "dev-resources/private/browser/js/simple/compiled" ;; browser-repl-simple
+                                    "dev-resources/private/node/js/compiled"           ;; node-repl
+                                    "dev-resources/private/test/browser/compiled"      ;; browser-test, browser-simple-test
+                                    "dev-resources/private/test/node/compiled"         ;; node-test, node-simple-test
+                                    "resources/public/js/compiled"                     ;; min
                                     "out" :target-path]
   :source-paths ["src/cljs"]
   :hooks [leiningen.cljsbuild]
+  :min-lein-version "2.0.0"
+  :jvm-opts ^:replace ["-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1" "-Xverify:none"]
 
   :cljsbuild {:builds [{:id "dev"
                         :source-paths ["src/cljs" "src/browser" "repl-demo/browser/cljs"]
@@ -28,6 +35,37 @@
                                    :asset-path "js/compiled/out"
                                    :source-map-timestamp true
                                    :static-fns true}}
+                       {:id "browser-repl"
+                        :source-paths ["src/cljs" "src/browser" "repl-demo/browser/cljs"]
+                        :compiler {:optimizations :none
+                                   :main replumb-repl.core
+                                   :output-to "dev-resources/private/browser/js/compiled/replumb-repl.js"
+                                   :output-dir "dev-resources/private/browser/js/compiled/out"
+                                   :asset-path "js/compiled/out"
+                                   :source-map-timestamp true
+                                   :static-fns true
+                                   :parallel-build true}}
+                       {:id "browser-repl-simple"
+                        :source-paths ["src/cljs" "src/browser" "repl-demo/browser/cljs"]
+                        :compiler {:optimizations :simple
+                                   :main replumb-repl.core
+                                   :output-to "dev-resources/private/browser/js/simple/compiled/replumb-repl.js"
+                                   :output-dir "dev-resources/private/browser/js/simple/compiled/out"
+                                   :asset-path "js/simple/compiled/out"
+                                   :source-map "dev-resources/private/browser/js/simple/compiled/replumb-repl.js.map"
+                                   :source-map-timestamp true
+                                   :static-fns true
+                                   :parallel-build true}}
+                       {:id "node-repl"
+                        :source-paths ["src/cljs" "src/node" "repl-demo/node/cljs"]
+                        :compiler {:target :nodejs
+                                   :optimizations :none
+                                   :main nodejs-repl.core
+                                   :output-to "dev-resources/private/node/js/compiled/nodejs-repl.js"
+                                   :output-dir "dev-resources/private/node/js/compiled/out"
+                                   :asset-path "js/compiled/out"
+                                   :static-fns true
+                                   :parallel-build true}}
                        {:id "browser-test"
                         :source-paths ["src/cljs" "test/cljs" "test/browser"]
                         :compiler {:optimizations :none
@@ -35,7 +73,17 @@
                                    :output-to "dev-resources/private/test/browser/compiled/browser-test.js"
                                    :output-dir "dev-resources/private/test/browser/compiled/out"
                                    :asset-path "dev-resources/private/test/browser/compiled/out"
-                                   :static-fns true}}
+                                   :static-fns true
+                                   :parallel-build true}}
+                       #_{:id "browser-simple-test"
+                          :source-paths ["src/cljs" "test/cljs" "test/browser"]
+                          :compiler {:optimizations :simple
+                                     :main launcher.runner
+                                     :output-to "dev-resources/private/test/browser/compiled/browser-test.js"
+                                     :output-dir "dev-resources/private/test/browser/compiled/out"
+                                     :asset-path "dev-resources/private/test/browser/compiled/out"
+                                     :static-fns true
+                                     :parallel-build true}}
                        {:id "node-test"
                         :source-paths ["src/cljs" "src/node" "test/cljs" "test/node"]
                         :compiler {:target :nodejs
@@ -44,24 +92,27 @@
                                    :output-to "dev-resources/private/test/node/compiled/nodejs-test.js"
                                    :output-dir "dev-resources/private/test/node/compiled/out"
                                    :asset-path "dev-resources/private/test/node/compiled/out"
-                                   :static-fns true}}
-                       {:id "node-repl"
-                        :source-paths ["src/cljs" "src/node" "repl-demo/node/cljs"]
-                        :compiler {:target :nodejs
-                                   :optimizations :none
-                                   :main nodejs-repl.core
-                                   :output-to "dev-resources/private/node/compiled/nodejs-repl.js"
-                                   :output-dir "dev-resources/private/node/compiled/out"
-                                   :asset-path "dev-resources/private/node/compiled/out"
-                                   :static-fns true}}
+                                   :static-fns true
+                                   :parallel-build true}}
+                       #_{:id "node-simple-test"
+                          :source-paths ["src/cljs" "src/node" "test/cljs" "test/node"]
+                          :compiler {:target :nodejs
+                                     :optimizations :simple
+                                     :main launcher.runner
+                                     :output-to "dev-resources/private/test/node/compiled/nodejs-test.js"
+                                     :output-dir "dev-resources/private/test/node/compiled/out"
+                                     :asset-path "dev-resources/private/test/node/compiled/out"
+                                     :static-fns true
+                                     :parallel-build true}}
                        {:id "min"
                         :source-paths ["src/cljs"]
                         :compiler { ;; :main cljs-browser-repl.core ;; https://github.com/emezeske/lein-cljsbuild/issues/420
-                                   :output-to "dev-resources/public/js/compiled/replumb-repl.js"
+                                   :output-to "resources/public/js/compiled/replumb-repl.js"
                                    :optimizations :simple
                                    :pretty-print false
                                    :elide-asserts true
-                                   :static-fns true}}]}
+                                   :static-fns true
+                                   :parallel-build true}}]}
   ;; :figwheel {:repl false}
 
   :prep-tasks ["codox"]
@@ -73,9 +124,14 @@
 
   :aliases {"fig-dev" ^{:doc "Start figwheel with dev profile."} ["figwheel" "dev"]
             "fig-dev*" ^{:doc "Clean and start figwheel with dev profile"} ["do" "clean" ["figwheel" "dev"]]
+
+            "node-repl" ^{:doc "Clean, build and launch the node demo repl. Node.js must be installed."} ["do" "clean" ["cljsbuild" "once" "node-repl"] ["shell" "scripts/node-repl.sh"]]
+            "browser-repl" ^{:doc "Clean, build and launch the browser demo repl."} ["do" "clean" ["cljsbuild" "once" "browser-repl"] ["shell" "scripts/browser-repl.sh" "dev-resources/private/browser"]]
+            "browser-repl-simple" ^{:doc "Clean, build and launch the browser demo repl."} ["do" "clean" ["cljsbuild" "once" "browser-repl-simple"] ["shell" "scripts/browser-repl.sh"]]
+
             "minify" ^{:doc "Compile sources minified for production."} ["cljsbuild" "once" "min"]
             "minify*" ^{:doc "Clean and compile sources minified for production."} ["do" "clean" ["cljsbuild" "once" "min"]]
-            "node-repl" ^{:doc "Clean, build and launch the node demo repl. Node.js (must be installed)."} ["do" "clean" ["cljsbuild" "once" "node-repl"] ["shell" "scripts/node-repl.sh"]]
+
             "test-phantom" ^{:doc "Execute once unit tests with PhantomJS (must be installed)."} ["doo" "phantom" "browser-test" "once"]
             "test-phantom*" ^{:doc "Clean and execute once unit tests with PhantomJS (must be installed)."} ["do" "clean" ["doo" "phantom" "browser-test" "once"]]
             "auto-phantom" ^{:doc "Clean and execute automatic unit tests with PhantomJS (must be installed)."} ["do" "clean" ["doo" "phantom" "browser-test" "auto"]]
