@@ -18,8 +18,8 @@
 (let [src-paths ["dev-resources/private/test/node/compiled/out"
                  "dev-resources/private/test/src/cljs"
                  "dev-resources/private/test/src/clj"
-                  "dev-resources/private/test/src/cljc"
-                  "dev-resources/private/test/src/js"]
+                 "dev-resources/private/test/src/cljc"
+                 "dev-resources/private/test/src/js"]
       target-opts (nodejs-options src-paths io/read-file!)
       validated-echo-cb (partial repl/validated-call-back! target-opts echo-callback)
       reset-env! (partial repl/reset-env! target-opts)
