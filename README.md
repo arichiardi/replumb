@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ScalaConsultants/replumb.svg?branch=travis)](https://travis-ci.org/ScalaConsultants/replumb)
+[![Build Status](https://travis-ci.org/Lambda-X/replumb.svg?branch=travis)](https://travis-ci.org/Lambda-X/replumb)
 
 <p>
   <img src="https://raw.githubusercontent.com/ScalaConsultants/replumb/master/images/replumb_logo_bg.jpg" alt="Replumb Logo"/>
