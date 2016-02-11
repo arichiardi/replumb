@@ -276,7 +276,7 @@
        ;; (it's the case when the "js" file is in the compilation set)
        ;; then also check in the user provided :foreign-libs option (for libraries not known
        ;; at compile time - we need to indicate the ns->file mapping)
-       :else (let [path (or (file-path-from-goog-dependencies (str name))
+       :else (let [path (or (when js/goog.DEPENDENCIES_ENABLED (file-path-from-goog-dependencies (str name)))
                             (file-path-from-foreign-libs (str name) foreign-libs)
                             path)
                    args [verbose (load/file-paths-for-load-fn src-paths macros path) read-file-fn! cb]
