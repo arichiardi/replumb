@@ -51,7 +51,7 @@ After that directly call ```replumb.core``` functions:
 
 Note that `replumb`, like ClojureScript, abstracts over `IO` details. You will
 need to provide your own read/write functions for it to work. There are examples of 
-this in the `replumb.browser.io` and `replumb.nodejs.io` that you can freely copy over.
+this in both `replumb.browser.io` and `replumb.nodejs.io` that you can freely copy over.
 
 ## Read-eval-call options
 
