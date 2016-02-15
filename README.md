@@ -1,7 +1,7 @@
 [![Build Status](https://travis-ci.org/ScalaConsultants/replumb.svg?branch=travis)](https://travis-ci.org/ScalaConsultants/replumb)
 
 <p>
-  <img src="https://raw.githubusercontent.com/ScalaConsultants/replumb/master/images/replumb_logo_bg.jpg" alt="Replumb Logo"/>
+  <img src="https://raw.githubusercontent.com/ScalaConsultants/replumb/master/images/replumb_logo.jpg" alt="Replumb Logo"/>
 </p>
 
 Replumb (*'rɛplʌm*) is a plumbing library for your [self-hosted](https://en.m.wikipedia.org/wiki/Self-hosting_compiler) ClojureScript Read-Eval-Print-Loops. Live demo available at [clojurescript.io](http://clojurescript.io).
