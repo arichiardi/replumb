@@ -13,6 +13,7 @@ pom.xml.asc
 .nrepl-port
 .repl/
 figwheel_server.log
+resources/**/compiled
 dev-resources/**/compiled/
 out/
 *.orig
