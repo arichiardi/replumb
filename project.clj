@@ -75,7 +75,7 @@
                                    :asset-path "dev-resources/private/test/browser/compiled/out"
                                    :static-fns true
                                    :parallel-build true}}
-                       #_{:id "browser-simple-test"
+                       #_{:id "browser-test-simple"
                           :source-paths ["src/cljs" "test/cljs" "test/browser"]
                           :compiler {:optimizations :simple
                                      :main launcher.runner
@@ -94,7 +94,7 @@
                                    :asset-path "dev-resources/private/test/node/compiled/out"
                                    :static-fns true
                                    :parallel-build true}}
-                       #_{:id "node-simple-test"
+                       #_{:id "node-test-simple"
                           :source-paths ["src/cljs" "src/node" "test/cljs" "test/node"]
                           :compiler {:target :nodejs
                                      :optimizations :simple
