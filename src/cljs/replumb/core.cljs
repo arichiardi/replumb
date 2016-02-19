@@ -10,7 +10,9 @@
   The first parameter is a map of configuration options, currently
   supporting:
 
-  * `:verbose` will enable the the evaluation logging, defaults to false
+  * `:verbose` will enable the the evaluation logging, defaults to false.
+  To customize how to print, use `(set! *print-fn* (fn [& args] ...)`
+
   * `:warning-as-error` will consider a compiler warning as error
   * `:target` `:nodejs` and `:browser` supported, the latter is used if
   missing
