@@ -33,7 +33,8 @@
    (fn []
      (let [repl-opts (merge (replumb/browser-options ["/src/cljs" "/js/compiled/out"]
                                                      io/fetch-file!)
-                            {:warning-as-error true})
+                            {:warning-as-error true
+                             :verbose true})
            jqconsole (console/new-jqconsole "#cljs-console"
                                             (merge {:prompt-label (replumb/get-prompt)
                                                     :disable-auto-focus true}

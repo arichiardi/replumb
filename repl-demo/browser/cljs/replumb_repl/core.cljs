@@ -8,6 +8,9 @@
 
 (enable-console-print!)
 
+(set! *print-fn* (fn [& args]
+                   (.apply (.-debug js/console) js/console (into-array args))))
+
 (defn page []
   [:div
    [cljs/cljs-component]])
