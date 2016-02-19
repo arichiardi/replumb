@@ -126,7 +126,7 @@
             "fig-dev*" ^{:doc "Clean and start figwheel with dev profile"} ["do" "clean" ["figwheel" "dev"]]
 
             "node-repl" ^{:doc "Clean, build and launch the node demo repl. Node.js must be installed."} ["do" "clean" ["cljsbuild" "once" "node-repl"] ["shell" "scripts/node-repl.sh"]]
-            "browser-repl" ^{:doc "Clean, build and launch the browser demo repl."} ["do" "clean" ["cljsbuild" "once" "browser-repl"] ["shell" "scripts/browser-repl.sh" "dev-resources/private/browser"]]
+            "browser-repl" ^{:doc "Clean, build and launch the browser demo repl."} ["do" "clean" ["cljsbuild" "once" "browser-repl"] ["shell" "scripts/browser-repl.sh"]]
             "browser-repl-simple" ^{:doc "Clean, build and launch the browser demo repl."} ["do" "clean" ["cljsbuild" "once" "browser-repl-simple"] ["shell" "scripts/browser-repl.sh"]]
 
             "minify" ^{:doc "Compile sources minified for production."} ["cljsbuild" "once" "min"]
