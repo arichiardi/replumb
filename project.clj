@@ -151,7 +151,8 @@
   :profiles {:dev {:dependencies [[com.cemerick/piggieback "0.1.5"]
                                   [org.clojure/tools.nrepl "0.2.11"]
                                   [cljsjs/jqconsole "2.13.1-0"]
-                                  [reagent "0.5.1"]]
+                                  [reagent "0.5.1"]
+                                  [binaryage/devtools "0.5.2"]]
                    :plugins [[lein-doo "0.1.6"]
                              [lein-figwheel "0.5.0-6" :exclusions [cider/cider-nrepl]]
                              [lein-shell "0.4.2"]]}})
