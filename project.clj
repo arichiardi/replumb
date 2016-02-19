@@ -63,7 +63,7 @@
                                    :main nodejs-repl.core
                                    :output-to "dev-resources/private/node/js/compiled/nodejs-repl.js"
                                    :output-dir "dev-resources/private/node/js/compiled/out"
-                                   :asset-path "js/compiled/out"
+                                   :asset-path "dev-resources/private/node/js/compiled/out"
                                    :static-fns true
                                    :parallel-build true}}
                        {:id "browser-test"
