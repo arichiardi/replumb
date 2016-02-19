@@ -467,7 +467,7 @@
 
   Call-back! supports the following opts:
 
-  * :verbose will enable the the evaluation logging, defaults to false.
+  * :verbose will enable the evaluation logging, defaults to false.
   * :no-pr-str-on-value avoids wrapping successful value in a pr-str
   * :warning-as-error will consider a warning like an error
 
@@ -880,7 +880,9 @@
   The first parameter is a map of configuration options, currently
   supporting:
 
-  * :verbose - will enable the the evaluation logging, defaults to false
+  * :verbose - will enable the evaluation logging, defaults to false.
+  To customize how to print, use (set! *print-fn* (fn [& args] ...)
+
   * :warning-as-error - will consider a compiler warning as error
   * :target - :nodejs and :browser supported, the latter is used if
   missing
@@ -901,14 +903,14 @@
   file is found). It is mutually exclusive with :load-fn! and will be
   ignored in case both are present
 
-  * `:write-file-fn!` a synchronous 2-arity function with signature
-  `[file-path data]` that accepts a file-path and data to write.
+  * :write-file-fn! a synchronous 2-arity function with signature
+  [file-path data] that accepts a file-path and data to write.
 
   * :src-paths - a vector of paths containing source files
 
   * :cache - a map containing two optional values: the first, :path, indicates
   the path of the cached files. The second, :src-paths-lookup?, indicates
-  if look for cached files in :src-paths. If both present, `:path` will have
+  if look for cached files in :src-paths. If both present, :path will have
   the priority but both will be inspected.
 
   * :no-pr-str-on-value - in case of :success? avoid converting the
@@ -917,7 +919,7 @@
   * :context - indicates the evaluation context that will be passed to
   cljs/eval-str. Defaults to :expr.
 
-  * `:foreign-libs` - a way to include foreign libraries. The format is analogous
+  * :foreign-libs - a way to include foreign libraries. The format is analogous
   to the compiler option. For more info visit https://github.com/clojure/clojurescript/wiki/Compiler-Options#foreign-libs
 
   The second parameter cb, is a 1-arity function which receives the
@@ -937,7 +939,7 @@
 
   It initializes the repl harness either on first execution or if an
   option in #{:src-paths :init-fn!} changes from the previous
-  `read-eval-call`."
+  read-eval-call."
   [opts cb source]
   (try
     (let [expression-form (repl-read-string source)

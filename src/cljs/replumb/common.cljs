@@ -104,9 +104,15 @@
     (into opts new-fn-entries)))
 
 (defn debug-prn
+  "The function used by replumb for logging. It simply calls println for
+  now so you that client code can set *print-fn* to customize the
+  behavior, for example the following marks traces as DEBUG:
+
+  (set! *print-fn*
+    (fn [& args]
+      (.apply (.-debug js/console) js/console (into-array args))))"
   [& args]
-  (binding [cljs.core/*print-fn* cljs.core/*print-err-fn*]
-    (apply println args)))
+  (apply println args))
 
 (defn normalize-path
   "Adds a / if missing at the end of the path."
