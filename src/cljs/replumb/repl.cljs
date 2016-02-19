@@ -850,7 +850,7 @@
   Data is passed from outside and will be forwarded to :init-fn!."
   [opts data]
   (when (:verbose opts)
-    (common/debug-prn "Initializing REPL environment with data" (println data)))
+    (common/debug-prn "Initializing REPL environment with data" (with-out-str (pprint data))))
 
   ;; Target/user init, we need at least one init-fn, the default init function
   (let [init-fns (:init-fns opts)]
