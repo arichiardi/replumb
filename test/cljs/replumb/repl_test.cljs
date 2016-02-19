@@ -292,27 +292,41 @@ select-keys
       (is (= "nil" out) "(require 'something.ns) should return nil")
       (reset-env! '[something.ns]))
 
-    (let [res (do (read-eval-call "(ns a.ns)")
-                  (read-eval-call "(def a 3)")
-                  (read-eval-call "(ns b.ns)")
-                  (read-eval-call "(require 'a.ns)"))
-          out (unwrap-result res)]
-      (is (success? res) "(require 'a.ns) from b.ns should succeed")
-      (is (valid-eval-result? out) "(require 'a.ns) from b.ns should be a valid result")
-      (is (= 'b.ns (repl/current-ns)) "(require 'a.ns) from b.ns should not change namespace")
-      (reset-env! '[a.ns b.ns]))
+    ;; AR - this is failing with :optimizations :simple.
+    ;; There is some shadowing going on when using single letter
+    ;; namespaces because the google closure compiler happens to a,b,c,d when
+    ;; renaming symbols
+    ;; (let [res (do (read-eval-call "(ns a.ns)")
+    ;;              (read-eval-call "(def a 3)")
+    ;;              (read-eval-call "(ns b.ns)")
+    ;;              (read-eval-call "(require 'a.ns)"))
+    ;;      out (unwrap-result res)]
+    ;;  (is (success? res) "(require 'a.ns) from b.ns should succeed")
+    ;;  (is (valid-eval-result? out) "(require 'a.ns) from b.ns should be a valid result")
+    ;;  (is (= 'b.ns (repl/current-ns)) "(require 'a.ns) from b.ns should not change namespace")
+    ;;  (reset-env! '[a.ns b.ns]))
 
-    (let [res (do (read-eval-call "(ns c.ns)")
+    (let [res (do (read-eval-call "(ns foo.bar.baz)")
+                  (read-eval-call "(def a 3)")
+                  (read-eval-call "(ns foo.bar)")
+                  (read-eval-call "(require 'foo.bar.baz)"))
+          out (unwrap-result res)]
+      (is (success? res) "(require 'foo.bar.baz) from foo.bar should succeed")
+      (is (valid-eval-result? out) "(require 'foo.bar.baz) from foo.bar should be a valid result")
+      (is (= 'foo.bar (repl/current-ns)) "(require 'foo.bar.baz) from foo.bar should not change namespace")
+      (reset-env! '[foo.bar foo.bar.baz]))
+
+    (let [res (do (read-eval-call "(ns foo.bar.baz)")
                   (read-eval-call "(def referred-a 3)")
-                  (read-eval-call "(ns d.ns)")
-                  (read-eval-call "(require '[c.ns :refer [referred-a]])")
+                  (read-eval-call "(ns foo.bar)")
+                  (read-eval-call "(require '[foo.bar.baz :refer [referred-a]])")
                   (read-eval-call "referred-a"))
           out (unwrap-result res)]
-      (is (success? res) )
-      (is (valid-eval-result? out) )
-      (is (= 'd.ns (repl/current-ns)) "(require '[c.ns :refer [referred-a]]) should not change namespace")
-      (is (= "3" out) "(require '[c.ns :refer [referred-a]]) should retrieve the interned var value")
-      (reset-env! '[c.ns d.ns])))
+      (is (success? res) "(require '[foo.bar.baz :refer [referred-a]]) from foo.bar should succeed")
+      (is (valid-eval-result? out) "(require '[foo.bar.baz :refer [referred-a]]) from foo.bar should be a valid result")
+      (is (= 'foo.bar (repl/current-ns)) "(require '[foo.bar.baz :refer [referred-a]]) from foo.bar should not change namespace")
+      (is (= "3" out) "(require '[foo.bar.baz :refer [referred-a]]) from foo.bar should retrieve the interned var value")
+      (reset-env! '[foo.bar foo.bar.baz])))
 
   (deftest warnings
     ;; AR - The only missing is because you can't have an error and a warning at the same time.
@@ -378,11 +392,11 @@ select-keys
       (reset-env!)))
 
   (deftest macros
-    ;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;
     ;; Implementing examples from Mike Fikes work at:
     ;; http://blog.fikesfarm.com/posts/2015-09-07-messing-with-macros-at-the-repl.html
     ;; (it's not that I don't trust Mike, you know)
-    ;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;
     (let [res (read-eval-call "(defmacro hello [x] `(inc ~x))")
           out (unwrap-result res)]
       (is (success? res) "(defmacro hello ..) should succeed")
