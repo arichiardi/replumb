@@ -392,11 +392,9 @@ select-keys
       (reset-env!)))
 
   (deftest macros
-;;;;;;;;;;;;;;;;
     ;; Implementing examples from Mike Fikes work at:
     ;; http://blog.fikesfarm.com/posts/2015-09-07-messing-with-macros-at-the-repl.html
     ;; (it's not that I don't trust Mike, you know)
-;;;;;;;;;;;;;;;;
     (let [res (read-eval-call "(defmacro hello [x] `(inc ~x))")
           out (unwrap-result res)]
       (is (success? res) "(defmacro hello ..) should succeed")
