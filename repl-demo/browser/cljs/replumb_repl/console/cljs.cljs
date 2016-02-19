@@ -37,7 +37,7 @@
                              :verbose true})
            jqconsole (console/new-jqconsole "#cljs-console"
                                             (merge {:prompt-label (replumb/get-prompt)
-                                                    :disable-auto-focus true}
+                                                    :disable-auto-focus false}
                                                    console-opts))]
        (app/add-console! :cljs-console jqconsole)
        (cljs-console-prompt! jqconsole repl-opts)))))
