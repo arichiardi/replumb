@@ -8,4 +8,8 @@
             replumb.require-browser-test
             replumb.source-browser-test))
 
+;; Or doo will exit with an error, see:
+;; https://github.com/bensu/doo/issues/83#issuecomment-165498172
+(set! (.-error js/console) (fn [x] (.log js/console x)))
+
 (doo-all-tests #"^replumb.*-test")
