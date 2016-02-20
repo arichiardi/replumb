@@ -326,7 +326,17 @@ select-keys
       (is (valid-eval-result? out) "(require '[foo.bar.baz :refer [referred-a]]) from foo.bar should be a valid result")
       (is (= 'foo.bar (repl/current-ns)) "(require '[foo.bar.baz :refer [referred-a]]) from foo.bar should not change namespace")
       (is (= "3" out) "(require '[foo.bar.baz :refer [referred-a]]) from foo.bar should retrieve the interned var value")
-      (reset-env! '[foo.bar foo.bar.baz])))
+      (reset-env! '[foo.bar foo.bar.baz]))
+
+    ;; https://github.com/Lambda-X/replumb/issues/117
+    ;; To uncomment when the source path will include cljs.tools.reader.reader-types
+    (let [res (do (read-eval-call "(require '[cljs.tools.reader :as r])")
+                  (read-eval-call "(binding [r/resolve-symbol (constantly 'cljs.user/x)] (r/read-string \"`x\"))"))
+          out (unwrap-result res)]
+      (is (success? res) "Test for issues #117 should succeed")
+      (is (valid-eval-result? out) "Test for issues #117 should be a valid result")
+      (is (= "(quote cljs.user/x)" out) "Test for issues #117 should return (quote cljs.user/x)")
+      (reset-env! '[cljs.tools.reader])))
 
   (deftest warnings
     ;; AR - The only missing is because you can't have an error and a warning at the same time.
