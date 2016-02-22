@@ -62,7 +62,10 @@
   "Try to read a string binding all the standard data readers. This
   function throws if a valid form cannot be found."
   [line]
-  (binding [r/*data-readers* tags/*cljs-data-readers*]
+  (binding [ana/*cljs-ns* (:current-ns @app-env)
+            env/*compiler* st
+            r/*data-readers* tags/*cljs-data-readers*
+            r/resolve-symbol ana/resolve-symbol]
     (r/read-string {:read-cond :allow :features #{:cljs}} line)))
 
 (defn ns-form?
