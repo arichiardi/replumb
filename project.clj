@@ -19,7 +19,6 @@
                                     "dev-resources/private/test/node/compiled"         ;; node-test, node-simple-test
                                     "resources/public/js/compiled"                     ;; min
                                     "out" :target-path]
-  :source-paths ["src/cljs"]
   :hooks [leiningen.cljsbuild]
   :min-lein-version "2.0.0"
   :jvm-opts ^:replace ["-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1" "-Xverify:none"]
