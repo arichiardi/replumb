@@ -5,6 +5,7 @@
             [cljs.tagged-literals :as tags]
             [cljs.tools.reader :as r]
             [cljs.tools.reader.reader-types :as rt]
+            [cljs.tools.reader.impl.commons :as rc]
             [cljs.analyzer :as ana]
             [cljs.env :as env]
             [cljs.repl :as repl]
@@ -58,15 +59,26 @@
   [f m]
   (reduce-kv (fn [r k v] (assoc r (f k) v)) {} m))
 
-(defn repl-read-string
-  "Try to read a string binding all the standard data readers. This
-  function throws if a valid form cannot be found."
-  [line]
+(defn read
+  "Reading forms from a reader (see clojure.tools.reader.reader-types
+  for reader implementations). This function throws if a valid form
+  cannot be found."
+  [opts rdr]
   (binding [ana/*cljs-ns* (:current-ns @app-env)
             env/*compiler* st
             r/*data-readers* tags/*cljs-data-readers*
             r/resolve-symbol ana/resolve-symbol]
-    (r/read-string {:read-cond :allow :features #{:cljs}} line)))
+    (r/read opts rdr)))
+
+(defn read-string
+  "Reading forms from a string. This function throws if a valid one
+  cannot be found."
+  [opts s]
+  (binding [ana/*cljs-ns* (:current-ns @app-env)
+            env/*compiler* st
+            r/*data-readers* tags/*cljs-data-readers*
+            r/resolve-symbol ana/resolve-symbol]
+    (r/read-string opts s)))
 
 (defn ns-form?
   [form]
@@ -77,12 +89,6 @@
   cljs.analyzer/resolve-macro-var) a macro?"
   [var]
   (:macro var))
-
-(defn extract-namespace
-  [source]
-  (let [first-form (repl-read-string source)]
-    (when (ns-form? first-form)
-      (second first-form))))
 
 (defn resolve
   "From cljs.analyzer.api.clj. Given an analysis environment resolve a
@@ -640,8 +646,10 @@
                                                  r/resolve-symbol ana/resolve-symbol]
                                          (let [source (:source result)
                                                rdr (rt/source-logging-push-back-reader source)]
-                                           (dotimes [_ (dec (:line var))] (rt/read-line rdr))
-                                           (-> (r/read {:read-cond :allow :features #{:cljs}} rdr)
+                                           ;; AR - Skip lines using cljs.tools.reader.impl.commons
+                                           ;; not a public API so it might change in the future
+                                           (dotimes [_ (dec (:line var))] (rc/skip-line rdr))
+                                           (-> (read {:read-cond :allow :features #{:cljs}} rdr)
                                                meta
                                                :source
                                                common/wrap-success
@@ -715,13 +723,11 @@
 
 (defn last-form
   [source]
-  (let [rdr (rt/string-push-back-reader source)
-        eof (js-obj)
-        read #(r/read {:eof eof} rdr)]
+  (let [eof (js-obj)
+        read #(read-string {:eof eof} source)]
     (loop [first-form (read)
            second-form (read)]
-      (if (identical? eof second-form)
-        first-form
+      (if (identical? eof second)
         (recur second-form (read))))))
 
 (defn process-load-file
@@ -949,7 +955,7 @@
   read-eval-call."
   [opts cb source]
   (try
-    (let [expression-form (repl-read-string source)
+    (let [expression-form (read-string {:read-cond :allow :features #{:cljs}} source)
           opts (normalize-opts opts) ;; AR - does the whole user option processing
           data {:form expression-form
                 :ns (:current-ns @app-env)
