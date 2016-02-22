@@ -634,14 +634,18 @@
                                    read-file-fn!
                                    (fn [result]
                                      (if result
-                                       (let [source (:source result)
-                                             rdr (rt/source-logging-push-back-reader source)]
-                                         (dotimes [_ (dec (:line var))] (rt/read-line rdr))
-                                         (-> (r/read {:read-cond :allow :features #{:cljs}} rdr)
-                                             meta
-                                             :source
-                                             common/wrap-success
-                                             cb))
+                                       (binding [ana/*cljs-ns* (:current-ns @app-env)
+                                                 env/*compiler* st
+                                                 r/*data-readers* tags/*cljs-data-readers*
+                                                 r/resolve-symbol ana/resolve-symbol]
+                                         (let [source (:source result)
+                                               rdr (rt/source-logging-push-back-reader source)]
+                                           (dotimes [_ (dec (:line var))] (rt/read-line rdr))
+                                           (-> (r/read {:read-cond :allow :features #{:cljs}} rdr)
+                                               meta
+                                               :source
+                                               common/wrap-success
+                                               cb)))
                                        (cb (common/wrap-success "nil")))))
     (do (when verbose
           (common/debug-prn "No :read-file-fn! provided, skipping source fetching..."))
