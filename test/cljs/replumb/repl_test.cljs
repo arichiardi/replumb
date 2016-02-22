@@ -329,7 +329,6 @@ select-keys
       (reset-env! '[foo.bar foo.bar.baz]))
 
     ;; https://github.com/Lambda-X/replumb/issues/117
-    ;; To uncomment when the source path will include cljs.tools.reader.reader-types
     (let [res (do (read-eval-call "(require '[cljs.tools.reader :as r])")
                   (read-eval-call "(binding [r/resolve-symbol (constantly 'cljs.user/x)] (r/read-string \"`x\"))"))
           out (unwrap-result res)]
