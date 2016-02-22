@@ -417,7 +417,7 @@ select-keys
           out (unwrap-result res)]
       (is (success? res) "(defmacro hello [x] `(inc ~x))\n(hello nil nil 13)\nshould succeed")
       (is (valid-eval-result? out) "(defmacro hello [x] `(inc ~x))\n(hello nil nil 13)\nshould have a valid result")
-      (is (= "(inc 13)" out) "(defmacro hello [x] `(inc ~x))\n(hello nil nil 13)\nshould return (inc 13)")
+      (is (= "(cljs.core/inc 13)" out) "(defmacro hello [x] `(inc ~x))\n(hello nil nil 13)\nshould return (cljs.core/inc 13)")
       (reset-env!))
 
     (let [res (do (read-eval-call "(ns foo.core$macros)")
