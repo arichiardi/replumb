@@ -326,7 +326,16 @@ select-keys
       (is (valid-eval-result? out) "(require '[foo.bar.baz :refer [referred-a]]) from foo.bar should be a valid result")
       (is (= 'foo.bar (repl/current-ns)) "(require '[foo.bar.baz :refer [referred-a]]) from foo.bar should not change namespace")
       (is (= "3" out) "(require '[foo.bar.baz :refer [referred-a]]) from foo.bar should retrieve the interned var value")
-      (reset-env! '[foo.bar foo.bar.baz])))
+      (reset-env! '[foo.bar foo.bar.baz]))
+
+    ;; https://github.com/Lambda-X/replumb/issues/117
+    (let [res (do (read-eval-call "(require '[cljs.tools.reader :as r])")
+                  (read-eval-call "(binding [r/resolve-symbol (constantly 'cljs.user/x)] (r/read-string \"`x\"))"))
+          out (unwrap-result res)]
+      (is (success? res) "Test for issues #117 should succeed")
+      (is (valid-eval-result? out) "Test for issues #117 should be a valid result")
+      (is (= "(quote cljs.user/x)" out) "Test for issues #117 should return (quote cljs.user/x)")
+      (reset-env! '[cljs.tools.reader])))
 
   (deftest warnings
     ;; AR - The only missing is because you can't have an error and a warning at the same time.
@@ -397,26 +406,26 @@ select-keys
     ;; (it's not that I don't trust Mike, you know)
     (let [res (read-eval-call "(defmacro hello [x] `(inc ~x))")
           out (unwrap-result res)]
-      (is (success? res) "(defmacro hello ..) should succeed")
-      (is (valid-eval-result? out) "(defmacro hello ..) should have a valid result")
-      (is (= "true" out) "(defmacro hello ..) should return true")
+      (is (success? res) "(defmacro hello [x] `(inc ~x)) should succeed")
+      (is (valid-eval-result? out) "(defmacro hello [x] `(inc ~x)) should have a valid result")
+      (is (= "true" out) "(defmacro hello [x] `(inc ~x)) should return true")
       (reset-env!))
 
     (let [res (do (read-eval-call "(defmacro hello [x] `(inc ~x))")
                   (read-eval-call "(hello nil nil 13)"))
           out (unwrap-result res)]
-      (is (success? res) "Executing (defmacro hello ..) as function should succeed")
-      (is (valid-eval-result? out) "Executing (defmacro hello ..) as function should have a valid result")
-      (is (= "(inc 13)" out) "Executing (defmacro hello ..) as function should return (inc 13)")
+      (is (success? res) "(defmacro hello [x] `(inc ~x))\n(hello nil nil 13)\nshould succeed")
+      (is (valid-eval-result? out) "(defmacro hello [x] `(inc ~x))\n(hello nil nil 13)\nshould have a valid result")
+      (is (= "(cljs.core/inc 13)" out) "(defmacro hello [x] `(inc ~x))\n(hello nil nil 13)\nshould return (cljs.core/inc 13)")
       (reset-env!))
 
     (let [res (do (read-eval-call "(ns foo.core$macros)")
                   (read-eval-call "(defmacro hello [x] (prn &form) `(inc ~x))")
                   (read-eval-call "(foo.core/hello (+ 2 3))"))
           out (unwrap-result res)]
-      (is (success? res) "Executing (foo.core/hello ..) as function should succeed")
-      (is (valid-eval-result? out) "Executing (foo.core/hello ..) hello ..) as function should have a valid result")
-      (is (= "6" out) "Executing (foo.core/hello ..) hello ..) as function should return 6")
+      (is (success? res) "(ns foo.core$macros)\n(defmacro hello [x] (prn &form) `(inc ~x))\n(foo.core/hello (+ 2 3)) should succeed")
+      (is (valid-eval-result? out) "(ns foo.core$macros)\n(defmacro hello [x] (prn &form) `(inc ~x))\n(foo.core/hello (+ 2 3)) should have a valid result")
+      (is (= "6" out) "(ns foo.core$macros)\n(defmacro hello [x] (prn &form) `(inc ~x))\n(foo.core/hello (+ 2 3)) should return 6")
       (reset-env! '[foo.core]))
 
     (let [res (do (read-eval-call "(ns foo.core$macros)")
@@ -425,9 +434,9 @@ select-keys
                   (read-eval-call "(require-macros '[foo.core :refer [hello]])")
                   (read-eval-call "(hello (+ 2 3))"))
           out (unwrap-result res)]
-      (is (success? res) "Executing (foo.core/hello ..) as function should succeed")
-      (is (valid-eval-result? out) "Executing (foo.core/hello ..) hello ..) as function should have a valid result")
-      (is (= "6" out) "Executing (foo.core/hello ..) hello ..) as function should return 6")
+      (is (success? res) "(ns foo.core$macros)\n(defmacro hello [x] (prn &form) `(inc ~x))\n(ns another.ns)\n(require-macros '[foo.core :refer [hello]])\n(hello (+ 2 3))\nshould succeed")
+      (is (valid-eval-result? out) "(ns foo.core$macros)\n(defmacro hello [x] (prn &form) `(inc ~x))\n(ns another.ns)\n(require-macros '[foo.core :refer [hello]])\n(hello (+ 2 3))\nshould have a valid result")
+      (is (= "6" out) "(ns foo.core$macros)\n(defmacro hello [x] (prn &form) `(inc ~x))\n(ns another.ns)\n(require-macros '[foo.core :refer [hello]])\n(hello (+ 2 3))\nshould return 6")
       (reset-env! '[foo.core another.ns])))
 
   (deftest tagged-literals

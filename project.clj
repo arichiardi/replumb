@@ -5,7 +5,7 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.7.0"]
                  [org.clojure/clojurescript "1.7.228"]
-                 [org.clojure/tools.reader "1.0.0-alpha2"]
+                 [org.clojure/tools.reader "1.0.0-alpha3"]
                  [com.cognitect/transit-cljs "0.8.220"]]
 
   :plugins [[lein-cljsbuild "1.1.1"]
@@ -19,7 +19,6 @@
                                     "dev-resources/private/test/node/compiled"         ;; node-test, node-simple-test
                                     "resources/public/js/compiled"                     ;; min
                                     "out" :target-path]
-  :source-paths ["src/cljs"]
   :hooks [leiningen.cljsbuild]
   :min-lein-version "2.0.0"
   :jvm-opts ^:replace ["-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1" "-Xverify:none"]
