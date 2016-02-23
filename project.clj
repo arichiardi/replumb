@@ -1,6 +1,6 @@
 (defproject replumb/replumb "0.1.5"
   :description "ClojureScript plumbing for your bootstrapped REPLs."
-  :url "https://github.com/clojurex/replumb"
+  :url "https://github.com/Lambda-X/replumb"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.7.0"]
