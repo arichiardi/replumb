@@ -723,8 +723,9 @@
 
 (defn last-form
   [source]
-  (let [eof (js-obj)
-        read #(read-string {:eof eof} source)]
+  (let [rdr (rt/string-push-back-reader source)
+        eof (js-obj)
+        read #(read {:eof eof} rdr)]
     (loop [first-form (read)
            second-form (read)]
       (if (identical? eof second-form)
