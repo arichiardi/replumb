@@ -727,7 +727,8 @@
         read #(read-string {:eof eof} source)]
     (loop [first-form (read)
            second-form (read)]
-      (if (identical? eof second)
+      (if (identical? eof second-form)
+        first-form
         (recur second-form (read))))))
 
 (defn process-load-file
