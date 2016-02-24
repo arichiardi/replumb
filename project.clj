@@ -22,7 +22,7 @@
   :hooks [leiningen.cljsbuild]
   :min-lein-version "2.0.0"
   :jvm-opts ^:replace ["-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1" "-Xverify:none"]
-
+  :source-paths ["src/cljs"]
   :cljsbuild {:builds [{:id "dev"
                         :source-paths ["src/cljs" "src/browser" "repl-demo/browser/cljs"]
                         :figwheel {:on-jsload "replumb-repl.core/main"
