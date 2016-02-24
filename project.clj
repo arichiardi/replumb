@@ -1,4 +1,4 @@
-(defproject replumb/replumb "0.1.5-2"
+(defproject replumb/replumb "0.1.5-3"
   :description "ClojureScript plumbing for your bootstrapped REPLs."
   :url "https://github.com/Lambda-X/replumb"
   :license {:name "Eclipse Public License"
@@ -23,6 +23,7 @@
   :min-lein-version "2.0.0"
   :jvm-opts ^:replace ["-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1" "-Xverify:none"]
   :source-paths ["src/cljs"]
+  :resource-paths []
   :cljsbuild {:builds [{:id "dev"
                         :source-paths ["src/cljs" "src/browser" "repl-demo/browser/cljs"]
                         :figwheel {:on-jsload "replumb-repl.core/main"
