@@ -24,10 +24,10 @@
   :jvm-opts ^:replace ["-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1" "-Xverify:none"]
   :source-paths ["src/cljs"]
   :resource-paths []
+
   :cljsbuild {:builds [{:id "dev"
                         :source-paths ["src/cljs" "src/browser" "repl-demo/browser/cljs"]
-                        :figwheel {:on-jsload "replumb-repl.core/main"
-                                   :css-dirs ["resources/public/styles"]}
+                        :figwheel {:on-jsload "replumb-repl.core/main"}
                         :compiler {:main replumb-repl.core
                                    :optimizations :none
                                    :output-to "resources/public/js/compiled/replumb-repl.js"
@@ -113,7 +113,8 @@
                                    :elide-asserts true
                                    :static-fns true
                                    :parallel-build true}}]}
-  ;; :figwheel {:repl false}
+
+  :figwheel {:css-dirs ["resources/public/styles"]}
 
   :prep-tasks ["codox"]
   :codox {:language :clojurescript
