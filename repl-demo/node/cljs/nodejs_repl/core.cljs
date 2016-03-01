@@ -49,10 +49,11 @@
   (if (or (empty? args) (> (count args) 2))
     (print-usage)
     (let [verbose? (= "--verbose" (first args))
-          opts (merge (replumb/nodejs-options (arg->src-paths (if-not verbose?
-                                                                (first args)
-                                                                (second args)))
-                                              io/read-file!)
+          opts (merge (replumb/options :nodejs
+                                       (arg->src-paths (if-not verbose?
+                                                         (first args)
+                                                         (second args)))
+                                       io/read-file!)
                       {:verbose verbose?})]
       (print "Starting Node.js sample repl:\n"
              (find opts :target) "\n"

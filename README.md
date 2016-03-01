@@ -41,8 +41,9 @@ After that directly call ```replumb.core``` functions:
   [console-opts]
   (js/$
    (fn []
-     (let [repl-opts (merge (replumb/browser-options ["/src/cljs" "/js/compiled/out"]
-                                                     io/fetch-file!)
+     (let [repl-opts (merge (replumb/options :browser
+                                             ["/src/cljs" "/js/compiled/out"]
+                                             io/fetch-file!)
                             {:warning-as-error true
                              :verbose true})
            jqconsole (console/new-jqconsole "#cljs-console" console-opts)]
@@ -151,7 +152,7 @@ Support is provided, but only `:optimizations :none` works fine at the moment:
 
 ```clojure
 (replumb/read-eval-call
-  (replumb/nodejs-options src-paths node-read-file!)
+  (replumb/options :node src-paths node-read-file!)
   (fn [res]
     (-> res
         replumb/result->string true
@@ -164,7 +165,7 @@ Support is provided, but only `:optimizations :none` works fine at the moment:
 Where `node-read-file!` is the user-provided node implementation for
 `:read-file-fn!`.
 
-See `replumb.core/nodejs-options` documentation and feel free to reuse code in
+See `replumb.core/options` documentation and feel free to reuse code in
 `src/node/replumb/nodejs/io.cljs`. Moreover `repl-demo/node` contains a working
 example that can be built and executed with ```lein node-repl```.
 

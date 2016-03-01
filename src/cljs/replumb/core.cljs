@@ -149,8 +149,11 @@
          warning
          value)))))
 
-(defn ^:export browser-options
-  "Creates the browser option map for read-eval-call.
+(defn ^:export options
+  "Creates the right option map for read-eval-call.
+
+  Supported targets: `:nodejs` or `:node`, `:browser`. It throws if not
+  supported.
 
   The 1-arity function requires a `load-fn!` compatible with
   ClojureScript `cljs.js/*load-fn*`. Use it if you know what you are
@@ -185,60 +188,21 @@
   The 3-arity function receives additionally a third parameter `write-file-fn!`,
   a synchronous 2-arity function with signature `[file-path data]` that accepts
   a file-path and data to write."
-  ([load-fn!]
-   {:target :default
-    :load-fn! load-fn!})
-  ([src-paths read-file-fn!]
-   (browser-options src-paths read-file-fn! nil))
-  ([src-paths read-file-fn! write-file-fn!]
-   {:target :default
-    :read-file-fn! read-file-fn!
-    :src-paths src-paths
-    :write-file-fn! write-file-fn!}))
-
-(defn ^:export nodejs-options
-  "Creates the Node.js option map for read-eval-call.
-
-  The 1-arity function requires a `load-fn!` compatible with
-  ClojureScript `cljs.js/*load-fn*`. Use it if you know what you are
-  doing and follow this protocol:
-
-      Each runtime environment provides a different way to load a library.
-      Whatever function `*load-fn*` is bound to will be passed two arguments
-      - a map and a callback function: The map will have the following keys:
-
-          :name   - the name of the library (a symbol)
-          :macros - modifier signaling a macros namespace load
-          :path   - munged relative library path (a string)
-
-      The callback cb, upon resolution, will need to pass the same map:
-
-          :lang       - the language, :clj or :js
-          :source     - the source of the library (a string)
-          :cache      - optional, if a :clj namespace has been precompiled to
-                        :js, can give an analysis cache for faster loads.
-          :source-map - optional, if a :clj namespace has been precompiled
-                        to :js, can give a V3 source map JSON
-
-      If the resource could not be resolved, the callback should be invoked with
-      nil.
-
-  The 2-arity function accepts a sequence of source path strings and
-  `read-file-fn!`, an asynchronous 2-arity function with signature
-  `[file-path src-cb]` where src-cb is itself a function `(fn [source]
-  ...)` that needs to be called with the file content as string (`nil`
-  if no file is found).
-
-  The 3-arity function receives additionally a third parameter `write-file-fn!`,
-  a synchronous 2-arity function with signature `[file-path data]` that accepts
-  a file-path and data to write."
-  ([load-fn!]
-   {:target :nodejs
-    :load-fn! load-fn!})
-  ([src-paths read-file-fn!]
-   (nodejs-options src-paths read-file-fn! nil))
-  ([src-paths read-file-fn! write-file-fn!]
-   {:target :nodejs
-    :read-file-fn! read-file-fn!
-    :src-paths src-paths
-    :write-file-fn! write-file-fn!}))
+  ([target load-fn!]
+   (case target
+     (:nodejs :node) {:target :nodejs
+                      :load-fn! load-fn!}
+     :browser {:target :default
+               :load-fn! load-fn!}))
+  ([target src-paths read-file-fn!]
+   (options target src-paths read-file-fn! nil))
+  ([target src-paths read-file-fn! write-file-fn!]
+   (case target
+     (:nodejs :node) {:target :nodejs
+                      :read-file-fn! read-file-fn!
+                      :src-paths src-paths
+                      :write-file-fn! write-file-fn!}
+     :browser {:target :default
+               :read-file-fn! read-file-fn!
+               :src-paths src-paths
+               :write-file-fn! write-file-fn!})))
