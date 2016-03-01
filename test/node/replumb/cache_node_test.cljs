@@ -2,7 +2,7 @@
   (:require [cljs.test :refer-macros [deftest is]]
             [cljs.nodejs :as nodejs]
             [doo.runner :as doo]
-            [replumb.core :as core :refer [nodejs-options success? unwrap-result]]
+            [replumb.core :as core :refer [options success? unwrap-result]]
             [replumb.common :as common :refer [echo-callback valid-eval-result?
                                                extract-message valid-eval-error?]]
             [replumb.repl :as repl]
@@ -30,7 +30,7 @@
       set-js-path (str (common/normalize-path cache-path) (munge path) ".js")
       set-json-path (str (common/normalize-path cache-path) (munge path) ".cache.json")
       fns-from-cache-opts (fn [cache-opts]
-                            (let [target-opts (merge (nodejs-options src-paths io/read-file! io/write-file!) cache-opts)
+                            (let [target-opts (merge (options :nodejs src-paths io/read-file! io/write-file!) cache-opts)
                                   validated-echo-cb (partial repl/validated-call-back! target-opts echo-callback)
                                   read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)
                                   load-fn (repl/make-load-fn target-opts)]

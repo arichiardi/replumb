@@ -15,8 +15,8 @@
                  "dev-resources/private/test/src/cljs"
                  "dev-resources/private/test/src/clj"]
       target-opts (if (doo/node?)
-                    (core/nodejs-options load/fake-load-fn!)
-                    (core/browser-options load/fake-load-fn!))
+                    (core/options :node load/fake-load-fn!)
+                    (core/options :browser load/fake-load-fn!))
       validated-echo-cb (partial repl/validated-call-back! target-opts echo-callback)
       reset-env! (partial repl/reset-env! target-opts)
       read-eval-call (partial repl/read-eval-call target-opts validated-echo-cb)]
@@ -335,7 +335,42 @@ select-keys
       (is (success? res) "Test for issues #117 should succeed")
       (is (valid-eval-result? out) "Test for issues #117 should be a valid result")
       (is (= "(quote cljs.user/x)" out) "Test for issues #117 should return (quote cljs.user/x)")
-      (reset-env! '[cljs.tools.reader])))
+      (reset-env! '[cljs.tools.reader]))
+
+    ;; was require-node-test/require-when-read-file-return-nil
+    (let [res (do (read-eval-call "(require 'clojure.string)")
+                  (read-eval-call "(source clojure.string/trim)"))
+          out (unwrap-result res)]
+      (is (success? res) "(source clojure.string/trim) should succeed.")
+      (is (valid-eval-result? out) "(source clojure.string/trim) should be a valid result")
+      (is (= "nil" out) "(source clojure.string/trim) should return nil")
+      (reset-env! '[clojure.string goog.string goog.string.StringBuffer]))
+
+    ;; was require-node-test/load-file-when-read-file-retuns-nil
+    (let [res (read-eval-call "(load-file \"foo/load.clj\")")
+          result (unwrap-result res)]
+      (is (success? res) "(load-file \"foo/load.clj\") should succeed")
+      (is (valid-eval-result? result) "(load-file \"foo/load.clj\") be a valid result")
+      (is (= "nil" result) "(load-file \"foo/load.clj\") should return nil")
+      (is (= (repl/current-ns) 'cljs.user) "(load-file \"foo/load.clj\") should not change namespace")
+      (reset-env! '[foo.load]))
+
+    ;; was source-node-test/source-corner-cases
+    (let [res (do (read-eval-call-no-resource "(require 'clojure.string)")
+                  (read-eval-call-no-resource "(source clojure.string/trim)"))
+          source-string (unwrap-result res)]
+      (is (success? res) "(source ...) when *load-fn* returns nil should succeed.")
+      (is (valid-eval-result? source-string) "(source ...) when *load-fn* returns nil should be a valid result")
+      (is (= "nil" source-string) "(source ...) when *load-fn* returns nil should return nil")
+      (reset-env! '[clojure.string goog.string goog.string.StringBuffer]))
+
+    (let [res (do (read-eval-call-nil-read-file-fn "(require 'clojure.string)")
+                  (read-eval-call-nil-read-file-fn "(source clojure.string/trim)"))
+          source-string (unwrap-result res)]
+      (is (success? res) "(source ...) when :read-file-fn! is nil should succeed.")
+      (is (valid-eval-result? source-string) "(source ...) when :read-file-fn! is nil should be a valid result")
+      (is (= "nil" source-string) "(source ...) when :read-file-fn! is nil should return nil")
+      (reset-env! '[clojure.string goog.string goog.string.StringBuffer])))
 
   (deftest warnings
     ;; AR - The only missing is because you can't have an error and a warning at the same time.
