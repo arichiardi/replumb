@@ -11,13 +11,13 @@
   :plugins [[lein-cljsbuild "1.1.2"]
             [lein-codox "0.9.0"]]
 
-  :clean-targets ^{:protect false} ["dev-resources/public/js/compiled"                 ;; dev
-                                    "dev-resources/private/browser/js/compiled"        ;; browser-repl
+  :clean-targets ^{:protect false} ["dev-resources/public/js/compiled" ;; dev
+                                    "dev-resources/private/browser/js/compiled" ;; browser-repl
                                     "dev-resources/private/browser/js/simple/compiled" ;; browser-repl-simple
-                                    "dev-resources/private/node/js/compiled"           ;; node-repl
-                                    "dev-resources/private/test/browser/compiled"      ;; browser-test, browser-simple-test
-                                    "dev-resources/private/test/node/compiled"         ;; node-test, node-simple-test
-                                    "dev-resources/public/js/compiled"                 ;; min
+                                    "dev-resources/private/node/js/compiled" ;; node-repl
+                                    "dev-resources/private/test/browser/compiled" ;; browser-test, browser-simple-test
+                                    "dev-resources/private/test/node/compiled" ;; node-test, node-simple-test
+                                    "dev-resources/public/js/compiled" ;; min
                                     "out" :target-path]
   :hooks [leiningen.cljsbuild]
   :min-lein-version "2.0.0"
@@ -84,7 +84,7 @@
                                      :static-fns true
                                      :parallel-build true}}
                        {:id "node-test"
-                        :source-paths ["src/cljs" "src/node" "test/cljs" "test/node"]
+                        :source-paths ["src/cljs" "src/node" "test/cljs" "test/clj" "test/node"]
                         :compiler {:target :nodejs
                                    :optimizations :none
                                    :main launcher.runner
@@ -113,9 +113,11 @@
                                    :static-fns true
                                    :parallel-build true}}]}
 
-  :figwheel {:css-dirs ["dev-resources/public/styles"]}
+  :figwheel {:css-dirs ["dev-resources/public/styles"]
+             :open-file-command "open-emacs"
+             :nrepl-port 5088}
 
-  :prep-tasks ["codox"]
+  :prep-tasks [] ;; or cljsbuild will start compiling everything
   :codox {:language :clojurescript
           :source-paths ["src/cljs"]
           :namespaces [replumb.core]
@@ -149,11 +151,17 @@
                                      :creds :gpg}]]
 
   :profiles {:dev {:resource-paths ["dev-resources"]
-                   :dependencies [[com.cemerick/piggieback "0.1.5"]
-                                  [org.clojure/tools.nrepl "0.2.11"]
+                   :source-paths ["src/cljs" "src/browser" "repl-demo/browser/cljs" "dev"]
+                   :dependencies [[com.cemerick/piggieback "0.2.1"]
+                                  [org.clojure/tools.nrepl "0.2.12"]
+                                  [figwheel-sidecar "0.5.0-6"]
                                   [cljsjs/jqconsole "2.13.2-0"]
                                   [reagent "0.5.1"]
-                                  [binaryage/devtools "0.5.2"]]
+                                  [binaryage/devtools "0.5.2"]
+                                  [org.clojure/core.async "0.2.374"]]
                    :plugins [[lein-doo "0.1.7-SNAPSHOT"]
                              [lein-figwheel "0.5.0-6" :exclusions [cider/cider-nrepl]]
-                             [lein-shell "0.4.2"]]}})
+                             [lein-shell "0.4.2"]]}
+             :repl {:plugins [[cider/cider-nrepl "0.11.0-SNAPSHOT"]]
+                    :repl-options {:nrepl-middleware [#_cider.nrepl/cider-middleware
+                                                      cemerick.piggieback/wrap-cljs-repl]}}})
