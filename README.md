@@ -199,6 +199,7 @@ Tell us about your amazing Replumb project!
 |---------------------------|------|------|
 | [@joakin](https://github.com/joakin) | [Web repl + notebook](http://chimeces.com/cljs-browser-repl/) | [cljs-browser-repl](https://github.com/joakin/cljs-browser-repl) |
 | [@jaredly](https://github.com/jaredly) | [Repl w/ autocomplete, parinfer, and more](http://jaredforsyth.com/reepl/) | [Reepl](https://github.com/jaredly/reepl) |
+| [@milt](https://github.com/milt) | [Simple Emacs-flavored web repl](http://yetanalytics.github.io/re-pl/) | [re-pl](https://github.com/yetanalytics/re-pl) |
 
 ### License
 
