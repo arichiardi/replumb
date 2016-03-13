@@ -154,19 +154,19 @@
   valid."
   ([]
    (base-eval-opts! {}))
-  ([opts]
+  ([user-opts]
    {:ns (:current-ns @app-env)
-    :context (or (:context opts) :expr)
+    :context (or (:context user-opts) :expr)
     :source-map false
     :def-emits-var true
-    :load (:load-fn! opts)
-    :eval (make-js-eval-fn opts)
-    :verbose (or (:verbose opts) false)
+    :load (:load-fn! user-opts)
+    :eval (make-js-eval-fn user-opts)
+    :verbose (or (:verbose user-opts) false)
     :static-fns false}))
 
 (defn load-eval-opts!
-  [opts file-name]
-  (-> (base-eval-opts! opts)
+  [user-opts file-name]
+  (-> (base-eval-opts! user-opts)
       (dissoc :context)
       (assoc :file-name file-name)))
 
@@ -212,16 +212,16 @@
   [kind specs target-ns]
   (if (= kind :import)
     (with-meta `(~'ns ~target-ns
-                  (~kind
-                   ~@(map (fn [quoted-spec-or-kw]
-                            (if (keyword? quoted-spec-or-kw)
-                              quoted-spec-or-kw
-                              (second quoted-spec-or-kw)))
-                          specs)))
+                 (~kind
+                  ~@(map (fn [quoted-spec-or-kw]
+                           (if (keyword? quoted-spec-or-kw)
+                             quoted-spec-or-kw
+                             (second quoted-spec-or-kw)))
+                         specs)))
       {:merge true :line 1 :column 1})
     (with-meta `(~'ns ~target-ns
-                  (~kind
-                   ~@(-> specs canonicalize-specs process-reloads!)))
+                 (~kind
+                  ~@(-> specs canonicalize-specs process-reloads!)))
       {:merge true :line 1 :column 1})))
 
 (defn goog-deps-map
@@ -274,30 +274,30 @@
   (if (and read-file-fn! (sequential? src-paths) (every? string? src-paths))
     (fn [{:keys [name macros path] :as load-map} cb]
       (cond
-       (load/skip-load? load-map) (load/fake-load-fn! load-map cb)
-       (re-matches #"^goog/.*" path) (if-let [goog-path (get-goog-path name)]
-                                       (load/read-files-and-callback! verbose
-                                                                      (load/file-paths-for-closure src-paths goog-path)
-                                                                      read-file-fn!
-                                                                      cb)
-                                       (cb nil))
-       ;; first we check if we can retrieve the path from (.-dependencies_.nameToPath js/goog)
-       ;; (it's the case when the "js" file is in the compilation set)
-       ;; then also check in the user provided :foreign-libs option (for libraries not known
-       ;; at compile time - we need to indicate the ns->file mapping)
-       :else (let [path (or (when js/goog.DEPENDENCIES_ENABLED (file-path-from-goog-dependencies (str name)))
-                            (file-path-from-foreign-libs (str name) foreign-libs)
-                            path)
-                   args [verbose (load/file-paths-for-load-fn src-paths macros path) read-file-fn! cb]
-                   cache-path (:path cache)
-                   src-paths-lookup? (:src-paths-lookup? cache)]
-               (if (or cache-path src-paths-lookup?)
-                 (let [cache-paths (cond-> []
-                                           cache-path (into [cache-path])
-                                           src-paths-lookup? (into src-paths))
-                       cached-file-paths (load/cache-file-paths-for-load-fn cache-paths macros path)]
-                   (apply load/read-files-from-cache-and-callback! (conj args cached-file-paths)))
-                 (apply load/read-files-and-callback! args)))))
+        (load/skip-load? load-map) (load/fake-load-fn! load-map cb)
+        (re-matches #"^goog/.*" path) (if-let [goog-path (get-goog-path name)]
+                                        (load/read-files-and-callback! verbose
+                                                                       (load/file-paths-for-closure src-paths goog-path)
+                                                                       read-file-fn!
+                                                                       cb)
+                                        (cb nil))
+        ;; first we check if we can retrieve the path from (.-dependencies_.nameToPath js/goog)
+        ;; (it's the case when the "js" file is in the compilation set)
+        ;; then also check in the user provided :foreign-libs option (for libraries not known
+        ;; at compile time - we need to indicate the ns->file mapping)
+        :else (let [path (or (when js/goog.DEPENDENCIES_ENABLED (file-path-from-goog-dependencies (str name)))
+                             (file-path-from-foreign-libs (str name) foreign-libs)
+                             path)
+                    args [verbose (load/file-paths-for-load-fn src-paths macros path) read-file-fn! cb]
+                    cache-path (:path cache)
+                    src-paths-lookup? (:src-paths-lookup? cache)]
+                (if (or cache-path src-paths-lookup?)
+                  (let [cache-paths (cond-> []
+                                      cache-path (into [cache-path])
+                                      src-paths-lookup? (into src-paths))
+                        cached-file-paths (load/cache-file-paths-for-load-fn cache-paths macros path)]
+                    (apply load/read-files-from-cache-and-callback! (conj args cached-file-paths)))
+                  (apply load/read-files-and-callback! args)))))
     (do (when verbose
           (common/debug-prn "Invalid :read-file-fn! or :src-paths (is it sequential? Are all paths strings?). No *load-fn* will be passed to cljs.js."))
         ;; AR - by returning nil we force a "No *load-fn* set" in cljs.js
@@ -425,7 +425,7 @@
 
 (defn call-side-effect!
   "Execute the correct side effecting function from data.
-  Handles :side-effect-fn!, :on-error-fn! and on-success-fn!."
+  Handles :side-effect-fn!, :on-error-fn! and :on-success-fn!."
   [data {:keys [value error]}]
   (if-let [f! (:side-effect-fn! data)]
     (f!)
@@ -496,9 +496,9 @@
      (common/debug-prn "Calling back!\n" (with-out-str (pprint {:opts (common/filter-fn-keys opts)
                                                                 :data (common/filter-fn-keys data)
                                                                 :res res}))))
-   (let [new-map (warning-error-map! opts res)]
-     (let [{:keys [value error warning]} new-map]
-       (call-side-effect! data new-map)
+   (let [res (warning-error-map! opts res)]
+     (let [{:keys [value error warning]} res]
+       (call-side-effect! data res)
        (reset-last-warning!)
        (if-not error
          (do (set! *e nil)

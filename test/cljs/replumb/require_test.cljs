@@ -289,7 +289,6 @@ trim-newline
   (_reset!_ '[goog.string goog.string.StringBuffer]))
 
 ;; see https://github.com/clojure/clojurescript/wiki/Differences-from-Clojure#namespaces
-;; for reference
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:use [clojure.string :as s :only (trim)]))"]
   (let [error (unwrap-result @_res_)]

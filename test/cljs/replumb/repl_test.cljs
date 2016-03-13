@@ -12,11 +12,6 @@
   (is (symbol? (repl/current-ns)) "The current ns should be a symbol")
   (_reset!_))
 
-;; The init tests heavily relies on repl execution order. If the repl is already
-;; initialized before this point this test will fail. It is a good idea not
-;; to put repl tests in other places other then this file or force test execution
-;; order if this happens. For some we use force-init! in order to reset the
-;; state.
 (h/read-eval-call-test e/*target-opts*
   ["def a \"bogus-op\""]
   (let [_ (repl/force-init!)]
