@@ -7,10 +7,10 @@
             [replumb.test-env :as e]
             [replumb.test-helpers :as h :include-macros true]))
 
+;; Random notes:
 ;; Damian - Add js/COMPILED flag to cljs eval to turn off namespace already declared errors
 ;; AR - js/COMPILED goes here not in the runner otherwise node does not execute doo tests
-;; AR - js/COMPILED is not needed after having correctly bootstrapped the
-;; nodejs environment, see PR #57
+;; AR - js/COMPILED is not needed after having correctly bootstrapped the nodejs environment, see PR #57
 
 ;; https://github.com/ScalaConsultants/replumb/issues/47
 (h/read-eval-call-test e/*target-opts*
@@ -19,8 +19,7 @@
   (let [docstring (unwrap-result @_res_)]
     (is (success? @_res_) (str _msg_ "should succeed."))
     (is (valid-eval-result? docstring) (str _msg_ "should be a valid result"))
-    (is (re-find #"Set operations such as union/intersection" docstring) (str _msg_ "should return valid docstring")))
-  (_reset!_ '[clojure.set]))
+    (is (re-find #"Set operations such as union/intersection" docstring) (str _msg_ "should return valid docstring"))))
 
 ;; https://github.com/ScalaConsultants/replumb/issues/59
 (h/read-eval-call-test e/*target-opts*
@@ -29,8 +28,7 @@
   (let [docstring (unwrap-result @_res_)]
     (is (success? @_res_) (str _msg_ "should succeed."))
     (is (valid-eval-result? docstring) (str _msg_ "should be a valid result"))
-    (is (re-find #"Removes whitespace from both ends of string" docstring) (str _msg_ "should return valid docstring")))
-  (_reset!_ '[clojure.string goog.string goog.string.StringBuffer]))
+    (is (re-find #"Removes whitespace from both ends of string" docstring) (str _msg_ "should return valid docstring"))))
 
 ;; https://github.com/ScalaConsultants/replumb/issues/86
 (h/read-eval-call-test e/*target-opts*
@@ -39,8 +37,7 @@
   (let [docstring (unwrap-result @_res_)]
     (is (success? @_res_) (str _msg_ "should succeed."))
     (is (valid-eval-result? docstring) (str _msg_ "should be a valid result"))
-    (is (re-find #"Removes whitespace from both ends of string" docstring) (str _msg_ "should return valid docstring")))
-  (_reset!_ '[clojure.string goog.string goog.string.StringBuffer]))
+    (is (re-find #"Removes whitespace from both ends of string" docstring) (str _msg_ "should return valid docstring"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(require 'clojure.walk)"
@@ -55,8 +52,7 @@
                                    "walk"])]
     (is (success? @_res_) (str _msg_ " should succeed"))
     (is (valid-eval-result? dirstring) (str _msg_ "should be a valid result"))
-    (is (= expected dirstring) (str _msg_ "should return valid docstring")))
-  (_reset!_ '[clojure.walk]))
+    (is (= expected dirstring) (str _msg_ "should return valid docstring"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(apropos \"join\")"]
@@ -64,8 +60,7 @@
         expected "(cljs.core/-disjoin cljs.core/-disjoin!)"]
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? result) (str _msg_ "should be a valid result"))
-    (is (= expected result) (str _msg_ "should return valid docstring")))
-  (_reset!_))
+    (is (= expected result) (str _msg_ "should return valid docstring"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(require 'clojure.string)"
@@ -74,8 +69,7 @@
         expected "(cljs.core/-disjoin cljs.core/-disjoin! clojure.string/join)"]
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? result) (str _msg_ "should be a valid result"))
-    (is (= expected result) (str _msg_ "should return valid docstring")))
-  (_reset!_ '[clojure.string goog.string goog.string.StringBuffer]))
+    (is (= expected result) (str _msg_ "should return valid docstring"))))
 
 ;; note the lack of require
 (h/read-eval-call-test e/*target-opts*
@@ -83,8 +77,7 @@
   (let [result (unwrap-result @_res_)]
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? result) (str _msg_ "should be a valid result"))
-    (is (= "nil" result) (str _msg_ "should return nil because clojure.set has not been required.")))
-  (_reset!_))
+    (is (= "nil" result) (str _msg_ "should return nil because clojure.set has not been required."))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(require 'clojure.set)"
@@ -100,8 +93,7 @@ clojure.set
 "]
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? result) (str _msg_ "should be a valid result"))
-    (is (= expected result) (str _msg_ "should return a valid docstring.")))
-  (_reset!_ '[clojure.set]))
+    (is (= expected result) (str _msg_ "should return a valid docstring."))))
 
 ;; without requiring clojure.string
 (h/read-eval-call-test e/*target-opts*
@@ -115,8 +107,7 @@ clojure.set
 "]
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? result) (str _msg_ "should  be a valid result"))
-    (is (= expected result) (str _msg_ "should return valid docstring")))
-  (_reset!_))
+    (is (= expected result) (str _msg_ "should return valid docstring"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(require 'clojure.string)"
@@ -135,8 +126,7 @@ trim-newline
 "]
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? result) (str _msg_ "should be a valid result"))
-    (is (= expected result) (str _msg_ "should return valid docstring")))
-  (_reset!_ '[clojure.string goog.string goog.string.StringBuffer]))
+    (is (= expected result) (str _msg_ "should return valid docstring"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(load-file \"foo/load.clj\")"]
@@ -144,8 +134,7 @@ trim-newline
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? result) (str _msg_ "should be a valid result"))
     (is (= "#'foo.load/c" result) (str _msg_ "should return #'foo.load/c (last evaluated expression)"))
-    (is (= (repl/current-ns) 'cljs.user) (str _msg_ "should not change namespace")))
-  (_reset!_ '[foo.load foo.bar.baz clojure.string goog.string goog.string.StringBuffer]))
+    (is (= (repl/current-ns) 'cljs.user) (str _msg_ "should not change namespace"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(load-file \"foo/load.clj\")"
@@ -154,8 +143,7 @@ trim-newline
   (let [result (unwrap-result @_res_)]
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? result) (str _msg_ "should be a valid result"))
-    (is (= "100" result) (str _msg_ "should return 100")))
-  (_reset!_ '[foo.load foo.bar.baz clojure.string goog.string goog.string.StringBuffer]))
+    (is (= "100" result) (str _msg_ "should return 100"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(load-file \"foo/probably-non-existing-file.clj\")"]
@@ -163,8 +151,7 @@ trim-newline
     (is (not (success? @_res_)) (str _msg_ "should not succeed"))
     (is (valid-eval-error? error) (str _msg_ "should be an instance of js/Error"))
     (is (re-find #"Could not load file foo/probably-non-existing-file.clj" (extract-message error))
-        (str _msg_ "should have correct error message")))
-  (_reset!_))
+        (str _msg_ "should have correct error message"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(load-file \"foo/error_in_file.cljs\")"]
@@ -172,8 +159,7 @@ trim-newline
     (is (not (success? @_res_)) (str _msg_ "should not succeed"))
     (is (valid-eval-error? error) (str _msg_ "should be an instance of js/Error"))
     (is (re-find #"ERROR - Cannot read property 'call' of undefined" (extract-message error))
-        (str _msg_ "should have correct error message")))
-  (_reset!_ '[foo.error-in-file]))
+        (str _msg_ "should have correct error message"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(load-file \"foo/load_require.cljs\")"]
@@ -181,8 +167,7 @@ trim-newline
     (is (not (success? @_res_)) (str _msg_ "should not succeed"))
     (is (valid-eval-error? error) (str _msg_ "should be an instance of js/Error"))
     (is (re-find #"ERROR - Cannot read property 'call' of undefined" (extract-message error))
-        (str _msg_ "should have correct error message")))
-  (_reset!_ '[foo.load-require]))
+        (str _msg_ "should have correct error message"))))
 
 ;; AR - Test for "No *load-fn* when requiring a namespace in browser #35"
 ;; Note there these are tests with a real *load-fn*
@@ -192,8 +177,7 @@ trim-newline
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
     (is (= 'cljs.user (repl/current-ns)) (str _msg_ "should not change namespace"))
-    (is (= "nil" out) (str _msg_ "should return \"nil\"")))
-  (_reset!_ '[foo.bar.baz]))
+    (is (= "nil" out) (str _msg_ "should return \"nil\""))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(require 'foo.bar.baz)"
@@ -202,19 +186,17 @@ trim-newline
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
     (is (= 'cljs.user (repl/current-ns)) (str _msg_ "should not change namespace"))
-    (is (= "\"whatever\"" out) (str _msg_ "should return \"nil\"")))
-  (_reset!_ '[foo.bar.baz]))
+    (is (= "\"whatever\"" out) (str _msg_ "should return \"nil\""))))
 
 ;; https://github.com/ScalaConsultants/replumb/issues/39
 (h/read-eval-call-test e/*target-opts*
   ["(require 'foo.bar.baz)"
    "foo.bar.baz/const-a"]
   (let [out (unwrap-result @_res_)]
-    (is (success? @_res_) "(require 'foo.bar.baz) and foo.bar.baz/const-a should succeed")
-    (is (valid-eval-result? out) "(require 'foo.bar.baz) and foo.bar.baz/const-a should be a valid result")
-    (is (= 'cljs.user (repl/current-ns)) "(require 'foo.bar.baz) and foo.bar.baz/const-a should not change namespace")
-    (is (= "1024" out) "(require 'foo.bar.baz) and foo.bar.baz/const-a should return \"1024\""))
-  (_reset!_ '[foo.bar.baz]))
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
+    (is (= 'cljs.user (repl/current-ns)) (str _msg_ "should not change namespace"))
+    (is (= "1024" out) (str _msg_ "should return \"1024\""))))
 
 ;; https://github.com/ScalaConsultants/replumb/issues/66
 (h/read-eval-call-test e/*target-opts*
@@ -224,8 +206,7 @@ trim-newline
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
     (is (= 'cljs.user (repl/current-ns)) (str _msg_ "should not change namespace"))
-    (is (= "\"whatever\"" out) (str _msg_ "should return \"whatever\"")))
-  (_reset!_ '[foo.bar.baz]))
+    (is (= "\"whatever\"" out) (str _msg_ "should return \"whatever\""))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(require '[foo.bar.baz :refer [const-a]])"
@@ -234,26 +215,25 @@ trim-newline
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
     (is (= 'cljs.user (repl/current-ns)) (str _msg_ "should not change namespace"))
-    (is (= "1024" out) (str _msg_ "should return \"1024\"")))
-  (_reset!_ '[foo.bar.baz]))
+    (is (= "1024" out) (str _msg_ "should return \"1024\""))))
 
 (h/read-eval-call-test e/*target-opts*
-  ["(require 'yq)"]
+  ["(require 'yq)"
+   :after (repl/purge-cljs-user! '[yq])]
   (let [error (unwrap-result @_res_)]
     (is (not (success? @_res_)) (str _msg_ "should not succeed"))
     (is (valid-eval-error? error) (str _msg_ "should be an instance of js/Error"))
-    (is (re-find #"No such namespace: yq" (extract-message error)) (str _msg_ "should have correct error message")))
-  (_reset!_ '[yg]))
+    (is (re-find #"No such namespace: yq" (extract-message error)) (str _msg_ "should have correct error message"))))
 
 (h/read-eval-call-test (merge e/*target-opts* {:foreign-libs [{:file "yayquery.js"
                                                                :provides ["yq"]}]})
   ["(require 'yq)"
-   "(.. js/yq yayQuery getMessage)"]
+   "(.. js/yq yayQuery getMessage)"
+   :after (repl/purge-cljs-user! '[yq])]
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
-    (is (= "\"Hello, world!\"" out) (str _msg_ "should return \"Hello, world!\"")))
-  (_reset!_ '[yq]))
+    (is (= "\"Hello, world!\"" out) (str _msg_ "should return \"Hello, world!\""))))
 
 ;; AR - requiring clojure.string in turns imports goog.string
 ;; Node that goog.string should be never required but imported
@@ -263,8 +243,7 @@ trim-newline
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
     (is (= 'cljs.user (repl/current-ns)) (str _msg_ "should not change namespace"))
-    (is (= "nil" out) (str _msg_ "should return \"nil\"")))
-  (_reset!_ '[clojure.string goog.string goog.string.StringBuffer]))
+    (is (= "nil" out) (str _msg_ "should return \"nil\""))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(require 'clojure.string)"
@@ -273,8 +252,7 @@ trim-newline
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
     (is (= 'cljs.user (repl/current-ns)) (str _msg_ "should not change namespace"))
-    (is (= "\"tpircserujolc\"" out) (str _msg_ "should return \"tpircserujolc\"")))
-  (_reset!_ '[clojure.string goog.string goog.string.StringBuffer]))
+    (is (= "\"tpircserujolc\"" out) (str _msg_ "should return \"tpircserujolc\""))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(import 'goog.string.StringBuffer)"
@@ -285,8 +263,7 @@ trim-newline
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
     (is (= 'cljs.user (repl/current-ns)) (str _msg_ "should not change namespace"))
-    (is (= "\"clojurescript\"" out) (str _msg_ "should return \"clojurescript\"")))
-  (_reset!_ '[goog.string goog.string.StringBuffer]))
+    (is (= "\"clojurescript\"" out) (str _msg_ "should return \"clojurescript\""))))
 
 ;; see https://github.com/clojure/clojurescript/wiki/Differences-from-Clojure#namespaces
 (h/read-eval-call-test e/*target-opts*
@@ -295,8 +272,7 @@ trim-newline
     (is (not (success? @_res_)) "(ns my.namespace (:use [clojure.string :as s :only (trim)])) should not succeed")
     (is (valid-eval-error? error) "(ns my.namespace (:use [clojure.string :as s :only (trim)])) should be an instance of js/Error")
     (is (re-find #"Only \[lib.ns :only \(names\)\] specs supported in :use / :use-macros;" (extract-message error))
-        "(ns my.namespace (:use [clojure.string :as s :only (trim)])) should have correct error message"))
-  (_reset!_))
+        "(ns my.namespace (:use [clojure.string :as s :only (trim)])) should have correct error message")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:use [clojure.string :only (trim)]))"
@@ -304,8 +280,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:use ... )) and (trim ...) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:use ... )) and (trim ...) should be a valid result.")
-    (is (re-find #"clojure" out) "The result should be \"clojure\""))
-  (_reset!_ '[my.namespace clojure.string goog.string goog.string.StringBuffer]))
+    (is (re-find #"clojure" out) "The result should be \"clojure\"")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require [clojure.set :as s :refer [union]]))"
@@ -313,8 +288,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:require ... )) and (s/difference ...) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:require ... )) and (s/difference ...) should be a valid result.")
-    (is (re-find #"\{4\}" out) "The result should be #{4}"))
-  (_reset!_ '[my.namespace clojure.set]))
+    (is (re-find #"\{4\}" out) "The result should be #{4}")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require clojure.set))"
@@ -322,8 +296,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:require ... )) and (clojure.set/difference ...) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:require ... )) and (clojure.set/difference ...) should be a valid result.")
-    (is (re-find #"\{4\}" out) "The result should be #{4}"))
-  (_reset!_ '[my.namespace clojure.set]))
+    (is (re-find #"\{4\}" out) "The result should be #{4}")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require [clojure set string]))"]
@@ -331,8 +304,7 @@ trim-newline
     (is (not (success? @_res_)) "(ns my.namespace (:require [clojure set string])) should not succeed. Prefix lists are not supported.")
     (is (valid-eval-error? error) "(ns my.namespace (:require [clojure set string])) should be an instance of js/Error")
     (is (re-find #"Only :as and :refer options supported in :require / :require-macros;" (extract-message error))
-        "(ns my.namespace (:require [clojure set string])) should have correct error message."))
-  (_reset!_))
+        "(ns my.namespace (:require [clojure set string])) should have correct error message.")))
 
 ;; http://stackoverflow.com/questions/24463469/is-it-possible-to-use-refer-all-in-a-clojurescript-require
 (h/read-eval-call-test e/*target-opts*
@@ -341,8 +313,7 @@ trim-newline
     (is (not (success? @_res_)) "(ns my.namespace (:require [clojure.string :refer :all])) should not succeed. :refer :all is not allowed.")
     (is (valid-eval-error? error) "(ns my.namespace (:require [clojure.string :refer :all])) should be an instance of js/Error")
     (is (re-find #":refer must be followed by a sequence of symbols in :require / :require-macros;" (extract-message error))
-        "(ns my.namespace (:require [clojure.string :refer :all])) should have correct error message."))
-  (_reset!_))
+        "(ns my.namespace (:require [clojure.string :refer :all])) should have correct error message.")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:refer-clojure :rename {print core-print}))"]
@@ -350,8 +321,7 @@ trim-newline
     (is (not (success? @_res_)) "(ns my.namespace (:refer-clojure ...)) should not succeed. Only :exlude is allowed for :refer-clojure.")
     (is (valid-eval-error? error) "(ns my.namespace (:refer-clojure :rename {print core-print})) should be an instance of js/Error")
     (is (re-find #"Only \[:refer-clojure :exclude \(names\)\] form supported" (extract-message error))
-        "(ns my.namespace (:refer-clojure :rename {print core-print})) should have correct error message."))
-  (_reset!_))
+        "(ns my.namespace (:refer-clojure :rename {print core-print})) should have correct error message.")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:refer-clojure :exclude [max]))"
@@ -360,8 +330,7 @@ trim-newline
     (is (not (success? @_res_)) "(ns my.namespace (:refer-clojure ... :exclude)) and (max ...) should not succeed.")
     (is (valid-eval-error? error) "(ns my.namespace (:refer-clojure ... :exclude)) and (max ...) should be an instance of js/Error")
     (is (re-find #"ERROR" (extract-message error))
-        "(ns my.namespace (:refer-clojure ... :exclude)) and (max ...) should have correct error message."))
-  (_reset!_))
+        "(ns my.namespace (:refer-clojure ... :exclude)) and (max ...) should have correct error message.")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:refer-clojure :exclude [max]))"
@@ -369,8 +338,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:refer-clojure ... :exclude)) and (min ...) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:refer-clojure ... :exclude)) and (min ...) should be a valid result.")
-    (is (re-find #"1" out) "The result should be 1"))
-  (_reset!_ '[my.namespace clojure.set]))
+    (is (re-find #"1" out) "The result should be 1")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require [foo.bar.baz :refer [MyRecord]]))"
@@ -378,8 +346,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:require ... )) and (apply str ...) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:require ... )) and (apply str ...) should be a valid result.")
-    (is (re-find #"ABCDEF" out) "The result should be ABCDEF"))
-  (_reset!_ '[my.namespace foo.bar.baz]))
+    (is (re-find #"ABCDEF" out) "The result should be ABCDEF")))
 
 ;; even if not idiomatic, it should work also with "import"
 (h/read-eval-call-test e/*target-opts*
@@ -388,8 +355,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:import ... )) and (apply str ...) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:import ... )) and (apply str ...) should be a valid result.")
-    (is (re-find #"ABCDEF" out) "The result should be ABCDEF"))
-  (_reset!_ '[my.namespace foo.bar.baz]))
+    (is (re-find #"ABCDEF" out) "The result should be ABCDEF")))
 
 ;; quux.clj is a single .clj file and namespace
 ;; baz.clj file is paired with baz.cljs (but with no require-macros in baz.cljs)
@@ -400,8 +366,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:require-macros ...)) and (foo.bar.quux/mul-quux 2 2) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...)) and (foo.bar.quux/mul-quux 2 2) should be a valid result.")
-    (is (= "4" out) "(foo.quux/mul-quux 2 2) should be 4"))
-  (_reset!_ '[my.namespace foo.bar.quux]))
+    (is (= "4" out) "(foo.quux/mul-quux 2 2) should be 4")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require-macros [foo.bar.baz]))"
@@ -409,8 +374,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:require-macros ...)) and (foo.bar.baz/mul-baz 2 2) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...)) and (foo.bar.bar/mul-baz 2 2) should be a valid result.")
-    (is (= "4" out) "(foo.bar.bar/mul-baz 2 2) should be 4"))
-  (_reset!_ '[my.namespace foo.bar.baz]))
+    (is (= "4" out) "(foo.bar.bar/mul-baz 2 2) should be 4")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require-macros [foo.bar.core]))"
@@ -418,8 +382,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:require-macros ...)) and (foo.bar.core/mul-core 30 1) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...])) and (foo.bar.core/mul-core 30 1) should be a valid result.")
-    (is (= "30" out) "(foo.bar.core/mul-core 30 1) should be 30"))
-  (_reset!_ '[my.namespace foo.bar.core foo.bar.macros]))
+    (is (= "30" out) "(foo.bar.core/mul-core 30 1) should be 30")))
 
 ;; TB - this test fails but shouldn't, see https://github.com/clojure/clojurescript/wiki/Differences-from-Clojure#lisp
 ;; see also http://dev.clojure.org/jira/browse/CLJS-1449
@@ -432,8 +395,7 @@ trim-newline
   (let [error (unwrap-result @_res_)]
     (is (not (success? @_res_)) "(ns my.namespace (:require-macros ...:as...)) and (f/mul-baz 20 20) should not succeed")
     (is (valid-eval-error? error) "(ns my.namespace (:require-macros ...:as...)) and (f/mul-baz 20 20) should be an instance of js/Error")
-    (is (re-find #"ERROR" (extract-message error)) "(ns my.namespace (:require-macros ...:as...)) and (f/mul-baz 20 20) should have correct error message"))
-  (_reset!_ '[my.namespace foo.bar.baz]))
+    (is (re-find #"ERROR" (extract-message error)) "(ns my.namespace (:require-macros ...:as...)) and (f/mul-baz 20 20) should have correct error message")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require-macros [foo.bar.quux :refer [mul-quux]]))"
@@ -441,8 +403,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:require-macros ... :refer ...)) and (mul-quux 3 3) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...:refer...)) and (mul-quux 3 3) should be a valid result.")
-    (is (= "9" out) "(mul-quux 3 3) should be 9"))
-  (_reset!_ '[my.namespace foo.bar.quux]))
+    (is (= "9" out) "(mul-quux 3 3) should be 9")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require-macros [foo.bar.baz :refer [mul-baz]]))"
@@ -450,8 +411,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:require-macros ... :refer ...)) and (mul-baz 3 3) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...:refer...)) and (mul-baz 3 3) should be a valid result.")
-    (is (= "9" out) "(mul-baz 3 3) should be 9"))
-  (_reset!_ '[my.namespace foo.bar.baz]))
+    (is (= "9" out) "(mul-baz 3 3) should be 9")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require-macros [foo.bar.core :refer [mul-core]]))"
@@ -459,8 +419,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:require-macros...:refer...])) and (mul-core 30 3) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:require-macros...:refer...)) and (mul-core 30 3) should be a valid result")
-    (is (= "90" out) "(mul-core 30 3) should be 90")
-    (_reset!_ '[my.namespace foo.bar.core foo.bar.macros])))
+    (is (= "90" out) "(mul-core 30 3) should be 90")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:use-macros [foo.bar.quux :only [mul-quux]]))"
@@ -468,8 +427,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:use-macros ...)) and (mul-quux 5 5) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:use-macros ...)) and (mul-quux 5 5) should be a valid result.")
-    (is (= "25" out) "(mul-quux 25) should be 25"))
-  (_reset!_ '[my.namespace foo.bar.quux]))
+    (is (= "25" out) "(mul-quux 25) should be 25")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:use-macros [foo.bar.baz :only [mul-baz]]))"
@@ -477,8 +435,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:use-macros ...)) and (mul-baz 5 5) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:use-macros ...)) and (mul-baz 5 5) should be a valid result.")
-    (is (= "25" out) "(mul-baz 5 5) should be 25"))
-  (_reset!_ '[my.namespace foo.bar.baz]))
+    (is (= "25" out) "(mul-baz 5 5) should be 25")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:use-macros [foo.bar.core :only [mul-core]]))"
@@ -486,8 +443,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:use-macros...:only...])) and (mul-core 30 4) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:use-macros...:only...)) and (mul-core 30 4) should be a valid result")
-    (is (= "120" out) "(mul-core 30 4) should be 120"))
-  (_reset!_ '[my.namespace foo.bar.core foo.bar.macros]))
+    (is (= "120" out) "(mul-core 30 4) should be 120")))
 
 ;; cannot require clj file
 (h/read-eval-call-test e/*target-opts*
@@ -495,8 +451,7 @@ trim-newline
   (let [error (unwrap-result @_res_)]
     (is (not (success? @_res_)) "(ns my.namespace (:require [foo.bar.quux])) should not succeed")
     (is (valid-eval-error? error) "(ns my.namespace (:require [foo.bar.quux])) should be an instance of jsError.")
-    (is (re-find #"No such namespace: foo.bar.quux" (extract-message error)) "(ns my.namespace (:require [foo.bar.quux])) should have a valid error message."))
-  (_reset!_ '[my.namespace]))
+    (is (re-find #"No such namespace: foo.bar.quux" (extract-message error)) "(ns my.namespace (:require [foo.bar.quux])) should have a valid error message.")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require [foo.bar.core]))"
@@ -504,8 +459,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:require...])) and (foo.bar.core/add-five 30) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:require...])) and (foo.bar.core/add-five 30) should be a valid result")
-    (is (= "35" out) "(foo.bar.core/add-five 30) should be 35"))
-  (_reset!_ '[my.namespace foo.bar.core foo.bar.macros]))
+    (is (= "35" out) "(foo.bar.core/add-five 30) should be 35")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require [foo.bar.core :as f]))"
@@ -513,8 +467,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:require...:as...])) and (f/add-five 31) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:require...:as...])) and (f/add-five 31) should be a valid result")
-    (is (= "36" out) "(f/add-five 31) should be 36"))
-  (_reset!_ '[my.namespace foo.bar.core foo.bar.macros]))
+    (is (= "36" out) "(f/add-five 31) should be 36")))
 
 ;; Was https://github.com/ScalaConsultants/replumb/issues/91
 (h/read-eval-call-test e/*target-opts*
@@ -523,8 +476,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:require ... :include-macros ...)) and (f/mul-baz 6 6) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:require ...:include-macros...)) and (f/mul-baz 6 6) should be a valid result.")
-    (is (= "36" out) "(f/mul-baz 6 6) should be 36"))
-  (_reset!_ '[my.namespace foo.bar.baz]))
+    (is (= "36" out) "(f/mul-baz 6 6) should be 36")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require [foo.bar.core :include-macros true]))"
@@ -532,8 +484,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:require...:include-macros...])) and (foo.bar.core/mul-core 30 5) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:require...:as...])) and (foo.bar.core/mul-core 30 5) should be a valid result")
-    (is (= "150" out) "(foo.bar.core/mul-core 30 5) should be 150"))
-  (_reset!_ '[my.namespace foo.bar.core foo.bar.macros]))
+    (is (= "150" out) "(foo.bar.core/mul-core 30 5) should be 150")))
 
 ;; Was https://github.com/ScalaConsultants/replumb/issues/91
 (h/read-eval-call-test e/*target-opts*
@@ -542,8 +493,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:require ...:refer-macros...)) and (mul-baz 10 12) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:require ...:refer-macros)) and (mul-baz 10 12) should be a valid result")
-    (is (= "120" out) "(mul-baz 10 12) should be equal to 120"))
-  (_reset!_ '[my.namespace foo.bar.baz]))
+    (is (= "120" out) "(mul-baz 10 12) should be equal to 120")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require [foo.bar.core :refer-macros [mul-core]]))"
@@ -551,8 +501,7 @@ trim-newline
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(ns my.namespace (:require ...:refer-macros...)) and (mul-core 10 20) should succeed")
     (is (valid-eval-result? out) "(ns my.namespace (:require ...:refer-macros...)) and (mul-core 10 20) should have a valid result")
-    (is (= "200" out ) "(mul-core 10 20) should produce 200"))
-  (_reset!_ '[my.namespace foo.bar.core foo.bar.macros]))
+    (is (= "200" out ) "(mul-core 10 20) should produce 200")))
 
 ;; see "loop" section here: http://blog.fikesfarm.com/posts/2015-12-18-clojurescript-macro-tower-and-loop.html
 ;; but it does not work in JS ClojureScript
@@ -563,7 +512,7 @@ trim-newline
     (is (valid-eval-error? error) (str _msg_ "should be an instance of js/Error"))
     (is (re-find #"Maximum call stack size exceeded" (extract-message error)) (str _msg_ "should have correct error message"))))
 
-;; AR - The following test interact with the filesystem
+;; AR - The following writes on the filesystem
 (when (and e/*write-file-fn* e/*delete-file-fn*)
   (let [alterable-core-path "dev-resources/private/test/src/cljs/alterable/core.cljs"
         pre-content "(ns alterable.core)\n\n(def b \"pre\")"
@@ -578,8 +527,7 @@ trim-newline
         (is (success? @_res_) (str _msg_ "should succeed"))
         (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
         (is (= 'cljs.user (repl/current-ns)) (str _msg_ "should not change namespace"))
-        (is (= "\"pre\"" out) " should return \"pre\""))
-      (_reset!_ '[alterable.core]))
+        (is (= "\"pre\"" out) " should return \"pre\"")))
 
     (h/read-eval-call-test e/*target-opts*
       [:before (e/*write-file-fn* alterable-core-path post-content)
@@ -590,8 +538,7 @@ trim-newline
         (is (success? @_res_) (str _msg_ " should succeed"))
         (is (valid-eval-result? out) (str _msg_ " should be a valid result"))
         (is (= 'cljs.user (repl/current-ns)) (str _msg_ " should not change namespace"))
-        (is (= "\"post\"" out) (str _msg_ " should return \"post\"")))
-      (_reset!_ '[alterable.core])))
+        (is (= "\"post\"" out) (str _msg_ " should return \"post\"")))))
 
   (let [alterable-core-path "dev-resources/private/test/src/cljs/alterable/core.cljs"
         alterable-utils-path "dev-resources/private/test/src/cljs/alterable/utils.cljs"
@@ -611,8 +558,7 @@ trim-newline
         (is (success? @_res_) (str _msg_ " should succeed"))
         (is (valid-eval-result? out) (str _msg_ " should be a valid result"))
         (is (= 'cljs.user (repl/current-ns)) (str _msg_ " should not change namespace"))
-        (is (= "\"pre\"" out) (str _msg_ " should return \"pre\"")))
-      (_reset!_ '[alterable.core alterable.utils]))
+        (is (= "\"pre\"" out) (str _msg_ " should return \"pre\""))))
 
     (h/read-eval-call-test e/*target-opts*
       [:before (do (e/*write-file-fn* alterable-utils-path utils-pre-content)
@@ -625,8 +571,7 @@ trim-newline
         (is (success? @_res_) (str _msg_ " should succeed"))
         (is (valid-eval-result? out) (str _msg_ " should be a valid result"))
         (is (= 'cljs.user (repl/current-ns)) (str _msg_ " should not change namespace"))
-        (is (= "\"pre\"" out) (str _msg_ " should return \"pre\"")))
-      (_reset!_ '[alterable.utils]))
+        (is (= "\"pre\"" out) (str _msg_ " should return \"pre\""))))
 
     (h/read-eval-call-test e/*target-opts*
       [:before (do (e/*write-file-fn* alterable-utils-path utils-post-content)
@@ -639,5 +584,4 @@ trim-newline
         (is (success? @_res_) (str _msg_ " should succeed"))
         (is (valid-eval-result? out) (str _msg_ " should be a valid result"))
         (is (= 'cljs.user (repl/current-ns)) (str _msg_ " should not change namespace"))
-        (is (= "\"post\"" out) (str _msg_ " should return \"post\"")))
-      (_reset!_ '[alterable.core alterable.utils]))))
+        (is (= "\"post\"" out) (str _msg_ " should return \"post\""))))))

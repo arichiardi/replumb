@@ -1,6 +1,7 @@
 (ns replumb.macro-test
   (:require[cljs.test :refer-macros [deftest testing is async]]
            [replumb.core :as core :refer [success? unwrap-result]]
+           [replumb.repl :as repl]
            [replumb.common :as common :refer [valid-eval-result? extract-message valid-eval-error?]]
            [replumb.test-env :as e]
            [replumb.test-helpers :as h :refer-macros [read-eval-call-test]]))
@@ -13,8 +14,7 @@
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) (str _msg_ "should succeed."))
     (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
-    (is (= "true" out) (str _msg_ "should return true")))
-  (_reset!_))
+    (is (= "true" out) (str _msg_ "should return true"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(defmacro hello [x] `(inc ~x))"
@@ -22,8 +22,7 @@
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) (str _msg_ "should succeed."))
     (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
-    (is (= "(cljs.core/inc 13)" out) (str _msg_ "should return (cljs.core/inc 13)")))
-  (_reset!_))
+    (is (= "(cljs.core/inc 13)" out) (str _msg_ "should return (cljs.core/inc 13)"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns foo.core$macros)"
@@ -32,8 +31,7 @@
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) (str _msg_ "should succeed."))
     (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
-    (is (= "6" out) (str _msg_ "should return 6")))
-  (_reset!_ '[foo.core]))
+    (is (= "6" out) (str _msg_ "should return 6"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns foo.core$macros)"
@@ -44,8 +42,7 @@
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) (str _msg_ "should succeed."))
     (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
-    (is (= "6" out) (str _msg_ "should return 6")))
-  (_reset!_ '[foo.core another.ns]))
+    (is (= "6" out) (str _msg_ "should return 6"))))
 
 ;; From http://blog.fikesfarm.com/posts/2016-03-04-collapsing-macro-tower.html
 ;; AR - No need for towering when a macro expands a macro
@@ -63,9 +60,9 @@
                                        ~x
                                        (- ~x)))"})))
   ["(require-macros 'bar.core)"
-   "(bar.core/abs -17)"]
+   "(bar.core/abs -17)"
+   :after (repl/purge-cljs-user! '[bar.core])]
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
-    (is (= "17" out ) (str _msg_ "should result in 17")))
-  (_reset!_ '[bar.core]))
+    (is (= "17" out ) (str _msg_ "should result in 17"))))

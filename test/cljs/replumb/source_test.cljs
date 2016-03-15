@@ -17,8 +17,7 @@
    (reduce max (cljs.core/max x y) more)))"]
     (is (success? @_res_) "(source max) should succeed.")
     (is (valid-eval-result? source-string) "(source max) should be a valid result")
-    (is (= expected source-string) "(source max) should return valid source"))
-  (_reset!_))
+    (is (= expected source-string) "(source max) should return valid source")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(source nil?)"]
@@ -29,16 +28,14 @@
   (coercive-= x nil))"]
     (is (success? @_res_) "(source nil?) should succeed.")
     (is (valid-eval-result? source-string) "(source nil?) should be a valid result")
-    (is (= expected source-string) "(source nil?) should return valid source"))
-  (_reset!_))
+    (is (= expected source-string) "(source nil?) should return valid source")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(source not-existing)"]
   (let [source-string (unwrap-result @_res_)]
     (is (success? @_res_) "(source not-existing) should succeed.")
     (is (valid-eval-result? source-string) "(source not-existing) should be a valid result")
-    (is (= "nil" source-string) "(source not-existing) should return nil"))
-  (_reset!_))
+    (is (= "nil" source-string) "(source not-existing) should return nil")))
 
 ;; AR - when bundling and https://github.com/ScalaConsultants/replumb/issues/69
 ;; will be hacked together, this will work. The reason is that we need
@@ -54,8 +51,7 @@
   (let [source-string (unwrap-result @_res_)]
     (is (success? @_res_) "(source or) should succeed.")
     (is (valid-eval-result? source-string) "(source or) should be a valid result")
-    (is (re-find #"core/defmacro or" source-string) "(source or) should return correct source"))
-  (_reset!_))
+    (is (re-find #"core/defmacro or" source-string) "(source or) should return correct source")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(require 'clojure.set)"
@@ -74,8 +70,7 @@
        (reduce into (first bubbled-sets) (rest bubbled-sets)))))"]
     (is (success? @_res_) "(source clojure.set/union) should succeed.")
     (is (valid-eval-result? source-string) "(source clojure.set/union) should be a valid result")
-    (is (= expected source-string) "(source clojure.set/union) should return valid source"))
-  (_reset!_ '[clojure.set]))
+    (is (= expected source-string) "(source clojure.set/union) should return valid source")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(require 'clojure.string)"
@@ -87,8 +82,7 @@
   (gstring/trim s))"]
     (is (success? @_res_) "(source clojure.string/trim) should succeed.")
     (is (valid-eval-result? source-string) "(source clojure.string/trim) should be a valid result")
-    (is (= expected source-string) "(source clojure.string/trim) should return valid source"))
-  (_reset!_ '[clojure.string goog.string goog.string.StringBuffer]))
+    (is (= expected source-string) "(source clojure.string/trim) should return valid source")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(require 'clojure.string)"
@@ -96,8 +90,7 @@
   (let [source-string (unwrap-result @_res_)]
     (is (success? @_res_) "(source clojure.string/not-existing) should succeed.")
     (is (valid-eval-result? source-string) "(source clojure.string/not-existing) should be a valid result")
-    (is (= "nil" source-string) "(source clojure.string/not-existing) should return valid source"))
-  (_reset!_ '[clojure.string goog.string goog.string.StringBuffer]))
+    (is (= "nil" source-string) "(source clojure.string/not-existing) should return valid source")))
 
 ;; https://github.com/ScalaConsultants/replumb/issues/86
 (h/read-eval-call-test e/*target-opts*
@@ -106,8 +99,7 @@
   (let [docstring (unwrap-result @_res_)]
     (is (success? @_res_) "(require '[clojure.string :as s]) and (doc s/trim) should succeed.")
     (is (valid-eval-result? docstring) "(require '[clojure.string :as s]) and (doc s/trim) should be a valid result")
-    (is (re-find #"Removes whitespace from both ends of string" docstring) "(require '[clojure.string :as s]) and (doc s/trim) should return valid docstring")
-    (_reset!_ '[clojure.string goog.string goog.string.StringBuffer])))
+    (is (re-find #"Removes whitespace from both ends of string" docstring) "(require '[clojure.string :as s]) and (doc s/trim) should return valid docstring")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(require 'foo.bar.baz)"
@@ -116,8 +108,7 @@
         expected "(def a \"whatever\")"]
     (is (success? @_res_) "(source foo.bar.baz/a) should succeed.")
     (is (valid-eval-result? source-string) "(source foo.bar.baz/a) should be a valid result")
-    (is (= expected source-string) "(source foo.bar.baz/a) should return valid source"))
-  (_reset!_ '[foo.bar.baz]))
+    (is (= expected source-string) "(source foo.bar.baz/a) should return valid source")))
 
 ;; https://github.com/ScalaConsultants/replumb/issues/86
 (h/read-eval-call-test e/*target-opts*
@@ -127,5 +118,4 @@
         expected "(def a \"whatever\")"]
     (is (success? @_res_) "(require '[foo.bar.baz :as baz]) and (source baz/a) should succeed.")
     (is (valid-eval-result? source-string) "(require '[foo.bar.baz :as baz]) and (source baz/a) should be a valid result")
-    (is (= expected source-string) "(require '[foo.bar.baz :as baz]) and (source baz/a) should return valid source"))
-  (_reset!_ '[foo.bar.baz]))
+    (is (= expected source-string) "(require '[foo.bar.baz :as baz]) and (source baz/a) should return valid source")))

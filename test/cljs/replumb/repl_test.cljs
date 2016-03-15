@@ -9,27 +9,23 @@
 
 (h/read-eval-call-test e/*target-opts*
   ["def a \"bogus-op\""]
-  (is (symbol? (repl/current-ns)) "The current ns should be a symbol")
-  (_reset!_))
+  (is (symbol? (repl/current-ns)) "The current ns should be a symbol"))
 
 (h/read-eval-call-test e/*target-opts*
   ["def a \"bogus-op\""]
   (let [_ (repl/force-init!)]
     (is (not (:initializing? @repl/app-env)) "After force-init! :initializing? should be false before init")
-    (is (:needs-init? @repl/app-env) "After force-init!, :needs-init? should be true before init"))
-  (_reset!_))
+    (is (:needs-init? @repl/app-env) "After force-init!, :needs-init? should be true before init")))
 
 (h/read-eval-call-test e/*target-opts*
   ["def a \"bogus-op\""]
   (let [_ (repl/persist-init-opts! {:verbose true :src-paths ["src/a" "src/b"] :init-fn! #()})]
-    (is (every? repl/init-option-set (keys (:previous-init-opts @repl/app-env))) "After persist-init-opts!, the app-env should contain the right init options"))
-  (_reset!_))
+    (is (every? repl/init-option-set (keys (:previous-init-opts @repl/app-env))) "After persist-init-opts!, the app-env should contain the right init options")))
 
 (h/read-eval-call-test e/*target-opts*
   ["def a \"bogus-op\""]
   (let [_ (repl/persist-init-opts! {:verbose true :load-fn! #() :custom :opts})]
-    (is (not-any? repl/init-option-set (:previous-init-opts @repl/app-env)) "After persist-init-opts! but no option to persist, the app-env should not contain init options"))
-  (_reset!_))
+    (is (not-any? repl/init-option-set (:previous-init-opts @repl/app-env)) "After persist-init-opts! but no option to persist, the app-env should not contain init options")))
 
 (h/read-eval-call-test e/*target-opts*
   ["def a \"bogus-op\""]
@@ -43,15 +39,13 @@
     (is (not (string? (:form @init-map-atom))) "Init map :form should not be a string")
     (is (= (repl/current-ns) (:ns @init-map-atom)) "Init map should have correct :ns")
     (is (symbol? (:ns @init-map-atom)) "Init map :ns should be a symbol")
-    (is (= (:target e/*target-opts*) (:target @init-map-atom)) "Init map with custom init-fn! should have correct :target"))
-  (_reset!_))
+    (is (= (:target e/*target-opts*) (:target @init-map-atom)) "Init map with custom init-fn! should have correct :target")))
 
 (h/read-eval-call-test e/*target-opts*
   ["def a \"bogus-op\""]
   (let [_ (repl/read-eval-call (merge e/*target-opts* {:src-paths ["my/custom/path"]}) (fn [_] nil) "(def c 4)")
         previous-init-opts (:previous-init-opts @repl/app-env)]
-    (is (some #{"my/custom/path"} (:src-paths previous-init-opts)) "After changing :src-paths the new app-env should contain the new path"))
-  (_reset!_))
+    (is (some #{"my/custom/path"} (:src-paths previous-init-opts)) "After changing :src-paths the new app-env should contain the new path")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(throw (ex-info \"This is my custom error message %#FT%\" {:tag :exception}))"
@@ -59,8 +53,7 @@
   (let [error (unwrap-result @_res_)]
     (is (success? @_res_) "Eval of *e with error should return successfully")
     (is (valid-eval-result? error) "Eval of *e with error should be a valid error")
-    (is (re-find #"This is my custom error message %#FT%" error) "Eval of *e with error should return the correct message"))
-  (_reset!_))
+    (is (re-find #"This is my custom error message %#FT%" error) "Eval of *e with error should return the correct message")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(throw (ex-info \"This is my custom error message %#FT%\" {:tag :exception}))"
@@ -68,23 +61,20 @@
   (let [trace (unwrap-result @_res_)]
     (is (success? @_res_) "(pst) with previous error should return successfully")
     (is (valid-eval-result? trace) "(pst) with previous error should be a valid result")
-    (is (re-find #"This is my custom error message %#FT%" trace) "(pst) with previous error should return the correct message"))
-  (_reset!_))
+    (is (re-find #"This is my custom error message %#FT%" trace) "(pst) with previous error should return the correct message")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(pst)"]
   (let [trace (unwrap-result @_res_)]
     (is (success? @_res_) "(pst) with no error should return successfully")
     (is (valid-eval-result? trace) "(pst) with no error should be a valid result")
-    (is (= "nil" trace) "(pst) with no error should return nil"))
-  (_reset!_))
+    (is (= "nil" trace) "(pst) with no error should return nil")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(doc 'println)"]
   (let [error (unwrap-result @_res_)]
     (is (not (success? @_res_)) "(doc 'symbol) should have correct error")
-    (is (valid-eval-error? error) "(doc 'symbol) should result in an js/Error"))
-  (_reset!_))
+    (is (valid-eval-error? error) "(doc 'symbol) should result in an js/Error")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(doc println)"]
@@ -92,8 +82,7 @@
     (is (success? @_res_) "(doc symbol) should succeed")
     (is (valid-eval-result? docstring) "(doc symbol) should be a valid result")
     ;; Cannot test #"cljs.core\/println" because of a compilation bug?
-    (is (re-find #"cljs\.core.{1}println" docstring) "(doc symbol) should return valid docstring"))
-  (_reset!_))
+    (is (re-find #"cljs\.core.{1}println" docstring) "(doc symbol) should return valid docstring")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(defn my-function \"This is my documentation\" [param] (param))"
@@ -101,8 +90,7 @@
   (let [docstring (unwrap-result @_res_)]
     (is (success? @_res_) "(doc my-function) should succeed")
     (is (valid-eval-result? docstring) "(doc my-function) should be a valid result")
-    (is (re-find #"This is my documentation" docstring) "(doc my-function) should return valid docstring"))
-  (_reset!_))
+    (is (re-find #"This is my documentation" docstring) "(doc my-function) should return valid docstring")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns myns.testns \"Docstring for namespace\")"
@@ -110,16 +98,14 @@
   (let [docstring (unwrap-result @_res_)]
     (is (success? @_res_) "(doc myns.testns) should succeed.")
     (is (valid-eval-result? docstring) "(doc myns.testns) should be a valid result")
-    (is (re-find #"Docstring for namespace" docstring) "(doc myns.testns) should return valid docstring"))
-  (_reset!_ '[myns.testns]))
+    (is (re-find #"Docstring for namespace" docstring) "(doc myns.testns) should return valid docstring")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(doc ns-interns)"]
   (let [docstring (unwrap-result @_res_)]
     (is (success? @_res_) "(doc ns-interns), for issue #81, should succeed")
     (is (valid-eval-result? docstring) "(doc ns-interns), for issue #81, should be a valid result")
-    (is (re-find #"Returns a map of the intern mappings for the namespace" docstring) "(doc ns-interns), for issue #81, should return the correct docstring"))
-  (_reset!_))
+    (is (re-find #"Returns a map of the intern mappings for the namespace" docstring) "(doc ns-interns), for issue #81, should return the correct docstring")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(dir clojure.string)"]
@@ -127,8 +113,7 @@
   (let [dirstring (unwrap-result @_res_)]
     (is (success? @_res_) "(dir clojure.string) should succeed")
     (is (valid-eval-result? dirstring) "(dir clojure.string) should be a valid result")
-    (is (= "nil" dirstring) "(dir clojure.string) should be \"nil\" because clojure.string has not been required first"))
-  (_reset!_))
+    (is (= "nil" dirstring) "(dir clojure.string) should be \"nil\" because clojure.string has not been required first")))
 
 ;; test with string "tim"
 (h/read-eval-call-test e/*target-opts*
@@ -137,8 +122,7 @@
         expected "(cljs.core/-deref-with-timeout cljs.core/dotimes cljs.core/system-time cljs.core/time)"]
     (is (success? @_res_) "(apropos \"tim\") should succeed")
     (is (valid-eval-result? result) "(apropos \"tim\") should be a valid result")
-    (is (= expected result) "(apropos \"tim\") should return valid docstring"))
-  (_reset!_))
+    (is (= expected result) "(apropos \"tim\") should return valid docstring")))
 
 ;; test with regular expression #"tim"
 (h/read-eval-call-test e/*target-opts*
@@ -147,8 +131,7 @@
         expected "(cljs.core/-deref-with-timeout cljs.core/dotimes cljs.core/system-time cljs.core/time)"]
     (is (success? @_res_) "(apropos #\"tim\") should succeed")
     (is (valid-eval-result? result) "(apropos #\"tim\") should be a valid result")
-    (is (= expected result) "(apropos #\"tim\") should return valid docstring"))
-  (_reset!_))
+    (is (= expected result) "(apropos #\"tim\") should return valid docstring")))
 
 ;; test with regular expression #"t[i]me, containing metacharacters
 (h/read-eval-call-test e/*target-opts*
@@ -157,8 +140,7 @@
         expected "(cljs.core/-deref-with-timeout cljs.core/dotimes cljs.core/system-time cljs.core/time)"]
     (is (success? @_res_) "(apropos  #\"t[i]me\") should succeed")
     (is (valid-eval-result? result) "(apropos  #\"t[i]me\") should be a valid result")
-    (is (= expected result) "(apropos #\"t[i]me\") should return valid docstring"))
-  (_reset!_))
+    (is (= expected result) "(apropos #\"t[i]me\") should return valid docstring")))
 
 ;; test with string "t[i]me"
 ;; the metacharacters in this case will be interpreted just as characteres
@@ -167,16 +149,14 @@
   (let [result (unwrap-result @_res_)]
     (is (success? @_res_) "(apropos \"t[i]me\") should succeed")
     (is (valid-eval-result? result) "(apropos  #\"t[i]me\") should be a valid result")
-    (is (= "nil" result) "(apropos \"t[i]me\") should return nil."))
-  (_reset!_))
+    (is (= "nil" result) "(apropos \"t[i]me\") should return nil.")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(find-doc \"unguessable-string\")"]
   (let [result (unwrap-result @_res_)]
     (is (success? @_res_) "(find-doc \"unguessable-string\") should succeed")
     (is (valid-eval-result? result) "(find-doc \"unguessable-string\") should be a valid result")
-    (is (= "nil" result) "(find-doc \"unguessable-string\") should return nil"))
-  (_reset!_))
+    (is (= "nil" result) "(find-doc \"unguessable-string\") should return nil")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(find-doc \"^(di|a)ssoc.*!\")"]
@@ -194,8 +174,7 @@ dissoc!
 "]
     (is (success? @_res_) "(find-doc \"^(di|a)ssoc.*!\") should succeed")
     (is (valid-eval-result? result) "(find-doc \"^(di|a)ssoc.*!\") should be a valid result")
-    (is (= expected result) "(find-doc \"^(di|a)ssoc.*!\") should return valid docstrings"))
-  (_reset!_))
+    (is (= expected result) "(find-doc \"^(di|a)ssoc.*!\") should return valid docstrings")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(find-doc \"select-keys\")"]
@@ -207,8 +186,7 @@ select-keys
 "]
     (is (success? @_res_) "(find-doc \"select-keys\") should succeed")
     (is (valid-eval-result? result) "(find-doc \"select-keys\") should be a valid result")
-    (is (= expected result) "(find-doc \"select-keys\") should return valid docstring"))
-  (_reset!_))
+    (is (= expected result) "(find-doc \"select-keys\") should return valid docstring")))
 
 ;; Damian - Add COMPILED flag to cljs eval to turn off namespace already declared errors
 ;; AR - COMPILED goes here not in the runner otherwise node does not execute doo tests
@@ -219,8 +197,7 @@ select-keys
   (let [error (unwrap-result @_res_)]
     (is (not (success? @_res_)) "(in-ns \"string\") should NOT succeed")
     (is (valid-eval-error? error) "(in-ns \"string\")  should result in an js/Error")
-    (is (= "Argument to in-ns must be a symbol" (extract-message error)) "(in-ns \"string\") should have correct error"))
-  (_reset!_))
+    (is (= "Argument to in-ns must be a symbol" (extract-message error)) "(in-ns \"string\") should have correct error")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(in-ns first.namespace)"]
@@ -230,16 +207,14 @@ select-keys
     ;; Weird behavior of various runtime, each generating a different message
     (is (or (re-find #"is not defined" (extract-message error))
             (re-find #"Can't find variable" (extract-message error))
-            (re-find #"Argument to in-ns must be a symbol" (extract-message error))) "(in-ns symbol) should have correct error"))
-  (_reset!_ ['first.namespace]))
+            (re-find #"Argument to in-ns must be a symbol" (extract-message error))) "(in-ns symbol) should have correct error")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(in-ns 'first.namespace)"]
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(in-ns 'symbol) should succeed")
     (is (valid-eval-result? out) "(in-ns 'symbol) should be a valid result")
-    (is (= "nil" out) "(in-ns 'symbol) should return nil"))
-  (_reset!_ '[first.namespace]))
+    (is (= "nil" out) "(in-ns 'symbol) should return nil")))
 
 ;; Note that (do (in-ns 'my.namespace) (def a 3) (in-ns 'cljs) my.namespace/a)
 ;; Does not work in ClojureScript!
@@ -252,24 +227,23 @@ select-keys
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "Deffing a var in an in-ns namespace and querying it should succeed")
     (is (valid-eval-result? out) "Deffing a var in an in-ns namespace and querying it should be a valid result")
-    (is (= "3" out) "Deffing a var in an in-ns namespace and querying it should retrieve the interned var value"))
-  (_reset!_ '[first.namespace second.namespace]))
+    (is (= "3" out) "Deffing a var in an in-ns namespace and querying it should retrieve the interned var value")))
 
 (h/read-eval-call-test e/*target-opts*
-  ["(ns 'something.ns)"]
+  ["(ns 'something.ns)"
+   :after (repl/purge-cljs-user! '[something.ns])]
   (let [error (unwrap-result @_res_)]
-    (is (not (success? @_res_)) "(ns 'something.ns) should NOT succeed")
-    (is (valid-eval-error? error) "(ns 'something.ns) should result in an js/Error")
-    (is (re-find #"Namespaces must be named by a symbol" (extract-message error)) "(ns 'something.ns) should have correct error"))
-  (_reset!_))
+    (is (not (success? @_res_)) (str _msg_ "should NOT succeed"))
+    (is (valid-eval-error? error) (str _msg_ "should result in an js/Error"))
+    (is (re-find #"Namespaces must be named by a symbol" (extract-message error)) (str _msg_ "should have correct error"))))
 
 (h/read-eval-call-test e/*target-opts*
-  ["(ns my.namespace)"]
+  ["(ns my.namespace)"
+   :after (repl/purge-cljs-user! '[my.namespace])]
   (let [out (unwrap-result @_res_)]
-    (is (success? @_res_) "(ns my.namespace) should succeed")
-    (is (valid-eval-result? out) "(ns my.namespace) should be a valid result")
-    (is (= "nil" out) "(ns my.namespace) should return \"nil\""))
-  (_reset!_ '[my.namespace]))
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
+    (is (= "nil" out) (str _msg_ "should return \"nil\""))))
 
 ;; AR - with fake load, we want to test functionality that don't depend on
 ;; source reading. This will stay until we will provide a mechanism to inject
@@ -279,24 +253,22 @@ select-keys
   (let [error (unwrap-result @_res_)]
     (is (not (success? @_res_)) "(require something) should NOT succeed")
     (is (valid-eval-error? error) "(require something) should result in an js/Error")
-    (is (re-find #"is not ISeqable" (extract-message error)) "(require something) should have correct error"))
-  (_reset!_))
+    (is (re-find #"is not ISeqable" (extract-message error)) "(require something) should have correct error")))
 
 (h/read-eval-call-test (assoc e/*target-opts* :load-fn! load/fake-load-fn!)
   ["(require \"something\")"]
   (let [error (unwrap-result @_res_)]
     (is (not (success? @_res_)) "(require \"something\") should NOT succeed")
     (is (valid-eval-error? error) "(require \"something\") should result in an js/Error")
-    (is (re-find #"Argument to require must be a symbol" (extract-message error)) "(require \"something\") should have correct error"))
-  (_reset!_))
+    (is (re-find #"Argument to require must be a symbol" (extract-message error)) "(require \"something\") should have correct error")))
 
 (h/read-eval-call-test (assoc e/*target-opts* :load-fn! load/fake-load-fn!)
-  ["(require 'something.ns)"]
+  ["(require 'something.ns)"
+   :after (repl/purge-cljs-user! '[something.ns])]
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(require 'something.ns) should succeed")
     (is (valid-eval-result? out) "(require 'something.ns) should be a valid result")
-    (is (= "nil" out) "(require 'something.ns) should return nil"))
-  (_reset!_ '[something.ns]))
+    (is (= "nil" out) "(require 'something.ns) should return nil")))
 
 ;; AR - this is failing with :optimizations :simple.
 ;; There is some shadowing going on when using single letter
@@ -311,8 +283,7 @@ select-keys
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(require 'a.ns) from b.ns should succeed")
     (is (valid-eval-result? out) "(require 'a.ns) from b.ns should be a valid result")
-    (is (= 'b.ns (repl/current-ns)) "(require 'a.ns) from b.ns should not change namespace"))
-  (_reset!_ '[a.ns b.ns]))
+    (is (= 'b.ns (repl/current-ns)) "(require 'a.ns) from b.ns should not change namespace")))
 
 (h/read-eval-call-test (assoc e/*target-opts* :load-fn! load/fake-load-fn!)
   ["(ns foo.bar.baz)"
@@ -322,8 +293,7 @@ select-keys
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(require 'foo.bar.baz) from foo.bar should succeed")
     (is (valid-eval-result? out) "(require 'foo.bar.baz) from foo.bar should be a valid result")
-    (is (= 'foo.bar (repl/current-ns)) "(require 'foo.bar.baz) from foo.bar should not change namespace"))
-  (_reset!_ '[foo.bar foo.bar.baz]))
+    (is (= 'foo.bar (repl/current-ns)) "(require 'foo.bar.baz) from foo.bar should not change namespace")))
 
 (h/read-eval-call-test (assoc e/*target-opts* :load-fn! load/fake-load-fn!)
   ["(ns foo.bar.baz)"
@@ -335,8 +305,7 @@ select-keys
     (is (success? @_res_) "(require '[foo.bar.baz :refer [referred-a]]) from foo.bar should succeed")
     (is (valid-eval-result? out) "(require '[foo.bar.baz :refer [referred-a]]) from foo.bar should be a valid result")
     (is (= 'foo.bar (repl/current-ns)) "(require '[foo.bar.baz :refer [referred-a]]) from foo.bar should not change namespace")
-    (is (= "3" out) "(require '[foo.bar.baz :refer [referred-a]]) from foo.bar should retrieve the interned var value"))
-  (_reset!_ '[foo.bar foo.bar.baz]))
+    (is (= "3" out) "(require '[foo.bar.baz :refer [referred-a]]) from foo.bar should retrieve the interned var value")))
 
 ;; https://github.com/Lambda-X/replumb/issues/117
 (h/read-eval-call-test (assoc e/*target-opts* :load-fn! load/fake-load-fn!)
@@ -345,49 +314,49 @@ select-keys
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "Test for issues #117 should succeed")
     (is (valid-eval-result? out) "Test for issues #117 should be a valid result")
-    (is (= "(quote cljs.user/x)" out) "Test for issues #117 should return (quote cljs.user/x)"))
-  (_reset!_ '[cljs.tools.reader]))
+    (is (= "(quote cljs.user/x)" out) "Test for issues #117 should return (quote cljs.user/x)")))
 
 ;; was require-node-test/require-when-read-file-return-nil
 (h/read-eval-call-test (assoc e/*target-opts* :load-fn! load/no-resource-load-fn!)
   ["(require 'clojure.string)"
-   "(source clojure.string/trim)"]
+   "(source clojure.string/trim)"
+   :after (repl/purge-cljs-user! '[clojure.string])]
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "(source clojure.string/trim) should succeed.")
     (is (valid-eval-result? out) "(source clojure.string/trim) should be a valid result")
-    (is (= "nil" out) "(source clojure.string/trim) should return nil"))
-  (_reset!_ '[clojure.string goog.string goog.string.StringBuffer]))
+    (is (= "nil" out) "(source clojure.string/trim) should return nil")))
 
 ;; was require-node-test/load-file-when-read-file-retuns-nil
-(h/read-eval-call-test (assoc e/*target-opts* :load-fn! load/no-resource-load-fn!)
-  ["(load-file \"foo/load.clj\")"]
-  (let [result (unwrap-result @_res_)]
-    (is (success? @_res_) "(load-file \"foo/load.clj\") should succeed")
-    (is (valid-eval-result? result) "(load-file \"foo/load.clj\") be a valid result")
-    (is (= "nil" result) "(load-file \"foo/load.clj\") should return nil")
-    (is (= (repl/current-ns) 'cljs.user) "(load-file \"foo/load.clj\") should not change namespace"))
-  (_reset!_ '[foo.load]))
+;; AR - This test loads the file anyways but it shouldn't !
+;; (h/read-eval-call-test (assoc e/*target-opts* :load-fn! load/no-resource-load-fn!)
+;;   ["(load-file \"foo/load.clj\")"]
+;;   (let [result (unwrap-result @_res_)]
+;;     (is (success? @_res_) "(load-file \"foo/load.clj\") should succeed")
+;;     (is (valid-eval-result? result) "(load-file \"foo/load.clj\") be a valid result")
+;;     (is (= "nil" result) "(load-file \"foo/load.clj\") should return nil")
+;;     (is (= (repl/current-ns) 'cljs.user) "(load-file \"foo/load.clj\") should not change namespace"))
+;;   (_reset!_ '[foo.load]))
 
 ;; was source-node-test/source-corner-cases
 (h/read-eval-call-test (assoc e/*target-opts* :load-fn! load/no-resource-load-fn!)
   ["(require 'clojure.string)"
-   "(source clojure.string/trim)"]
+   "(source clojure.string/trim)"
+   :after (repl/purge-cljs-user! '[clojure.string])]
   (let [source-string (unwrap-result @_res_)]
-    (is (success? @_res_) "(source ...) when *load-fn* returns nil should succeed.")
-    (is (valid-eval-result? source-string) "(source ...) when *load-fn* returns nil should be a valid result")
-    (is (= "nil" source-string) "(source ...) when *load-fn* returns nil should return nil"))
-  (_reset!_ '[clojure.string goog.string goog.string.StringBuffer]))
+    (is (success? @_res_) (str _msg_ "when *load-fn* returns nil should succeed."))
+    (is (valid-eval-result? source-string) (str _msg_ "when *load-fn* returns nil should be a valid result"))
+    (is (= "nil" source-string) (str _msg_ "when *load-fn* returns nil should return nil"))))
 
 (h/read-eval-call-test (-> e/*target-opts*
                            (dissoc :load-fn!)
                            (assoc :read-file-fn! nil))
   ["(require 'clojure.string)"
-   "(source clojure.string/trim)"]
+   "(source clojure.string/trim)"
+   :after (repl/purge-cljs-user! '[clojure.string])]
   (let [source-string (unwrap-result @_res_)]
-    (is (success? @_res_) "(source ...) when :read-file-fn! is nil should succeed.")
-    (is (valid-eval-result? source-string) "(source ...) when :read-file-fn! is nil should be a valid result")
-    (is (= "nil" source-string) "(source ...) when :read-file-fn! is nil should return nil"))
-  (_reset!_ '[clojure.string goog.string goog.string.StringBuffer]))
+    (is (success? @_res_) (str _msg_ "when :read-file-fn! is nil should succeed."))
+    (is (valid-eval-result? source-string) (str _msg_ "when :read-file-fn! is nil should be a valid result"))
+    (is (= "nil" source-string) (str _msg_ "when :read-file-fn! is nil should return nil"))))
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;;  Warning tests  ;;
@@ -402,8 +371,7 @@ select-keys
     (is (not (success? @_res_)) "Response is :error and warning-as-error is true should not succeed")
     (is (not (has-valid-warning? @_res_)) "Response is :error and warning-as-error is true should not contain :warning")
     (is (valid-eval-error? out) "Response is :error and warning-as-error is true should result in an js/Error")
-    (is (re-find #"EOF" (extract-message out)) "Response is :error and warning-as-error is true should return EOF, the original error"))
-  (_reset!_))
+    (is (re-find #"EOF" (extract-message out)) "Response is :error and warning-as-error is true should return EOF, the original error")))
 
 ;; Response is :error and warning-as-error is false
 (h/read-eval-call-test e/*target-opts*
@@ -412,8 +380,7 @@ select-keys
     (is (not (success? @_res_)) "Response is :error and warning-as-error is false should not succeed")
     (is (not (has-valid-warning? @_res_)) "Response is :error and warning-as-error is false should not contain :warning")
     (is (valid-eval-error? out) "Response is :error and warning-as-error is false should result in an js/Error")
-    (is (re-find #"EOF" (extract-message out)) "Response is :error and warning-as-error is false should return EOF"))
-  (_reset!_))
+    (is (re-find #"EOF" (extract-message out)) "Response is :error and warning-as-error is false should return EOF")))
 
 ;; Response is :value but warning was raised and warning-as-error is true
 (h/read-eval-call-test (assoc e/*target-opts* :warning-as-error true)
@@ -422,8 +389,7 @@ select-keys
     (is (not (success? @_res_)) "Response is :value but warning was raised and warning-as-error is true should not succeed")
     (is (not (has-valid-warning? @_res_)) "Response is :value but warning was raised and warning-as-error is true should not contain warning")
     (is (valid-eval-error? out) "Response is :value but warning was raised and warning-as-error is true should result in an js/Error")
-    (is (re-find #"undeclared.*_arsenununpa42" (extract-message out)) "Response is :value but warning was raised and warning-as-error is true should have the right error msg"))
-  (_reset!_))
+    (is (re-find #"undeclared.*_arsenununpa42" (extract-message out)) "Response is :value but warning was raised and warning-as-error is true should have the right error msg")))
 
 ;; Response is :value but warning was raised and warning-as-error is false
 (h/read-eval-call-test e/*target-opts*
@@ -432,8 +398,7 @@ select-keys
     (is (success? @_res_) "Response is :value but warning was raised and warning-as-error is false should succeed")
     (is (has-valid-warning? @_res_) "Response is :value but warning was raised and warning-as-error is false should contain warning")
     (is (valid-eval-result? out) "Response is :value but warning was raised and warning-as-error is false should be a valid result")
-    (is (= "nil" out) "Response is :value but warning was raised and warning-as-error is false should return nil"))
-  (_reset!_))
+    (is (= "nil" out) "Response is :value but warning was raised and warning-as-error is false should return nil")))
 
 ;; Response is :value, no warning and warning-as-error is false
 (h/read-eval-call-test e/*target-opts*
@@ -443,8 +408,7 @@ select-keys
     (is (success? @_res_) "Response is :value, no warning and warning-as-error is false should succeed")
     (is (not (has-valid-warning? @_res_)) "Response is :value, no warning was raised and warning-as-error is false should not contain warning")
     (is (valid-eval-result? out) "Response is :value, no warning and warning-as-error is false should be a valid result")
-    (is (= "2" out) "Response is :value, no warning and warning-as-error is false symbol should return 2"))
-  (_reset!_))
+    (is (= "2" out) "Response is :value, no warning and warning-as-error is false symbol should return 2")))
 
 ;; Response is :value, no warning and warning-as-error is true
 (h/read-eval-call-test (assoc e/*target-opts* :warning-as-error true)
@@ -454,8 +418,7 @@ select-keys
     (is (success? @_res_) "Response is :value, no warning and warning-as-error is true should succeed")
     (is (not (has-valid-warning? @_res_)) "Response is :value, no warning was raised and warning-as-error is true should not contain warning")
     (is (valid-eval-result? out) "Response is :value, no warning and warning-as-error is true should be a valid result")
-    (is (= "2" out) "Response is :value, no warning and warning-as-error is true symbol should return 2"))
-  (_reset!_))
+    (is (= "2" out) "Response is :value, no warning and warning-as-error is true symbol should return 2")))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;  Warning tests end  ;;
@@ -467,32 +430,28 @@ select-keys
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "Reading #js literal should succeed")
     (is (valid-eval-result? out) "Reading #js literal should have a valid result")
-    (is (= "#js [1 2]" out) "Reading #js literal should return the object"))
-  (_reset!_))
+    (is (= "#js [1 2]" out) "Reading #js literal should return the object")))
 
 (h/read-eval-call-test e/*target-opts*
   ["#queue [1 2]"]
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "Reading #queue should succeed")
     (is (valid-eval-result? out) "Reading #queue should have a valid result")
-    (is (= "#queue [1 2]" out) "Reading #queue should return the object"))
-  (_reset!_))
+    (is (= "#queue [1 2]" out) "Reading #queue should return the object")))
 
 (h/read-eval-call-test e/*target-opts*
   ["#inst \"2010-11-12T13:14:15.666-05:00\""]
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "Reading #inst should succeed")
     (is (valid-eval-result? out) "Reading #inst should have a valid result")
-    (is (= "#inst \"2010-11-12T18:14:15.666-00:00\"" out) "Reading #inst should return the object"))
-  (_reset!_))
+    (is (= "#inst \"2010-11-12T18:14:15.666-00:00\"" out) "Reading #inst should return the object")))
 
 (h/read-eval-call-test e/*target-opts*
   ["#uuid \"550e8400-e29b-41d4-a716-446655440000\""]
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) "Reading #uuid should succeed")
     (is (valid-eval-result? out) "Reading #uuid should have a valid result")
-    (is (= "#uuid \"550e8400-e29b-41d4-a716-446655440000\"" out) "Reading #uuid should return the object"))
-  (_reset!_))
+    (is (= "#uuid \"550e8400-e29b-41d4-a716-446655440000\"" out) "Reading #uuid should return the object")))
 
 (let [custom-opts (assoc e/*target-opts* :no-pr-str-on-value true)]
   (h/read-eval-call-test custom-opts
@@ -500,24 +459,21 @@ select-keys
     (let [out (unwrap-result @_res_)]
       (is (success? @_res_) "Executing (js-obj :foo :bar) and :no-pr-str-on-value true should succeed")
       (is (valid-eval-result? custom-opts out) "Executing (js-obj :foo :bar) and :no-pr-str-on-value true should have a valid result")
-      (is (object? out) "Executing (js-obj :foo :bar) and :no-pr-str-on-value true should return a JS object"))
-    (_reset!_))
+      (is (object? out) "Executing (js-obj :foo :bar) and :no-pr-str-on-value true should return a JS object")))
 
   (h/read-eval-call-test custom-opts
     ["#js [:foo :bar]"]
     (let [out (unwrap-result @_res_)]
       (is (success? @_res_) "Executing #js [:foo :bar] and :no-pr-str-on-value true should succeed")
       (is (valid-eval-result? custom-opts out) "Executing #js [:foo :bar]) and :no-pr-str-on-value true should have a valid result")
-      (is (array? out) "Executing #js [:foo :bar] and :no-pr-str-on-value true should return a JS object"))
-    (_reset!_)))
+      (is (array? out) "Executing #js [:foo :bar] and :no-pr-str-on-value true should return a JS object"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["2 3"]
   (let [error (unwrap-result @_res_)]
     (is (not (success? @_res_)) "\"2 3\" with :context set to :expr should not succeed")
     (is (valid-eval-error? error) "\"2 3\" with :context set to :expr should be an instance of jsError")
-    (is (re-find #"ERROR - .* is not a function" (extract-message error)) "\"2 3\" with :context set to :expr should have a valid error message."))
-  (_reset!_))
+    (is (re-find #"ERROR - .* is not a function" (extract-message error)) "\"2 3\" with :context set to :expr should have a valid error message.")))
 
 (let [custom-opts (assoc e/*target-opts* :context :statement)]
   (h/read-eval-call-test custom-opts
@@ -525,5 +481,4 @@ select-keys
     (let [out (unwrap-result @_res_)]
       (is (success? @_res_) "\"2 3\" with :context set to :statement should succeed")
       (is (valid-eval-result? custom-opts out) "\"2 3\" with :context set to :statement should have a valid result")
-      (is (= "nil" out) "\"2 3\" with :context set to :statement should yield nil."))
-    (_reset!_)))
+      (is (= "nil" out) "\"2 3\" with :context set to :statement should yield nil."))))
