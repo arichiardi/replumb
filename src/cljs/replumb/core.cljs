@@ -105,7 +105,7 @@
 (defn ^:export error->str
   "Return the message string of the input `js/Error`."
   ([error] (common/extract-message error))
-  ([error print-stack?] (common/extract-message error print-stack?)))
+  ([print-stack? error] (common/extract-message print-stack? error)))
 
 (defn ^:export unwrap-result
   "Unwraps the result of an evaluation.
@@ -116,8 +116,8 @@
   When `include-warning?` is true, then the value yields from, in order,
   `:error`, then `:warning` and then eventually `:value`."
   ([result-map]
-   (unwrap-result result-map false))
-  ([result-map include-warning?]
+   (unwrap-result false result-map))
+  ([include-warning? result-map]
    (let [{:keys [error value warning]} result-map]
      (if error
        error
@@ -133,18 +133,21 @@
 (defn ^:export result->string
   "Given a `result-map`, returns the result of the evaluation as string.
 
-  - When `include-warning?` is true, then the string yields from, in
-  order, `:error`, then `:warning` and then eventually `:value`.
+  - When `include-warning?` is true, then the string returned is, in
+  order, from the `:error`, `:warning` and eventually `:value` key in
+  the result map.
+
   - When `print-stack?` is true, the error string will include the stack
   trace."
   ([result-map]
-   (result->string result-map false false))
-  ([result-map print-stack?]
-   (result->string result-map print-stack? false))
-  ([result-map print-stack? include-warning?]
+   (result->string false false result-map))
+  ([print-stack? result-map]
+   (result->string print-stack? false result-map))
+  ([print-stack? include-warning? result-map]
+   {:pre [(not (map? print-stack?)) (not (map? include-warning?)) (map? result-map)]}
    (let [{:keys [error value warning]} result-map]
      (if error
-       (common/extract-message error false print-stack?)
+       (common/extract-message print-stack? false error)
        (if (and include-warning? warning)
          warning
          value)))))

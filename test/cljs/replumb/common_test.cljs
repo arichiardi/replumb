@@ -26,7 +26,7 @@
   (let [msg (extract-message empty-err)]
     (is (= "Error" msg))
     (is (string? msg)))
-  (let [msg (extract-message (err-with-ERROR) true)]
+  (let [msg (extract-message false true (err-with-ERROR))]
     (is (re-find #"Write this.*and this please" msg))))
 
 (deftest filter-fn-key

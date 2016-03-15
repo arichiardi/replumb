@@ -640,7 +640,7 @@
                (fn [{:keys [value]}]
                  ;; AR the returned :value is a js/Error for pst of course
                  (let [msg (if value
-                             (common/extract-message value true true)
+                             (common/extract-message true true value)
                              "nil")]
                    (call-back! (assoc opts :no-pr-str-on-value true) cb data (common/wrap-success msg)))))
     (call-back! opts cb data (common/wrap-success nil))))

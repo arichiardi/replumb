@@ -523,7 +523,7 @@ trim-newline
        "(require 'alterable.core)"
        "alterable.core/b"
        :after (e/*delete-file-fn* alterable-core-path)]
-      (let [out (unwrap-result @_res_ true)]
+      (let [out (unwrap-result true @_res_)]
         (is (success? @_res_) (str _msg_ "should succeed"))
         (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
         (is (= 'cljs.user (repl/current-ns)) (str _msg_ "should not change namespace"))

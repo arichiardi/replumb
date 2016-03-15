@@ -15,18 +15,21 @@
   (tree-seq error-branch? error-children error))
 
 (defn extract-message
-  "Iteratively extracts messages inside (nested #error objects), returns
-  a string. If the boolean `exclude-error-msg?` is true, only the
-  message marked with \"ERROR\" will be included in the final string. If
-  the boolean `print-stack?` is true, the stack will be added to the
-  final string. They both default to false.
+  "Iteratively extracts messages inside nested #error objects, returns a
+  string.
+
+  If the boolean `exclude-error-msg?` is true, only the messages not
+  marked as \"ERROR\" will be included in the final string.
+
+  If the boolean `print-stack?` is true, the stack will be added
+  to the final string. They both default to false.
 
   ** Be sure to pass a js/Error object here **"
   ([err]
-   (extract-message err false false))
-  ([err exclude-error-msg?]
-   (extract-message err exclude-error-msg? false))
-  ([err exclude-error-msg? print-stack?]
+   (extract-message false false err))
+  ([print-stack? err]
+   (extract-message print-stack? false err))
+  ([print-stack? exclude-error-msg? err]
    (str (let [strings (cond->> (keep identity (error-seq err))
                            exclude-error-msg? (filter #(not= "ERROR" (.-message %1)))
                            true (map #(.-message %1))

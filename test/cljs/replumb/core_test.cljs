@@ -27,5 +27,5 @@
   (is (success? successful-map-with-warning) "(success? successful-map-with-warning) should be true")
   (is (valid-eval-result? (unwrap-result successful-map-with-warning)) "successful-map-with-warning should have valid result")
   (is (not (valid-eval-error? (unwrap-result successful-map-with-warning))) "successful-map-with-warning should not be an valid error")
-  (is (= "This is a warning" (unwrap-result successful-map-with-warning true)) "successful-map-with-warning should contain the correct message")
-  (is (= "This is a result" (unwrap-result successful-map-with-warning false)) "successful-map-with-warning should contain the correct message"))
+  (is (= "This is a warning" (unwrap-result true successful-map-with-warning)) "successful-map-with-warning should contain the correct message")
+  (is (= "This is a result" (unwrap-result false successful-map-with-warning)) "successful-map-with-warning should contain the correct message"))

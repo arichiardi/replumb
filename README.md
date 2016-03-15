@@ -14,11 +14,13 @@ As [current maintainer](https://github.com/arichiardi) of the project I would li
 
 ## Usage
 
-Put the following into the `:dependencies` vector.
+Version `0.2.0` __breaks__ two `replumb.core` APIs:
+  * there is a unified `options` function for both browser and Node.js
+  * `result->string`, `unwrap-result` and `error->str` have a new parameter order
 
 [![via Clojars](http://clojars.org/replumb/latest-version.svg)](http://clojars.org/replumb)
 
-After that directly call ```replumb.core``` functions:
+There is one entry namespace, ```replumb.core```, whose functions you should call directly:
 
 ``` clojure
 (ns ...
