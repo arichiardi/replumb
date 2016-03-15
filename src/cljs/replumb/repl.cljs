@@ -191,20 +191,57 @@
                 (if (vector? spec) spec [spec]))))]
     (map canonicalize specs)))
 
-(defn purge-ns!
-  [st ns]
-  (swap! st ast/dissoc-ns ns)
-  (swap! cljs.js/*loaded* disj ns))
+;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Clearing ns fns  ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn empty-cljs-user?
+  "Is the compiler state for the cljs.user namespace empty?"
+  []
+  (ast/empty-state? @st 'cljs.user))
+
+(defn purge-required-ns!
+  "Remove all the references to the given namespace in the compiler
+  state."
+  [required-ns]
+  (let [required-macro-ns (symbol (str required-ns "$macros"))]
+    (swap! st #(-> %
+                   (ast/dissoc-ns required-ns)
+                   (ast/dissoc-ns required-macro-ns)))
+    (swap! cljs.js/*loaded* #(->> (-> %
+                                      (disj required-ns)
+                                      (disj required-macro-ns))
+                                  (remove (partial ast/import-of-ns? required-ns))
+                                  (into #{})))))
+
+(defn purge-symbols!
+  "Get rid of all the compiler state references to required-ns macros
+  namespaces and symbols from requirer-ns."
+  [requirer-ns required-ns]
+  (swap! st #(-> %
+                 (ast/dissoc-all requirer-ns required-ns :require)
+                 (ast/dissoc-all requirer-ns required-ns :macro-require)
+                 (ast/dissoc-all requirer-ns required-ns :macro)
+                 (ast/dissoc-all requirer-ns required-ns :symbol)
+                 (ast/dissoc-all requirer-ns required-ns :import))))
+
+(defn purge-cljs-user!
+  "Remove all the namespace references required from inside cljs.user
+  from the compiler state."
+  ([]
+   (purge-cljs-user! @cljs.js/*loaded*))
+  ([namespaces]
+   (doseq [ns namespaces]
+     (purge-required-ns! ns)
+     (purge-symbols! 'cljs.user ns))))
 
 (defn process-reloads!
   [specs]
   (if-let [k (some #{:reload :reload-all} specs)]
     (let [specs (remove #{k} specs)]
       (if (= k :reload-all)
-        (doseq [ns @cljs.js/*loaded*]
-          (purge-ns! st ns))
-        (doseq [ns (map first specs)]
-          (purge-ns! st ns)))
+        (purge-cljs-user! @cljs.js/*loaded*)
+        (purge-cljs-user! (map first specs)))
       specs)
     specs))
 
@@ -978,27 +1015,3 @@
       (when (:verbose opts)
         (common/debug-prn "Exception caught in read-eval-call: " (.-stack e)))
       (call-back! opts cb {} (common/wrap-error e)))))
-
-(defn reset-env!
-  "It does the following (in order):
-
-  1. in-ns to cljs.user
-  2. remove the input namespaces from the compiler environment
-  3. reset the last warning
-  4. set *e to nil
-
-  It accepts a sequence of symbols or strings."
-  ([]
-   (reset-env! nil))
-  ([opts]
-   (reset-env! opts nil))
-  ([opts namespaces]
-   (read-eval-call opts identity "(in-ns 'cljs.user)")
-   (doseq [ns namespaces]
-     (purge-ns! st (symbol ns))
-     (purge-ns! st (symbol (str ns "$macros"))))
-   (if (seq @cljs.js/*loaded*)
-     (throw (ex-info (str "The cljs.js/*loaded* atom still contains " @cljs.js/*loaded* " - make sure you purge dependent namespaces.") ex-info-data)))
-   (reset-last-warning!)
-   (read-eval-call opts identity "(set! *e nil)")
-   (reset-init-opts!)))

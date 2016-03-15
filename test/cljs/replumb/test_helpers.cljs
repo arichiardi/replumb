@@ -1,6 +1,8 @@
 (ns replumb.test-helpers
-  (:require replumb.core
+  (:require cljs.pprint
+            replumb.core
             replumb.repl
+            replumb.ast
             goog.Promise)
   (:require-macros cljs.test))
 

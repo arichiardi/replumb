@@ -206,3 +206,24 @@
                :read-file-fn! read-file-fn!
                :src-paths src-paths
                :write-file-fn! write-file-fn!})))
+
+(defn repl-reset!
+  "Reset the repl and the current compiler state.
+
+  It performs the following (in order):
+
+  1. calls `(read-eval-call (in-ns 'cljs.user))`
+  2. removes `cljs.js/*loaded*` namespaces from the compiler environment
+  3. resets the last warning
+  4. sets `*e` to nil
+  5. resets the init options (the next eval will trigger an init)"
+  [opts]
+  ;; Clean cljs.user
+  (when-not (repl/empty-cljs-user?)
+    (repl/purge-cljs-user!))
+  ;; Back to cljs.user, has to be first
+  (repl/read-eval-call opts identity "(in-ns 'cljs.user)")
+  ;; Other side effects
+  (repl/reset-last-warning!)
+  (repl/read-eval-call opts identity "(set! *e nil)")
+  (repl/reset-init-opts!))
