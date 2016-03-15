@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.0
+
+- _\*API breaking\*_ Change signature of `result->string`, `error->str` and `unwrap-result`
+- _\*API breaking\*_ Merge `nodejs-options` and `browser-options` in `replumb.core/options` 
+- Clearing the repl is first class citizen, introducing `replumb.core/repl-reset!`
+- Brand new helper functions for querying and dissoc-ing symbols from the compiler AST in `replumb.ast`
+- The project now follows the new figwheel way to launch a Clojurescript repl through `lein repl`
+- Add (Collapsing Macro Tower)[http://blog.fikesfarm.com/posts/2016-03-04-collapsing-macro-tower.html] tests
+- The function replumb.ast/known-namespaces now filters out spurious nils
+- Fix for [issue #66](https://github.com/Lambda-X/replumb/issues/66) - referring a wrong symbol wreaks havoc
+
 ## 0.1.5
 - Expose replumb equivalent of Clojurescript compiler option `:foreign-libs`
 - Expose the Clojurescript compiler option `:context`
