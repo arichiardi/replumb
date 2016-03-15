@@ -73,7 +73,8 @@
                                    :output-dir "dev-resources/private/test/browser/compiled/out"
                                    :asset-path "dev-resources/private/test/browser/compiled/out"
                                    :static-fns true
-                                   :parallel-build true}}
+                                   :parallel-build true
+                                   :closure-defines {"goog.DEBUG" false}}}
                        #_{:id "browser-test-simple"
                           :source-paths ["src/cljs" "test/cljs" "test/browser"]
                           :compiler {:optimizations :simple
@@ -82,7 +83,8 @@
                                      :output-dir "dev-resources/private/test/browser/compiled/out"
                                      :asset-path "dev-resources/private/test/browser/compiled/out"
                                      :static-fns true
-                                     :parallel-build true}}
+                                     :parallel-build true
+                                     :closure-defines {"goog.DEBUG" false}}}
                        {:id "node-test"
                         :source-paths ["src/cljs" "src/node" "test/cljs" "test/clj" "test/node"]
                         :compiler {:target :nodejs
@@ -92,7 +94,8 @@
                                    :output-dir "dev-resources/private/test/node/compiled/out"
                                    :asset-path "dev-resources/private/test/node/compiled/out"
                                    :static-fns true
-                                   :parallel-build true}}
+                                   :parallel-build true
+                                   :closure-defines {"goog.DEBUG" false}}}
                        #_{:id "node-test-simple"
                           :source-paths ["src/cljs" "src/node" "test/cljs" "test/node"]
                           :compiler {:target :nodejs
@@ -102,7 +105,8 @@
                                      :output-dir "dev-resources/private/test/node/compiled/out"
                                      :asset-path "dev-resources/private/test/node/compiled/out"
                                      :static-fns true
-                                     :parallel-build true}}
+                                     :parallel-build true
+                                     :closure-defines {"goog.DEBUG" false}}}
                        {:id "min"
                         :source-paths ["src/cljs"]
                         :compiler { ;; :main cljs-browser-repl.core ;; https://github.com/emezeske/lein-cljsbuild/issues/420
