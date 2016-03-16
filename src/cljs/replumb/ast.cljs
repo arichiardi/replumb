@@ -6,7 +6,7 @@
   "Given a compiler state, return the seq of namespace symbols currently
   present in the AST."
   [state]
-  (keys (:cljs.analyzer/namespaces state)))
+  (remove nil? (keys (:cljs.analyzer/namespaces state))))
 
 (defn ns-publics
   "Given compiler state and namespace symbol return all the public vars
