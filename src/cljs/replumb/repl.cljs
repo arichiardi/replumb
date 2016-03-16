@@ -935,9 +935,11 @@
   * :verbose - will enable the evaluation logging, defaults to false.
   To customize how to print, use (set! *print-fn* (fn [& args] ...)
 
-  * :warning-as-error - will consider a compiler warning as error
+  * :warning-as-error - will consider a compiler warning as error.
+
   * :target - :nodejs and :browser supported, the latter is used if
-  missing
+  missing.
+
   * :init-fn! - user provided initialization function, it will be passed
   a map of data currently containing:
 
@@ -947,18 +949,20 @@
 
   * :load-fn! - will override replumb's default cljs.js/*load-fn*.
   It rules out :read-file-fn!, losing any perk of using replumb.load
-  helpers. Use it if you know what you are doing.
+  helpers. Use it if you know what you are doing and keep in mind
+  that :load-fn! is never used with load-file. It is the only case where
+  it does not take precedence over :read-file-fn!.
 
   * :read-file-fn! an asynchronous 2-arity function with signature
   [file-path src-cb] where src-cb is itself a function (fn [source] ...)
   that needs to be called with the file content as string (nil if no
   file is found). It is mutually exclusive with :load-fn! and will be
-  ignored in case both are present
+  ignored in case both are present.
 
   * :write-file-fn! a synchronous 2-arity function with signature
   [file-path data] that accepts a file-path and data to write.
 
-  * :src-paths - a vector of paths containing source files
+  * :src-paths - a vector of paths containing source files.
 
   * :cache - a map containing two optional values: the first, :path, indicates
   the path of the cached files. The second, :src-paths-lookup?, indicates
@@ -966,13 +970,13 @@
   the priority but both will be inspected.
 
   * :no-pr-str-on-value - in case of :success? avoid converting the
-  result map :value to string
+  result map :value to string.
 
   * :context - indicates the evaluation context that will be passed to
-  cljs/eval-str. Defaults to :expr.
+  cljs/eval-str. One in :expr, :statement, :return. Defaults to :expr.
 
   * :foreign-libs - a way to include foreign libraries. The format is analogous
-  to the compiler option. For more info visit https://github.com/clojure/clojurescript/wiki/Compiler-Options#foreign-libs
+  to the compiler option.
 
   The second parameter cb, is a 1-arity function which receives the
   result map.
