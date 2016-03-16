@@ -506,12 +506,15 @@ trim-newline
 
 ;; see "loop" section here: http://blog.fikesfarm.com/posts/2015-12-18-clojurescript-macro-tower-and-loop.html
 ;; but it does not work in JS ClojureScript
+;; AR - note that Node.js version 0.12.7 behaves differently locally and on
+;; Jenkins. This is the reason of the two different error messages.
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require [foo.bar.self]))"]
   (let [error (unwrap-result @_res_)]
     (is (not (success? @_res_)) (str _msg_ "should not succeed"))
     (is (valid-eval-error? error) (str _msg_ "should be an instance of js/Error"))
-    (is (re-find #"Maximum call stack size exceeded" (extract-message error)) (str _msg_ "should have correct error message"))))
+    (is (or (re-find #"Maximum call stack size exceeded" (extract-message error))
+            (re-find #"No such macros namespace" (extract-message error))) (str _msg_ "should have correct error message"))))
 
 ;; AR - The following writes on the filesystem
 (when (and e/*write-file-fn* e/*delete-file-fn*)
