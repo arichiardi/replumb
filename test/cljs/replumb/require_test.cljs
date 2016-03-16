@@ -301,27 +301,27 @@ trim-newline
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require [clojure set string]))"]
   (let [error (unwrap-result @_res_)]
-    (is (not (success? @_res_)) "(ns my.namespace (:require [clojure set string])) should not succeed. Prefix lists are not supported.")
-    (is (valid-eval-error? error) "(ns my.namespace (:require [clojure set string])) should be an instance of js/Error")
+    (is (not (success? @_res_)) (str _msg_ "should not succeed. Prefix lists are not supported."))
+    (is (valid-eval-error? error) (str _msg_ "should be an instance of js/Error"))
     (is (re-find #"Only :as and :refer options supported in :require / :require-macros;" (extract-message error))
-        "(ns my.namespace (:require [clojure set string])) should have correct error message.")))
+        (str _msg_ "should have correct error message."))))
 
 ;; http://stackoverflow.com/questions/24463469/is-it-possible-to-use-refer-all-in-a-clojurescript-require
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require [clojure.string :refer :all]))"]
   (let [error (unwrap-result @_res_)]
-    (is (not (success? @_res_)) "(ns my.namespace (:require [clojure.string :refer :all])) should not succeed. :refer :all is not allowed.")
-    (is (valid-eval-error? error) "(ns my.namespace (:require [clojure.string :refer :all])) should be an instance of js/Error")
+    (is (not (success? @_res_)) (str _msg_ "should not succeed. :refer :all is not allowed."))
+    (is (valid-eval-error? error) (str _msg_ "should be an instance of js/Error"))
     (is (re-find #":refer must be followed by a sequence of symbols in :require / :require-macros;" (extract-message error))
-        "(ns my.namespace (:require [clojure.string :refer :all])) should have correct error message.")))
+        (str _msg_ "should have correct error message."))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:refer-clojure :rename {print core-print}))"]
   (let [error (unwrap-result @_res_)]
-    (is (not (success? @_res_)) "(ns my.namespace (:refer-clojure ...)) should not succeed. Only :exlude is allowed for :refer-clojure.")
-    (is (valid-eval-error? error) "(ns my.namespace (:refer-clojure :rename {print core-print})) should be an instance of js/Error")
+    (is (not (success? @_res_)) (str _msg_ "should not succeed. Only :exlude is allowed for :refer-clojure."))
+    (is (valid-eval-error? error) (str _msg_ "should be an instance of js/Error"))
     (is (re-find #"Only \[:refer-clojure :exclude \(names\)\] form supported" (extract-message error))
-        "(ns my.namespace (:refer-clojure :rename {print core-print})) should have correct error message.")))
+        (str _msg_ "should have correct error message."))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:refer-clojure :exclude [max]))"
@@ -364,25 +364,25 @@ trim-newline
   ["(ns my.namespace (:require-macros [foo.bar.quux]))"
    "(foo.bar.quux/mul-quux 2 2)"]
   (let [out (unwrap-result @_res_)]
-    (is (success? @_res_) "(ns my.namespace (:require-macros ...)) and (foo.bar.quux/mul-quux 2 2) should succeed")
-    (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...)) and (foo.bar.quux/mul-quux 2 2) should be a valid result.")
-    (is (= "4" out) "(foo.quux/mul-quux 2 2) should be 4")))
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? out) (str _msg_ "should be a valid result."))
+    (is (= "4" out) (str _msg_ "should be 4"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require-macros [foo.bar.baz]))"
    "(foo.bar.baz/mul-baz 2 2)"]
   (let [out (unwrap-result @_res_)]
-    (is (success? @_res_) "(ns my.namespace (:require-macros ...)) and (foo.bar.baz/mul-baz 2 2) should succeed")
-    (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...)) and (foo.bar.bar/mul-baz 2 2) should be a valid result.")
-    (is (= "4" out) "(foo.bar.bar/mul-baz 2 2) should be 4")))
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? out) (str _msg_ "should be a valid result."))
+    (is (= "4" out) (str _msg_ "should be 4"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require-macros [foo.bar.core]))"
    "(foo.bar.core/mul-core 30 1)"]
   (let [out (unwrap-result @_res_)]
-    (is (success? @_res_) "(ns my.namespace (:require-macros ...)) and (foo.bar.core/mul-core 30 1) should succeed")
-    (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...])) and (foo.bar.core/mul-core 30 1) should be a valid result.")
-    (is (= "30" out) "(foo.bar.core/mul-core 30 1) should be 30")))
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? out) (str _msg_ "should be a valid result."))
+    (is (= "30" out) (str _msg_ "should be 30"))))
 
 ;; TB - this test fails but shouldn't, see https://github.com/clojure/clojurescript/wiki/Differences-from-Clojure#lisp
 ;; see also http://dev.clojure.org/jira/browse/CLJS-1449
@@ -401,65 +401,65 @@ trim-newline
   ["(ns my.namespace (:require-macros [foo.bar.quux :refer [mul-quux]]))"
    "(mul-quux 3 3)"]
   (let [out (unwrap-result @_res_)]
-    (is (success? @_res_) "(ns my.namespace (:require-macros ... :refer ...)) and (mul-quux 3 3) should succeed")
-    (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...:refer...)) and (mul-quux 3 3) should be a valid result.")
-    (is (= "9" out) "(mul-quux 3 3) should be 9")))
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? out) (str _msg_ "should be a valid result."))
+    (is (= "9" out) (str _msg_ "should be 9"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require-macros [foo.bar.baz :refer [mul-baz]]))"
    "(mul-baz 3 3)"]
   (let [out (unwrap-result @_res_)]
-    (is (success? @_res_) "(ns my.namespace (:require-macros ... :refer ...)) and (mul-baz 3 3) should succeed")
-    (is (valid-eval-result? out) "(ns my.namespace (:require-macros ...:refer...)) and (mul-baz 3 3) should be a valid result.")
-    (is (= "9" out) "(mul-baz 3 3) should be 9")))
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? out) (str _msg_ "should be a valid result."))
+    (is (= "9" out) (str _msg_ "should be 9"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require-macros [foo.bar.core :refer [mul-core]]))"
    "(mul-core 30 3)"]
   (let [out (unwrap-result @_res_)]
-    (is (success? @_res_) "(ns my.namespace (:require-macros...:refer...])) and (mul-core 30 3) should succeed")
-    (is (valid-eval-result? out) "(ns my.namespace (:require-macros...:refer...)) and (mul-core 30 3) should be a valid result")
-    (is (= "90" out) "(mul-core 30 3) should be 90")))
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
+    (is (= "90" out) (str _msg_ "should be 90"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:use-macros [foo.bar.quux :only [mul-quux]]))"
    "(mul-quux 5 5)"]
   (let [out (unwrap-result @_res_)]
-    (is (success? @_res_) "(ns my.namespace (:use-macros ...)) and (mul-quux 5 5) should succeed")
-    (is (valid-eval-result? out) "(ns my.namespace (:use-macros ...)) and (mul-quux 5 5) should be a valid result.")
-    (is (= "25" out) "(mul-quux 25) should be 25")))
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? out) (str _msg_ "should be a valid result."))
+    (is (= "25" out) (str _msg_ "should be 25"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:use-macros [foo.bar.baz :only [mul-baz]]))"
    "(mul-baz 5 5)"]
   (let [out (unwrap-result @_res_)]
-    (is (success? @_res_) "(ns my.namespace (:use-macros ...)) and (mul-baz 5 5) should succeed")
-    (is (valid-eval-result? out) "(ns my.namespace (:use-macros ...)) and (mul-baz 5 5) should be a valid result.")
-    (is (= "25" out) "(mul-baz 5 5) should be 25")))
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? out) (str _msg_ "should be a valid result."))
+    (is (= "25" out) (str _msg_ "should be 25"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:use-macros [foo.bar.core :only [mul-core]]))"
    "(mul-core 30 4)"]
   (let [out (unwrap-result @_res_)]
-    (is (success? @_res_) "(ns my.namespace (:use-macros...:only...])) and (mul-core 30 4) should succeed")
-    (is (valid-eval-result? out) "(ns my.namespace (:use-macros...:only...)) and (mul-core 30 4) should be a valid result")
-    (is (= "120" out) "(mul-core 30 4) should be 120")))
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
+    (is (= "120" out) (str _msg_ "should be 120"))))
 
 ;; cannot require clj file
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require [foo.bar.quux]))"]
   (let [error (unwrap-result @_res_)]
-    (is (not (success? @_res_)) "(ns my.namespace (:require [foo.bar.quux])) should not succeed")
-    (is (valid-eval-error? error) "(ns my.namespace (:require [foo.bar.quux])) should be an instance of jsError.")
-    (is (re-find #"No such namespace: foo.bar.quux" (extract-message error)) "(ns my.namespace (:require [foo.bar.quux])) should have a valid error message.")))
+    (is (not (success? @_res_)) (str _msg_ "should not succeed"))
+    (is (valid-eval-error? error) (str _msg_ "should be an instance of jsError."))
+    (is (re-find #"No such namespace: foo.bar.quux" (extract-message error)) (str _msg_ "should have a valid error message."))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require [foo.bar.core]))"
    "(foo.bar.core/add-five 30)"]
   (let [out (unwrap-result @_res_)]
-    (is (success? @_res_) "(ns my.namespace (:require...])) and (foo.bar.core/add-five 30) should succeed")
-    (is (valid-eval-result? out) "(ns my.namespace (:require...])) and (foo.bar.core/add-five 30) should be a valid result")
-    (is (= "35" out) "(foo.bar.core/add-five 30) should be 35")))
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
+    (is (= "35" out) (str _msg_ "should be 35"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require [foo.bar.core :as f]))"
