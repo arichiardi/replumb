@@ -16,7 +16,7 @@
 ;; https://github.com/bensu/doo/issues/83#issuecomment-165498172
 (set! (.-error js/console) (fn [x] (.log js/console x)))
 
-;; (set! goog.DEBUG false)
+(set! goog.DEBUG false)
 
 (doo-tests 'replumb.core-test
            'replumb.repl-test
