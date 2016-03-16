@@ -8,7 +8,7 @@
             replumb.macro-test
             replumb.require-test
             replumb.source-test
-            #_replumb.cache-node-test)) ;; TODO port it to the new test way
+            replumb.cache-test))
 
 (enable-console-print!)
 
@@ -22,4 +22,4 @@
            'replumb.macro-test
            'replumb.require-test
            'replumb.source-test
-           #_'replumb.cache-node-test)
+           'replumb.cache-test)

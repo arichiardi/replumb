@@ -15,3 +15,7 @@
 (def ^:dynamic *write-file-fn* io/write-file!)
 
 (def ^:dynamic *delete-file-fn* io/delete-file!)
+
+(def ^:dynamic *rename-file-fn* io/safely-rename-file!)
+
+(def ^:dynamic *file-exists-fn* io/file-exists?)

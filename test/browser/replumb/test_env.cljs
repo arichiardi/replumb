@@ -11,3 +11,7 @@
 (def ^:dynamic *write-file-fn* nil)
 
 (def ^:dynamic *delete-file-fn* nil)
+
+(def ^:dynamic *rename-file-fn* nil)
+
+(def ^:dynamic *file-exists-fn* nil)
