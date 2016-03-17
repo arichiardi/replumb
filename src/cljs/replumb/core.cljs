@@ -1,4 +1,5 @@
-(ns replumb.core
+(ns ^{:doc "Replumb core functions for self-hosted ClojureScript REPL implementations"}
+    replumb.core
   (:require-macros [cljs.env.macros :refer [with-compiler-env]])
   (:require [cljs.js :as cljs]
             [replumb.repl :as repl]
@@ -117,8 +118,9 @@
   It returns the content of `:value` in case of success and the content
   of `:error` (a `js/Error`) in case of failure.
 
-  When `include-warning?` is true, then the value yields from, in order,
-  `:error`, then `:warning` and then eventually `:value`."
+  When `include-warning?` is true, then the string returned is, in
+  order, from the `:error`, `:warning` and eventually `:value` key in
+  the result map."
   ([result-map]
    (unwrap-result false result-map))
   ([include-warning? result-map]
