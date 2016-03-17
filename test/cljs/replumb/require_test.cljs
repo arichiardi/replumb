@@ -12,6 +12,16 @@
 ;; AR - js/COMPILED goes here not in the runner otherwise node does not execute doo tests
 ;; AR - js/COMPILED is not needed after having correctly bootstrapped the nodejs environment, see PR #57
 
+;; https://github.com/Lambda-X/replumb/issues/66
+(h/read-eval-call-test e/*target-opts*
+  ["(require '[clojure.string :refer [drim]])"
+   "(require '[clojure.string :refer [trim]])"
+   "(doc trim)"]
+  (let [docstring (unwrap-result @_res_)]
+    (is (success? @_res_) (str _msg_ "should succeed."))
+    (is (valid-eval-result? docstring) (str _msg_ "should be a valid result"))
+    (is (re-find #"Removes whitespace from both ends of string" docstring) (str _msg_ "should return valid docstring"))))
+
 ;; https://github.com/ScalaConsultants/replumb/issues/47
 (h/read-eval-call-test e/*target-opts*
   ["(require 'clojure.set)"

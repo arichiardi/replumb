@@ -225,15 +225,36 @@
                  (ast/dissoc-all requirer-ns required-ns :symbol)
                  (ast/dissoc-all requirer-ns required-ns :import))))
 
+(defn purge-namespaces!
+  "Remove all the namespace references, symbols included, required from
+  inside the input requirer-ns namespace.
+
+  For instance after evaluating:
+
+  (in-ns 'cljs.user)         ;; requirer-ns
+  (require 'clojure.string)  ;; required-ns
+
+  You can eval the following to clean the compiler state:
+
+  (replumb.repl/purge-require 'cljs.user 'clojure.string).
+
+  Note that doing this manually is tricky, as, for instance,
+  clojure.string has the following dependencies to clear: goog.string
+  goog.string.StringBuffer."
+  [requirer-ns namespaces]
+  (doseq [ns namespaces]
+    (purge-required-ns! ns)
+    (purge-symbols! requirer-ns ns)))
+
 (defn purge-cljs-user!
   "Remove all the namespace references required from inside cljs.user
-  from the compiler state."
+  from the compiler state.
+
+  The 0-arity version cleans namespaces in cljs.js/*loaded*."
   ([]
-   (purge-cljs-user! @cljs.js/*loaded*))
+   (purge-namespaces! 'cljs.user @cljs.js/*loaded*))
   ([namespaces]
-   (doseq [ns namespaces]
-     (purge-required-ns! ns)
-     (purge-symbols! 'cljs.user ns))))
+   (purge-namespaces! 'cljs.user namespaces)))
 
 (defn process-reloads!
   [specs]
@@ -596,7 +617,10 @@
           [target-ns restore-ns] (if-not is-self-require?
                                    [(:current-ns @app-env) nil]
                                    ['cljs.user (:current-ns @app-env)])
-          ns-form (make-ns-form kind specs target-ns)]
+          ns-form (make-ns-form kind specs target-ns)
+          restore-ns! #(when is-self-require?
+                         (swap! app-env assoc :current-ns restore-ns))
+          purge-ns! #(purge-namespaces! target-ns @cljs.js/*loaded*)]
       (when (:verbose opts)
         (common/debug-prn "Processing" kind "via" (pr-str ns-form)))
       (cljs/eval st
@@ -604,9 +628,8 @@
                  (base-eval-opts! opts)
                  (fn [{error :error}]
                    (call-back! opts cb
-                               (merge data
-                                      {:side-effect-fn! #(when is-self-require?
-                                                           (swap! app-env assoc :current-ns restore-ns))})
+                               (merge data {:on-error-fn! #(do (purge-ns!) (restore-ns!))
+                                            :on-success-fn! #(restore-ns!)})
                                (if error
                                  (common/wrap-error error)
                                  (common/wrap-success nil))))))))
@@ -903,7 +926,6 @@
   [opts data]
   (when (:verbose opts)
     (common/debug-prn "Initializing REPL environment with data" (with-out-str (pprint data))))
-
   ;; Target/user init, we need at least one init-fn, the default init function
   (let [init-fns (:init-fns opts)]
     (assert (> (count init-fns) 0))
