@@ -154,19 +154,19 @@
   valid."
   ([]
    (base-eval-opts! {}))
-  ([opts]
+  ([user-opts]
    {:ns (:current-ns @app-env)
-    :context (or (:context opts) :expr)
+    :context (or (:context user-opts) :expr)
     :source-map false
     :def-emits-var true
-    :load (:load-fn! opts)
-    :eval (make-js-eval-fn opts)
-    :verbose (or (:verbose opts) false)
+    :load (:load-fn! user-opts)
+    :eval (make-js-eval-fn user-opts)
+    :verbose (or (:verbose user-opts) false)
     :static-fns false}))
 
 (defn load-eval-opts!
-  [opts file-name]
-  (-> (base-eval-opts! opts)
+  [user-opts file-name]
+  (-> (base-eval-opts! user-opts)
       (dissoc :context)
       (assoc :file-name file-name)))
 
@@ -191,20 +191,78 @@
                 (if (vector? spec) spec [spec]))))]
     (map canonicalize specs)))
 
-(defn purge-ns!
-  [st ns]
-  (swap! st ast/dissoc-ns ns)
-  (swap! cljs.js/*loaded* disj ns))
+;;;;;;;;;;;;;;;;;;;;;;;;
+;;; Clearing ns fns  ;;;
+;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defn empty-cljs-user?
+  "Is the compiler state for the cljs.user namespace empty?"
+  []
+  (ast/empty-state? @st 'cljs.user))
+
+(defn purge-required-ns!
+  "Remove all the references to the given namespace in the compiler
+  state."
+  [required-ns]
+  (let [required-macro-ns (symbol (str required-ns "$macros"))]
+    (swap! st #(-> %
+                   (ast/dissoc-ns required-ns)
+                   (ast/dissoc-ns required-macro-ns)))
+    (swap! cljs.js/*loaded* #(->> (-> %
+                                      (disj required-ns)
+                                      (disj required-macro-ns))
+                                  (remove (partial ast/import-of-ns? required-ns))
+                                  (into #{})))))
+
+(defn purge-symbols!
+  "Get rid of all the compiler state references to required-ns macros
+  namespaces and symbols from requirer-ns."
+  [requirer-ns required-ns]
+  (swap! st #(-> %
+                 (ast/dissoc-all requirer-ns required-ns :require)
+                 (ast/dissoc-all requirer-ns required-ns :macro-require)
+                 (ast/dissoc-all requirer-ns required-ns :macro)
+                 (ast/dissoc-all requirer-ns required-ns :symbol)
+                 (ast/dissoc-all requirer-ns required-ns :import))))
+
+(defn purge-namespaces!
+  "Remove all the namespace references, symbols included, required from
+  inside the input requirer-ns namespace.
+
+  For instance after evaluating:
+
+  (in-ns 'cljs.user)         ;; requirer-ns
+  (require 'clojure.string)  ;; required-ns
+
+  You can eval the following to clean the compiler state:
+
+  (replumb.repl/purge-require 'cljs.user 'clojure.string).
+
+  Note that doing this manually is tricky, as, for instance,
+  clojure.string has the following dependencies to clear: goog.string
+  goog.string.StringBuffer."
+  [requirer-ns namespaces]
+  (doseq [ns namespaces]
+    (purge-required-ns! ns)
+    (purge-symbols! requirer-ns ns)))
+
+(defn purge-cljs-user!
+  "Remove all the namespace references required from inside cljs.user
+  from the compiler state.
+
+  The 0-arity version cleans namespaces in cljs.js/*loaded*."
+  ([]
+   (purge-namespaces! 'cljs.user @cljs.js/*loaded*))
+  ([namespaces]
+   (purge-namespaces! 'cljs.user namespaces)))
 
 (defn process-reloads!
   [specs]
   (if-let [k (some #{:reload :reload-all} specs)]
     (let [specs (remove #{k} specs)]
       (if (= k :reload-all)
-        (doseq [ns @cljs.js/*loaded*]
-          (purge-ns! st ns))
-        (doseq [ns (map first specs)]
-          (purge-ns! st ns)))
+        (purge-cljs-user! @cljs.js/*loaded*)
+        (purge-cljs-user! (map first specs)))
       specs)
     specs))
 
@@ -212,16 +270,16 @@
   [kind specs target-ns]
   (if (= kind :import)
     (with-meta `(~'ns ~target-ns
-                  (~kind
-                   ~@(map (fn [quoted-spec-or-kw]
-                            (if (keyword? quoted-spec-or-kw)
-                              quoted-spec-or-kw
-                              (second quoted-spec-or-kw)))
-                          specs)))
+                 (~kind
+                  ~@(map (fn [quoted-spec-or-kw]
+                           (if (keyword? quoted-spec-or-kw)
+                             quoted-spec-or-kw
+                             (second quoted-spec-or-kw)))
+                         specs)))
       {:merge true :line 1 :column 1})
     (with-meta `(~'ns ~target-ns
-                  (~kind
-                   ~@(-> specs canonicalize-specs process-reloads!)))
+                 (~kind
+                  ~@(-> specs canonicalize-specs process-reloads!)))
       {:merge true :line 1 :column 1})))
 
 (defn goog-deps-map
@@ -274,30 +332,30 @@
   (if (and read-file-fn! (sequential? src-paths) (every? string? src-paths))
     (fn [{:keys [name macros path] :as load-map} cb]
       (cond
-       (load/skip-load? load-map) (load/fake-load-fn! load-map cb)
-       (re-matches #"^goog/.*" path) (if-let [goog-path (get-goog-path name)]
-                                       (load/read-files-and-callback! verbose
-                                                                      (load/file-paths-for-closure src-paths goog-path)
-                                                                      read-file-fn!
-                                                                      cb)
-                                       (cb nil))
-       ;; first we check if we can retrieve the path from (.-dependencies_.nameToPath js/goog)
-       ;; (it's the case when the "js" file is in the compilation set)
-       ;; then also check in the user provided :foreign-libs option (for libraries not known
-       ;; at compile time - we need to indicate the ns->file mapping)
-       :else (let [path (or (when js/goog.DEPENDENCIES_ENABLED (file-path-from-goog-dependencies (str name)))
-                            (file-path-from-foreign-libs (str name) foreign-libs)
-                            path)
-                   args [verbose (load/file-paths-for-load-fn src-paths macros path) read-file-fn! cb]
-                   cache-path (:path cache)
-                   src-paths-lookup? (:src-paths-lookup? cache)]
-               (if (or cache-path src-paths-lookup?)
-                 (let [cache-paths (cond-> []
-                                           cache-path (into [cache-path])
-                                           src-paths-lookup? (into src-paths))
-                       cached-file-paths (load/cache-file-paths-for-load-fn cache-paths macros path)]
-                   (apply load/read-files-from-cache-and-callback! (conj args cached-file-paths)))
-                 (apply load/read-files-and-callback! args)))))
+        (load/skip-load? load-map) (load/fake-load-fn! load-map cb)
+        (re-matches #"^goog/.*" path) (if-let [goog-path (get-goog-path name)]
+                                        (load/read-files-and-callback! verbose
+                                                                       (load/file-paths-for-closure src-paths goog-path)
+                                                                       read-file-fn!
+                                                                       cb)
+                                        (cb nil))
+        ;; first we check if we can retrieve the path from (.-dependencies_.nameToPath js/goog)
+        ;; (it's the case when the "js" file is in the compilation set)
+        ;; then also check in the user provided :foreign-libs option (for libraries not known
+        ;; at compile time - we need to indicate the ns->file mapping)
+        :else (let [path (or (when js/goog.DEPENDENCIES_ENABLED (file-path-from-goog-dependencies (str name)))
+                             (file-path-from-foreign-libs (str name) foreign-libs)
+                             path)
+                    args [verbose (load/file-paths-for-load-fn src-paths macros path) read-file-fn! cb]
+                    cache-path (:path cache)
+                    src-paths-lookup? (:src-paths-lookup? cache)]
+                (if (or cache-path src-paths-lookup?)
+                  (let [cache-paths (cond-> []
+                                      cache-path (into [cache-path])
+                                      src-paths-lookup? (into src-paths))
+                        cached-file-paths (load/cache-file-paths-for-load-fn cache-paths macros path)]
+                    (apply load/read-files-from-cache-and-callback! (conj args cached-file-paths)))
+                  (apply load/read-files-and-callback! args)))))
     (do (when verbose
           (common/debug-prn "Invalid :read-file-fn! or :src-paths (is it sequential? Are all paths strings?). No *load-fn* will be passed to cljs.js."))
         ;; AR - by returning nil we force a "No *load-fn* set" in cljs.js
@@ -425,7 +483,7 @@
 
 (defn call-side-effect!
   "Execute the correct side effecting function from data.
-  Handles :side-effect-fn!, :on-error-fn! and on-success-fn!."
+  Handles :side-effect-fn!, :on-error-fn! and :on-success-fn!."
   [data {:keys [value error]}]
   (if-let [f! (:side-effect-fn! data)]
     (f!)
@@ -496,9 +554,9 @@
      (common/debug-prn "Calling back!\n" (with-out-str (pprint {:opts (common/filter-fn-keys opts)
                                                                 :data (common/filter-fn-keys data)
                                                                 :res res}))))
-   (let [new-map (warning-error-map! opts res)]
-     (let [{:keys [value error warning]} new-map]
-       (call-side-effect! data new-map)
+   (let [res (warning-error-map! opts res)]
+     (let [{:keys [value error warning]} res]
+       (call-side-effect! data res)
        (reset-last-warning!)
        (if-not error
          (do (set! *e nil)
@@ -559,7 +617,10 @@
           [target-ns restore-ns] (if-not is-self-require?
                                    [(:current-ns @app-env) nil]
                                    ['cljs.user (:current-ns @app-env)])
-          ns-form (make-ns-form kind specs target-ns)]
+          ns-form (make-ns-form kind specs target-ns)
+          restore-ns! #(when is-self-require?
+                         (swap! app-env assoc :current-ns restore-ns))
+          purge-ns! #(purge-namespaces! target-ns @cljs.js/*loaded*)]
       (when (:verbose opts)
         (common/debug-prn "Processing" kind "via" (pr-str ns-form)))
       (cljs/eval st
@@ -567,9 +628,8 @@
                  (base-eval-opts! opts)
                  (fn [{error :error}]
                    (call-back! opts cb
-                               (merge data
-                                      {:side-effect-fn! #(when is-self-require?
-                                                           (swap! app-env assoc :current-ns restore-ns))})
+                               (merge data {:on-error-fn! #(do (purge-ns!) (restore-ns!))
+                                            :on-success-fn! #(restore-ns!)})
                                (if error
                                  (common/wrap-error error)
                                  (common/wrap-success nil))))))))
@@ -603,7 +663,7 @@
                (fn [{:keys [value]}]
                  ;; AR the returned :value is a js/Error for pst of course
                  (let [msg (if value
-                             (common/extract-message value true true)
+                             (common/extract-message true true value)
                              "nil")]
                    (call-back! (assoc opts :no-pr-str-on-value true) cb data (common/wrap-success msg)))))
     (call-back! opts cb data (common/wrap-success nil))))
@@ -866,7 +926,6 @@
   [opts data]
   (when (:verbose opts)
     (common/debug-prn "Initializing REPL environment with data" (with-out-str (pprint data))))
-
   ;; Target/user init, we need at least one init-fn, the default init function
   (let [init-fns (:init-fns opts)]
     (assert (> (count init-fns) 0))
@@ -898,9 +957,11 @@
   * :verbose - will enable the evaluation logging, defaults to false.
   To customize how to print, use (set! *print-fn* (fn [& args] ...)
 
-  * :warning-as-error - will consider a compiler warning as error
+  * :warning-as-error - will consider a compiler warning as error.
+
   * :target - :nodejs and :browser supported, the latter is used if
-  missing
+  missing.
+
   * :init-fn! - user provided initialization function, it will be passed
   a map of data currently containing:
 
@@ -910,18 +971,20 @@
 
   * :load-fn! - will override replumb's default cljs.js/*load-fn*.
   It rules out :read-file-fn!, losing any perk of using replumb.load
-  helpers. Use it if you know what you are doing.
+  helpers. Use it if you know what you are doing and keep in mind
+  that :load-fn! is never used with load-file. It is the only case where
+  it does not take precedence over :read-file-fn!.
 
   * :read-file-fn! an asynchronous 2-arity function with signature
   [file-path src-cb] where src-cb is itself a function (fn [source] ...)
   that needs to be called with the file content as string (nil if no
   file is found). It is mutually exclusive with :load-fn! and will be
-  ignored in case both are present
+  ignored in case both are present.
 
   * :write-file-fn! a synchronous 2-arity function with signature
   [file-path data] that accepts a file-path and data to write.
 
-  * :src-paths - a vector of paths containing source files
+  * :src-paths - a vector of paths containing source files.
 
   * :cache - a map containing two optional values: the first, :path, indicates
   the path of the cached files. The second, :src-paths-lookup?, indicates
@@ -929,13 +992,13 @@
   the priority but both will be inspected.
 
   * :no-pr-str-on-value - in case of :success? avoid converting the
-  result map :value to string
+  result map :value to string.
 
   * :context - indicates the evaluation context that will be passed to
-  cljs/eval-str. Defaults to :expr.
+  cljs/eval-str. One in :expr, :statement, :return. Defaults to :expr.
 
   * :foreign-libs - a way to include foreign libraries. The format is analogous
-  to the compiler option. For more info visit https://github.com/clojure/clojurescript/wiki/Compiler-Options#foreign-libs
+  to the compiler option.
 
   The second parameter cb, is a 1-arity function which receives the
   result map.
@@ -978,27 +1041,3 @@
       (when (:verbose opts)
         (common/debug-prn "Exception caught in read-eval-call: " (.-stack e)))
       (call-back! opts cb {} (common/wrap-error e)))))
-
-(defn reset-env!
-  "It does the following (in order):
-
-  1. in-ns to cljs.user
-  2. remove the input namespaces from the compiler environment
-  3. reset the last warning
-  4. set *e to nil
-
-  It accepts a sequence of symbols or strings."
-  ([]
-   (reset-env! nil))
-  ([opts]
-   (reset-env! opts nil))
-  ([opts namespaces]
-   (read-eval-call opts identity "(in-ns 'cljs.user)")
-   (doseq [ns namespaces]
-     (purge-ns! st (symbol ns))
-     (purge-ns! st (symbol (str ns "$macros"))))
-   (if (seq @cljs.js/*loaded*)
-     (throw (ex-info (str "The cljs.js/*loaded* atom still contains " @cljs.js/*loaded* " - make sure you purge dependent namespaces.") ex-info-data)))
-   (reset-last-warning!)
-   (read-eval-call opts identity "(set! *e nil)")
-   (reset-init-opts!)))

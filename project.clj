@@ -1,4 +1,4 @@
-(defproject replumb/replumb "0.1.5-3"
+(defproject replumb/replumb "0.2.0-SNAPSHOT"
   :description "ClojureScript plumbing for your bootstrapped REPLs."
   :url "https://github.com/Lambda-X/replumb"
   :license {:name "Eclipse Public License"
@@ -8,30 +8,29 @@
                  [org.clojure/tools.reader "1.0.0-alpha3"]
                  [com.cognitect/transit-cljs "0.8.220"]]
 
-  :plugins [[lein-cljsbuild "1.1.1"]
+  :plugins [[lein-cljsbuild "1.1.2"]
             [lein-codox "0.9.0"]]
 
-  :clean-targets ^{:protect false} ["resources/public/js/compiled"                     ;; dev
-                                    "dev-resources/private/browser/js/compiled"        ;; browser-repl
+  :clean-targets ^{:protect false} ["dev-resources/public/js/compiled" ;; dev
+                                    "dev-resources/private/browser/js/compiled" ;; browser-repl
                                     "dev-resources/private/browser/js/simple/compiled" ;; browser-repl-simple
-                                    "dev-resources/private/node/js/compiled"           ;; node-repl
-                                    "dev-resources/private/test/browser/compiled"      ;; browser-test, browser-simple-test
-                                    "dev-resources/private/test/node/compiled"         ;; node-test, node-simple-test
-                                    "resources/public/js/compiled"                     ;; min
+                                    "dev-resources/private/node/js/compiled" ;; node-repl
+                                    "dev-resources/private/test/browser/compiled" ;; browser-test, browser-simple-test
+                                    "dev-resources/private/test/node/compiled" ;; node-test, node-simple-test
+                                    "dev-resources/public/js/compiled" ;; min
                                     "out" :target-path]
   :hooks [leiningen.cljsbuild]
   :min-lein-version "2.0.0"
   :jvm-opts ^:replace ["-XX:+TieredCompilation" "-XX:TieredStopAtLevel=1" "-Xverify:none"]
   :source-paths ["src/cljs"]
-  :resource-paths []
+
   :cljsbuild {:builds [{:id "dev"
                         :source-paths ["src/cljs" "src/browser" "repl-demo/browser/cljs"]
-                        :figwheel {:on-jsload "replumb-repl.core/main"
-                                   :css-dirs ["resources/public/styles"]}
+                        :figwheel {:on-jsload "replumb-repl.core/main"}
                         :compiler {:main replumb-repl.core
                                    :optimizations :none
-                                   :output-to "resources/public/js/compiled/replumb-repl.js"
-                                   :output-dir "resources/public/js/compiled/out"
+                                   :output-to "dev-resources/public/js/compiled/replumb-repl.js"
+                                   :output-dir "dev-resources/public/js/compiled/out"
                                    :asset-path "js/compiled/out"
                                    :source-map-timestamp true
                                    :static-fns true}}
@@ -74,7 +73,8 @@
                                    :output-dir "dev-resources/private/test/browser/compiled/out"
                                    :asset-path "dev-resources/private/test/browser/compiled/out"
                                    :static-fns true
-                                   :parallel-build true}}
+                                   :parallel-build true
+                                   :closure-defines {"goog.DEBUG" false}}}
                        #_{:id "browser-test-simple"
                           :source-paths ["src/cljs" "test/cljs" "test/browser"]
                           :compiler {:optimizations :simple
@@ -83,9 +83,10 @@
                                      :output-dir "dev-resources/private/test/browser/compiled/out"
                                      :asset-path "dev-resources/private/test/browser/compiled/out"
                                      :static-fns true
-                                     :parallel-build true}}
+                                     :parallel-build true
+                                     :closure-defines {"goog.DEBUG" false}}}
                        {:id "node-test"
-                        :source-paths ["src/cljs" "src/node" "test/cljs" "test/node"]
+                        :source-paths ["src/cljs" "src/node" "test/cljs" "test/clj" "test/node"]
                         :compiler {:target :nodejs
                                    :optimizations :none
                                    :main launcher.runner
@@ -93,7 +94,8 @@
                                    :output-dir "dev-resources/private/test/node/compiled/out"
                                    :asset-path "dev-resources/private/test/node/compiled/out"
                                    :static-fns true
-                                   :parallel-build true}}
+                                   :parallel-build true
+                                   :closure-defines {"goog.DEBUG" false}}}
                        #_{:id "node-test-simple"
                           :source-paths ["src/cljs" "src/node" "test/cljs" "test/node"]
                           :compiler {:target :nodejs
@@ -103,19 +105,23 @@
                                      :output-dir "dev-resources/private/test/node/compiled/out"
                                      :asset-path "dev-resources/private/test/node/compiled/out"
                                      :static-fns true
-                                     :parallel-build true}}
+                                     :parallel-build true
+                                     :closure-defines {"goog.DEBUG" false}}}
                        {:id "min"
                         :source-paths ["src/cljs"]
                         :compiler { ;; :main cljs-browser-repl.core ;; https://github.com/emezeske/lein-cljsbuild/issues/420
-                                   :output-to "resources/public/js/compiled/replumb-repl.js"
+                                   :output-to "dev-resources/public/js/compiled/replumb-repl.js"
                                    :optimizations :simple
                                    :pretty-print false
                                    :elide-asserts true
                                    :static-fns true
                                    :parallel-build true}}]}
-  ;; :figwheel {:repl false}
 
-  :prep-tasks ["codox"]
+  :figwheel {:css-dirs ["dev-resources/public/styles"]
+             :open-file-command "open-emacs"
+             :nrepl-port 5088}
+
+  :prep-tasks [] ;; or cljsbuild will start compiling everything
   :codox {:language :clojurescript
           :source-paths ["src/cljs"]
           :namespaces [replumb.core]
@@ -148,11 +154,18 @@
                                      :signing {:gpg-key "clojars@scalac.io"}
                                      :creds :gpg}]]
 
-  :profiles {:dev {:dependencies [[com.cemerick/piggieback "0.1.5"]
-                                  [org.clojure/tools.nrepl "0.2.11"]
+  :profiles {:dev {:resource-paths ["dev-resources"]
+                   :source-paths ["src/cljs" "src/clj" "test/clj" "test/cljs" "test/browser" "src/browser" "repl-demo/browser/cljs" "dev"]
+                   :dependencies [[com.cemerick/piggieback "0.2.1"]
+                                  [org.clojure/tools.nrepl "0.2.12"]
+                                  [figwheel-sidecar "0.5.0-6"]
                                   [cljsjs/jqconsole "2.13.2-0"]
                                   [reagent "0.5.1"]
-                                  [binaryage/devtools "0.5.2"]]
-                   :plugins [[lein-doo "0.1.6"]
+                                  [binaryage/devtools "0.5.2"]
+                                  [spellhouse/clairvoyant "0.0-72-g15e1e44"]]
+                   :plugins [[lein-doo "0.1.7-SNAPSHOT"]
                              [lein-figwheel "0.5.0-6" :exclusions [cider/cider-nrepl]]
-                             [lein-shell "0.4.2"]]}})
+                             [lein-shell "0.4.2"]]}
+             :repl {:plugins [[cider/cider-nrepl "0.11.0-SNAPSHOT"]]
+                    :repl-options {:nrepl-middleware [#_cider.nrepl/cider-middleware
+                                                      cemerick.piggieback/wrap-cljs-repl]}}})

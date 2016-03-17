@@ -2,6 +2,10 @@
   (:require [cljs.nodejs :as nodejs]
             [replumb.common :as common]))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;  This are all synchronous functions  ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (def require-fs
   "Delay containing the call to \"require fs\". It returns the File
   System Node.js module object."

@@ -14,11 +14,13 @@ As [current maintainer](https://github.com/arichiardi) of the project I would li
 
 ## Usage
 
-Put the following into the `:dependencies` vector.
+Version `0.2.0` __breaks__ two `replumb.core` APIs:
+  * there is a unified `options` function for both browser and Node.js
+  * `result->string`, `unwrap-result` and `error->str` have a new parameter order
 
 [![via Clojars](http://clojars.org/replumb/latest-version.svg)](http://clojars.org/replumb)
 
-After that directly call ```replumb.core``` functions:
+There is one entry namespace, ```replumb.core```, whose functions you should call directly:
 
 ``` clojure
 (ns ...
@@ -41,8 +43,9 @@ After that directly call ```replumb.core``` functions:
   [console-opts]
   (js/$
    (fn []
-     (let [repl-opts (merge (replumb/browser-options ["/src/cljs" "/js/compiled/out"]
-                                                     io/fetch-file!)
+     (let [repl-opts (merge (replumb/options :browser
+                                             ["/src/cljs" "/js/compiled/out"]
+                                             io/fetch-file!)
                             {:warning-as-error true
                              :verbose true})
            jqconsole (console/new-jqconsole "#cljs-console" console-opts)]
@@ -64,9 +67,9 @@ supporting:
 * `:verbose` will enable the evaluation logging, defaults to false.
 To customize how to print, use `(set! *print-fn* (fn [& args] ...)`
 
-* `:warning-as-error` will consider a compiler warning as error
+* `:warning-as-error` will consider a compiler warning as error.
 * `:target` `:nodejs` and `:browser` supported, the latter is used if
-missing
+missing.
 * `:init-fn!` user provided initialization function, it will be passed a
 map:
 
@@ -76,8 +79,9 @@ map:
 
 * `:load-fn!` will override replumb's default `cljs.js/*load-fn*`.
 It rules out `:read-file-fn!`, losing any perk of using `replumb.load`
-helpers. Use it if you know what you are doing and follow this
-protocol:
+helpers. Trickily enough, `:load-fn!` is never used with `load-file`. It is the
+only case where it does not take precedence over `:read-file-fn!`. Use it if
+you know what you are doing and follow this protocol:
 
     > Each runtime environment provides a different way to load a library.
     > Whatever function `*load-fn*` is bound to will be passed two arguments,
@@ -98,7 +102,7 @@ protocol:
     >
     > If the resource could not be resolved, the callback should be invoked with
     > nil.
-
+    
 * `:read-file-fn!` an asynchronous 2-arity function with signature
 `[file-path src-cb]` where src-cb is itself a function `(fn [source]
 ...)` that needs to be called with the file content as string (`nil`
@@ -119,10 +123,11 @@ have the priority but both will be inspected.
  `:value` to string
 
 * `:context` - indicates the evaluation context that will be passed to
-`cljs/eval-str`. Defaults to `:expr`.
+  `cljs/eval-str`. One in `:expr`, `:statement`, `:return`. Defaults to `:expr`.
+  If you really feel adventurous check [David Nolen's dev notes](https://github.com/clojure/clojurescript/blob/r1.7.228/devnotes/day1.org#tricky-bit---context).
 
 * `:foreign-libs` - a way to include foreign libraries. The format is analogous
-to the compiler option. For more info visit https://github.com/clojure/clojurescript/wiki/Compiler-Options#foreign-libs
+to the compiler option. For more info visit the [compiler option page](https://github.com/clojure/clojurescript/wiki/Compiler-Options#foreign-libs).
 
 The second parameter, `callback`, should be a 1-arity function which receives
 the `result` map, whose result keys will be:
@@ -151,7 +156,7 @@ Support is provided, but only `:optimizations :none` works fine at the moment:
 
 ```clojure
 (replumb/read-eval-call
-  (replumb/nodejs-options src-paths node-read-file!)
+  (replumb/options :node src-paths node-read-file!)
   (fn [res]
     (-> res
         replumb/result->string true
@@ -164,7 +169,7 @@ Support is provided, but only `:optimizations :none` works fine at the moment:
 Where `node-read-file!` is the user-provided node implementation for
 `:read-file-fn!`.
 
-See `replumb.core/nodejs-options` documentation and feel free to reuse code in
+See `replumb.core/options` documentation and feel free to reuse code in
 `src/node/replumb/nodejs/io.cljs`. Moreover `repl-demo/node` contains a working
 example that can be built and executed with ```lein node-repl```.
 

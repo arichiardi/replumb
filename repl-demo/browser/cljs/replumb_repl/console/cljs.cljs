@@ -31,8 +31,9 @@
   [console-opts]
   (js/$
    (fn []
-     (let [repl-opts (merge (replumb/browser-options ["/src/cljs" "/js/compiled/out"]
-                                                     io/fetch-file!)
+     (let [repl-opts (merge (replumb/options :browser
+                                             ["/src/cljs" "/js/compiled/out"]
+                                             io/fetch-file!)
                             {:warning-as-error true
                              :verbose true})
            jqconsole (console/new-jqconsole "#cljs-console"

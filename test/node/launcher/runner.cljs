@@ -1,12 +1,25 @@
 (ns launcher.runner
-  (:require [doo.runner :as doo :refer-macros [doo-all-tests]]
+  (:require [doo.runner :as doo :refer-macros [doo-tests]]
             replumb.core-test
             replumb.repl-test
             replumb.common-test
             replumb.load-test
             replumb.options-test
-            replumb.require-node-test
-            replumb.source-node-test
-            replumb.cache-node-test))
+            replumb.macro-test
+            replumb.require-test
+            replumb.source-test
+            replumb.cache-test))
 
-(doo-all-tests #"^replumb.*-test")
+(enable-console-print!)
+
+(set! goog.DEBUG false)
+
+(doo-tests 'replumb.core-test
+           'replumb.repl-test
+           'replumb.common-test
+           'replumb.load-test
+           'replumb.options-test
+           'replumb.macro-test
+           'replumb.require-test
+           'replumb.source-test
+           'replumb.cache-test)
