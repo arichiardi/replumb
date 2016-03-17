@@ -124,7 +124,8 @@
   :prep-tasks [] ;; or cljsbuild will start compiling everything
   :codox {:language :clojurescript
           :source-paths ["src/cljs"]
-          :namespaces [replumb.core]
+          :namespaces [replumb.core
+                       replumb.ast]
           :output-path "doc"
           :metadata {:doc/format :markdown}}
 
