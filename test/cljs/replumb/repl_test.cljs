@@ -81,31 +81,34 @@
   (let [docstring (unwrap-result @_res_)]
     (is (success? @_res_) "(doc symbol) should succeed")
     (is (valid-eval-result? docstring) "(doc symbol) should be a valid result")
-    ;; Cannot test #"cljs.core\/println" because of a compilation bug?
+    (is (re-find #"^-+" docstring) (str _msg_ "should start with -----------"))
     (is (re-find #"cljs\.core.{1}println" docstring) "(doc symbol) should return valid docstring")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(defn my-function \"This is my documentation\" [param] (param))"
    "(doc my-function)"]
   (let [docstring (unwrap-result @_res_)]
-    (is (success? @_res_) "(doc my-function) should succeed")
-    (is (valid-eval-result? docstring) "(doc my-function) should be a valid result")
-    (is (re-find #"This is my documentation" docstring) "(doc my-function) should return valid docstring")))
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? docstring) (str _msg_ "should be a valid result"))
+    (is (re-find #"^-+" docstring) (str _msg_ "should start with -----------"))
+    (is (re-find #"This is my documentation" docstring) (str _msg_ "should return valid docstring"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns myns.testns \"Docstring for namespace\")"
    "(doc myns.testns)"]
   (let [docstring (unwrap-result @_res_)]
-    (is (success? @_res_) "(doc myns.testns) should succeed.")
-    (is (valid-eval-result? docstring) "(doc myns.testns) should be a valid result")
-    (is (re-find #"Docstring for namespace" docstring) "(doc myns.testns) should return valid docstring")))
+    (is (success? @_res_) (str _msg_ "should succeed." ))
+    (is (valid-eval-result? docstring) (str _msg_ "should be a valid result"))
+    (is (re-find #"^-+" docstring) (str _msg_ "should start with -----------"))
+    (is (re-find #"Docstring for namespace" docstring) (str _msg_ "should return valid docstring"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(doc ns-interns)"]
   (let [docstring (unwrap-result @_res_)]
-    (is (success? @_res_) "(doc ns-interns), for issue #81, should succeed")
-    (is (valid-eval-result? docstring) "(doc ns-interns), for issue #81, should be a valid result")
-    (is (re-find #"Returns a map of the intern mappings for the namespace" docstring) "(doc ns-interns), for issue #81, should return the correct docstring")))
+    (is (success? @_res_) (str _msg_ "should succeed [issue #81]"))
+    (is (valid-eval-result? docstring) (str _msg_ "should be a valid result [issue #81]"))
+    (is (re-find #"^-+" docstring) (str _msg_ "should start with ----------- [issue #81]"))
+    (is (re-find #"Returns a map of the intern mappings for the namespace" docstring) (str _msg_ "should return the correct docstring [issue #81]"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(dir clojure.string)"]

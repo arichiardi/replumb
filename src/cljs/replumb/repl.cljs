@@ -97,7 +97,7 @@
   {:pre [(map? env) (symbol? sym)]}
   (let [macro-var (ana/resolve-macro-var env sym)
         var (ana/resolve-var env sym ana/confirm-var-exist-warning)]
-    (when (:verbose opts)
+    (when (and (not (:no-pr-str-on-value opts)) (:verbose opts))
       (do (common/debug-prn "cljs.analyzer/resolve-macro-var returned" (with-out-str (pprint macro-var)))
           (common/debug-prn "cljs.analyzer/resolve-var returned" (with-out-str (pprint var)))))
     ;; AR - we need to merge because ana/resolve-var sometimes returns more
@@ -642,17 +642,18 @@
 
 (defn process-doc
   [opts cb data sym]
-  (call-back! (merge opts {:no-pr-str-on-value true})
-              cb
-              data
-              (common/wrap-success
-               (with-out-str
-                 (let [sym (doc-map-special-symbols sym)]
-                   (cond
-                     (docs/special-doc-map sym) (repl/print-doc (docs/special-doc sym))
-                     (docs/repl-special-doc-map sym) (repl/print-doc (docs/repl-special-doc sym))
-                     (ast/namespace @st sym) (repl/print-doc (select-keys (ast/namespace @st sym) [:name :doc]))
-                     :else (repl/print-doc (get-var opts (empty-analyzer-env) sym))))))))
+  (let [opts (merge opts {:no-pr-str-on-value true})]
+    (call-back! opts
+                cb
+                data
+                (common/wrap-success
+                 (with-out-str
+                   (let [sym (doc-map-special-symbols sym)]
+                     (cond
+                       (docs/special-doc-map sym) (repl/print-doc (docs/special-doc sym))
+                       (docs/repl-special-doc-map sym) (repl/print-doc (docs/repl-special-doc sym))
+                       (ast/namespace @st sym) (repl/print-doc (select-keys (ast/namespace @st sym) [:name :doc]))
+                       :else (repl/print-doc (get-var opts (empty-analyzer-env) sym)))))))))
 
 (defn process-pst
   [opts cb data expr]

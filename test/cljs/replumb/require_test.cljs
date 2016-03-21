@@ -20,6 +20,7 @@
   (let [docstring (unwrap-result @_res_)]
     (is (success? @_res_) (str _msg_ "should succeed."))
     (is (valid-eval-result? docstring) (str _msg_ "should be a valid result"))
+    (is (re-find #"^-+" docstring) (str _msg_ "should start with -----------"))
     (is (re-find #"Removes whitespace from both ends of string" docstring) (str _msg_ "should return valid docstring"))))
 
 ;; https://github.com/ScalaConsultants/replumb/issues/47
@@ -29,6 +30,7 @@
   (let [docstring (unwrap-result @_res_)]
     (is (success? @_res_) (str _msg_ "should succeed."))
     (is (valid-eval-result? docstring) (str _msg_ "should be a valid result"))
+    (is (re-find #"^-+" docstring) (str _msg_ "should start with -----------"))
     (is (re-find #"Set operations such as union/intersection" docstring) (str _msg_ "should return valid docstring"))))
 
 ;; https://github.com/ScalaConsultants/replumb/issues/59
@@ -38,6 +40,7 @@
   (let [docstring (unwrap-result @_res_)]
     (is (success? @_res_) (str _msg_ "should succeed."))
     (is (valid-eval-result? docstring) (str _msg_ "should be a valid result"))
+    (is (re-find #"^-+" docstring) (str _msg_ "should start with -----------"))
     (is (re-find #"Removes whitespace from both ends of string" docstring) (str _msg_ "should return valid docstring"))))
 
 ;; https://github.com/ScalaConsultants/replumb/issues/86
@@ -47,6 +50,7 @@
   (let [docstring (unwrap-result @_res_)]
     (is (success? @_res_) (str _msg_ "should succeed."))
     (is (valid-eval-result? docstring) (str _msg_ "should be a valid result"))
+    (is (re-find #"^-+" docstring) (str _msg_ "should start with -----------"))
     (is (re-find #"Removes whitespace from both ends of string" docstring) (str _msg_ "should return valid docstring"))))
 
 (h/read-eval-call-test e/*target-opts*
