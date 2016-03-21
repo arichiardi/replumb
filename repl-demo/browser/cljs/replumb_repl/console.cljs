@@ -59,4 +59,4 @@
 (defn write-exception!
   ([console ex] (write-exception! console ex false))
   ([console ex print-stack-trace?]
-   (write-error! console (replumb/error->str ex print-stack-trace?))))
+   (write-error! console (replumb/error->str print-stack-trace? ex))))

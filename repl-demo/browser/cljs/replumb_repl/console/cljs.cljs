@@ -8,8 +8,8 @@
 
 (defn handle-result!
   [console result]
-  (let [write-fn (if (replumb/success? result) console/write-return! console/write-exception!)]
-    (write-fn console (replumb/unwrap-result result))))
+  (let [write-fn (if (replumb/success? result) console/write-return! console/write-error!)]
+    (write-fn console (replumb/result->string true true result))))
 
 (defn cljs-read-eval-print!
   [console repl-opts line]
