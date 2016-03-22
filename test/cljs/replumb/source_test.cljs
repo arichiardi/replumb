@@ -97,9 +97,9 @@
   ["(require '[clojure.string :as s])"
    "(source s/trim)"]
   (let [docstring (unwrap-result @_res_)]
-    (is (success? @_res_) "(require '[clojure.string :as s]) and (doc s/trim) should succeed.")
-    (is (valid-eval-result? docstring) "(require '[clojure.string :as s]) and (doc s/trim) should be a valid result")
-    (is (re-find #"Removes whitespace from both ends of string" docstring) "(require '[clojure.string :as s]) and (doc s/trim) should return valid docstring")))
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? docstring) (str _msg_ "should be a valid result"))
+    (is (re-find #"Removes whitespace from both ends of string" docstring) (str _msg_ "should return valid docstring"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(require 'foo.bar.baz)"

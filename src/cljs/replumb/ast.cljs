@@ -218,7 +218,7 @@
 (defn dissoc-all
   "Dissoc all the required-ns symbols from requirer-ns.
 
-  There are three types of symbol in replumb jargon, which loosely map to
+  There are five types of symbol in replumb jargon, which loosely map to
   `cljs.js` ones. These optionally go in the type parameter as keyword:
 
   - `:symbol`, the default, for instance my-sym in `(def my-sym 3)`
