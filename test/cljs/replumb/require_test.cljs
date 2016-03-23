@@ -398,19 +398,14 @@ trim-newline
     (is (valid-eval-result? out) (str _msg_ "should be a valid result."))
     (is (= "30" out) (str _msg_ "should be 30"))))
 
-;; TB - this test fails but shouldn't, see https://github.com/clojure/clojurescript/wiki/Differences-from-Clojure#lisp
-;; see also http://dev.clojure.org/jira/browse/CLJS-1449
-;; I'm leaving it here for reference, it needs to be changed when the bug will be resolved
-;; the issue in replumb is https://github.com/ScalaConsultants/replumb/issues/90
-;; AR - this will be commented until http://dev.clojure.org/jira/browse/CLJS-1521 is in
-;; as it messes up big time with the compiler state (all the subsequent tests fail)
-;; (h/read-eval-call-test e/*target-opts*
-;;   ["(ns my.namespace (:require-macros [foo.bar.baz :as f]))"
-;;    "(f/mul-baz 20 20)"]
-;;   (let [error (unwrap-result @_res_)]
-;;     (is (not (success? @_res_)) (str _msg_ "should not succeed"))
-;;     (is (valid-eval-error? error) (str _msg_ "should be an instance of js/Error"))
-;;     (is (re-find #"ERROR" (extract-message error)) (str _msg_ "should have correct error message"))))
+;; https://github.com/Lambda-X/replumb/issues/90
+(h/read-eval-call-test (assoc e/*target-opts* :verbose true)
+  ["(ns my.namespace (:require-macros [foo.bar.baz :as f]))"
+   "(f/mul-baz 20 20)"]
+  (let [out (unwrap-result @_res_)]
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? out) (str _msg_ "should be a valid result."))
+    (is (= "400" out) (str _msg_ "should be 400"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require-macros [foo.bar.quux :refer [mul-quux]]))"
