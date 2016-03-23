@@ -1,4 +1,4 @@
-// Compiled by ClojureScript 1.7.228
+// Compiled by ClojureScript 1.8.34
 goog.provide("clojure.set");
 (function (){
 clojure.set.bubble_max_key = (function clojure$set$bubble_max_key(k,coll){
@@ -18,14 +18,14 @@ new cljs.core.Var(function(){return clojure.set.bubble_max_key;},new cljs.core.S
 (function (){
 clojure.set.union = (function clojure$set$union(var_args){
 var args22 = [];
-var len__15229__auto___28 = arguments.length;
-var i__15230__auto___29 = (0);
+var len__14274__auto___28 = arguments.length;
+var i__14275__auto___29 = (0);
 while(true){
-if((i__15230__auto___29 < len__15229__auto___28)){
-args22.push((arguments[i__15230__auto___29]));
+if((i__14275__auto___29 < len__14274__auto___28)){
+args22.push((arguments[i__14275__auto___29]));
 
-var G__30 = (i__15230__auto___29 + (1));
-i__15230__auto___29 = G__30;
+var G__30 = (i__14275__auto___29 + (1));
+i__14275__auto___29 = G__30;
 continue;
 } else {
 }
@@ -47,8 +47,8 @@ return clojure.set.union.cljs$core$IFn$_invoke$arity$2((arguments[(0)]),(argumen
 
 break;
 default:
-var argseq__15240__auto__ = (new cljs.core.IndexedSeq(args22.slice((2)),(0)));
-return clojure.set.union.cljs$core$IFn$_invoke$arity$variadic((arguments[(0)]),(arguments[(1)]),argseq__15240__auto__);
+var argseq__14285__auto__ = (new cljs.core.IndexedSeq(args22.slice((2)),(0),null));
+return clojure.set.union.cljs$core$IFn$_invoke$arity$variadic((arguments[(0)]),(arguments[(1)]),argseq__14285__auto__);
 
 }
 }); return (
@@ -91,14 +91,14 @@ clojure.set.union.cljs$lang$maxFixedArity = (2);
 (function (){
 clojure.set.intersection = (function clojure$set$intersection(var_args){
 var args32 = [];
-var len__15229__auto___38 = arguments.length;
-var i__15230__auto___39 = (0);
+var len__14274__auto___38 = arguments.length;
+var i__14275__auto___39 = (0);
 while(true){
-if((i__15230__auto___39 < len__15229__auto___38)){
-args32.push((arguments[i__15230__auto___39]));
+if((i__14275__auto___39 < len__14274__auto___38)){
+args32.push((arguments[i__14275__auto___39]));
 
-var G__40 = (i__15230__auto___39 + (1));
-i__15230__auto___39 = G__40;
+var G__40 = (i__14275__auto___39 + (1));
+i__14275__auto___39 = G__40;
 continue;
 } else {
 }
@@ -116,8 +116,8 @@ return clojure.set.intersection.cljs$core$IFn$_invoke$arity$2((arguments[(0)]),(
 
 break;
 default:
-var argseq__15240__auto__ = (new cljs.core.IndexedSeq(args32.slice((2)),(0)));
-return clojure.set.intersection.cljs$core$IFn$_invoke$arity$variadic((arguments[(0)]),(arguments[(1)]),argseq__15240__auto__);
+var argseq__14285__auto__ = (new cljs.core.IndexedSeq(args32.slice((2)),(0),null));
+return clojure.set.intersection.cljs$core$IFn$_invoke$arity$variadic((arguments[(0)]),(arguments[(1)]),argseq__14285__auto__);
 
 }
 }); return (
@@ -173,14 +173,14 @@ clojure.set.intersection.cljs$lang$maxFixedArity = (2);
 (function (){
 clojure.set.difference = (function clojure$set$difference(var_args){
 var args44 = [];
-var len__15229__auto___50 = arguments.length;
-var i__15230__auto___51 = (0);
+var len__14274__auto___50 = arguments.length;
+var i__14275__auto___51 = (0);
 while(true){
-if((i__15230__auto___51 < len__15229__auto___50)){
-args44.push((arguments[i__15230__auto___51]));
+if((i__14275__auto___51 < len__14274__auto___50)){
+args44.push((arguments[i__14275__auto___51]));
 
-var G__52 = (i__15230__auto___51 + (1));
-i__15230__auto___51 = G__52;
+var G__52 = (i__14275__auto___51 + (1));
+i__14275__auto___51 = G__52;
 continue;
 } else {
 }
@@ -198,8 +198,8 @@ return clojure.set.difference.cljs$core$IFn$_invoke$arity$2((arguments[(0)]),(ar
 
 break;
 default:
-var argseq__15240__auto__ = (new cljs.core.IndexedSeq(args44.slice((2)),(0)));
-return clojure.set.difference.cljs$core$IFn$_invoke$arity$variadic((arguments[(0)]),(arguments[(1)]),argseq__15240__auto__);
+var argseq__14285__auto__ = (new cljs.core.IndexedSeq(args44.slice((2)),(0),null));
+return clojure.set.difference.cljs$core$IFn$_invoke$arity$variadic((arguments[(0)]),(arguments[(1)]),argseq__14285__auto__);
 
 }
 }); return (
@@ -327,14 +327,14 @@ new cljs.core.Var(function(){return clojure.set.map_invert;},new cljs.core.Symbo
 (function (){
 clojure.set.join = (function clojure$set$join(var_args){
 var args62 = [];
-var len__15229__auto___67 = arguments.length;
-var i__15230__auto___68 = (0);
+var len__14274__auto___67 = arguments.length;
+var i__14275__auto___68 = (0);
 while(true){
-if((i__15230__auto___68 < len__15229__auto___67)){
-args62.push((arguments[i__15230__auto___68]));
+if((i__14275__auto___68 < len__14274__auto___67)){
+args62.push((arguments[i__14275__auto___68]));
 
-var G__69 = (i__15230__auto___68 + (1));
-i__15230__auto___68 = G__69;
+var G__69 = (i__14275__auto___68 + (1));
+i__14275__auto___68 = G__69;
 continue;
 } else {
 }

@@ -22,6 +22,10 @@
     (let [tmp-file (str path ".tmp")]
       (e/*rename-file-fn* tmp-file (apply str (drop-last 4 tmp-file))))))
 
+;;; important: if the ClojureScript version is updated rembember to update
+;;; the files in the cache folder as well (in order to match the compiler
+;;; version)
+
 (binding [e/*src-paths* ["dev-resources/private/test/node/compiled/out"]]
   (let [cache-path "dev-resources/private/test/cache"
         path "clojure/set"
