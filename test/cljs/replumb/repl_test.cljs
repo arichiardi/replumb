@@ -485,3 +485,12 @@ select-keys
       (is (success? @_res_) "\"2 3\" with :context set to :statement should succeed")
       (is (valid-eval-result? custom-opts out) "\"2 3\" with :context set to :statement should have a valid result")
       (is (= "nil" out) "\"2 3\" with :context set to :statement should yield nil."))))
+
+;; https://github.com/Lambda-X/replumb/issues/155
+(let [custom-opts e/*target-opts*]
+  (h/read-eval-call-test custom-opts
+    ["(condp = 1 1 2)"]
+    (let [out (unwrap-result @_res_)]
+      (is (success? @_res_) (str _msg_ "should succeed"))
+      (is (valid-eval-result? custom-opts out) (str _msg_ "should have a valid result"))
+      (is (= "2" out) (str _msg_ "should return 2")))))
