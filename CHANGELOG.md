@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.1
+- Clojurescript 1.8.34 support
+- Fix for avoiding printing debug messages when doc is called
+
 ## 0.2.0
 
 - _\*API breaking\*_ Change signature of `result->string`, `error->str` and `unwrap-result`

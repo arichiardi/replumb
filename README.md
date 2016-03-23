@@ -14,7 +14,7 @@ As [current maintainer](https://github.com/arichiardi) of the project I would li
 
 ## Usage
 
-Version `0.2.0` __breaks__ two `replumb.core` APIs:
+Versions higher than `0.2.0` __break__ two `replumb.core` APIs:
   * there is a unified `options` function for both browser and Node.js
   * `result->string`, `unwrap-result` and `error->str` have a new parameter order
 
