@@ -399,7 +399,7 @@ trim-newline
     (is (= "30" out) (str _msg_ "should be 30"))))
 
 ;; https://github.com/Lambda-X/replumb/issues/90
-(h/read-eval-call-test (assoc e/*target-opts* :verbose true)
+(h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require-macros [foo.bar.baz :as f]))"
    "(f/mul-baz 20 20)"]
   (let [out (unwrap-result @_res_)]
