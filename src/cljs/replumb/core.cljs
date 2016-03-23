@@ -221,8 +221,8 @@
 
   It performs the following (in order):
 
-  1. calls `(read-eval-call (in-ns 'cljs.user))`
-  2. removes `cljs.js/*loaded*` namespaces from the compiler environment
+  1. removes `cljs.js/*loaded*` namespaces from the compiler environment
+  2. calls `(read-eval-call (in-ns 'cljs.user))`
   3. resets the last warning
   4. sets `*e` to nil
   5. resets the init options (the next eval will trigger an init)"
