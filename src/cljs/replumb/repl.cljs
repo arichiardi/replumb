@@ -43,12 +43,6 @@
   []
   (:current-ns @app-env))
 
-(defn get-goog-path
-  "Given a Google Closure provide / Clojure require (e.g. goog.string),
-  returns the path to the actual file (without extension)."
-  [provide]
-  (get-in @app-env [:goog-provide->path provide]))
-
 (defn empty-analyzer-env
   []
   (assoc (ana/empty-env)
@@ -282,21 +276,6 @@
                   ~@(-> specs canonicalize-specs process-reloads!)))
       {:merge true :line 1 :column 1})))
 
-(defn goog-deps-map
-  "Given the content of goog/deps.js file, create a map
-  provide->path (without extension) of Google dependencies.
-
-  Adapted from planck:
-  https://github.com/mfikes/planck/blob/master/planck-cljs/src/planck/repl.cljs#L438-L451"
-  [deps-js-content]
-  (let [paths-to-provides (map (fn [[_ path provides]]
-                                 [path (map second (re-seq #"'(.*?)'" provides))])
-                               (re-seq #"\ngoog\.addDependency\('(.*)', \[(.*?)\].*"
-                                       deps-js-content))]
-    (into {} (for [[path provides] paths-to-provides
-                   provide provides]
-               [(symbol provide) (str "goog/" (second (re-find #"(.*)\.js$" path)))]))))
-
 (defn file-path-from-goog-dependencies
   "Retrives the path for a file from (.-dependencies_.nameToPath js/goog). If
   not found will returns nil."
@@ -333,12 +312,18 @@
     (fn [{:keys [name macros path] :as load-map} cb]
       (cond
         (load/skip-load? load-map) (load/fake-load-fn! load-map cb)
-        (re-matches #"^goog/.*" path) (if-let [goog-path (get-goog-path name)]
-                                        (load/read-files-and-callback! verbose
-                                                                       (load/file-paths-for-closure src-paths goog-path)
-                                                                       read-file-fn!
-                                                                       cb)
-                                        (cb nil))
+        (re-matches #"^goog/.*" path) (.then (load/goog-closure-index-promise! verbose src-paths read-file-fn!)
+                                             (fn [goog-map]
+                                               (if-let [goog-path (get goog-map name)]
+                                                 (load/read-files-and-callback! verbose
+                                                                                (load/file-paths-for-closure src-paths goog-path)
+                                                                                read-file-fn!
+                                                                                cb)
+                                                 (cb nil)))
+                                             (fn [_]
+                                               (when verbose
+                                                 (common/debug-prn "Error in parsing the Google Closure index."))
+                                               (cb nil)))
         ;; first we check if we can retrieve the path from (.-dependencies_.nameToPath js/goog)
         ;; (it's the case when the "js" file is in the compilation set)
         ;; then also check in the user provided :foreign-libs option (for libraries not known
@@ -834,6 +819,11 @@
 
 (def init-option-set #{:init-fn! :src-paths})
 
+(defn auto-init-opts
+  "Just assoc the options to persist to the input map."
+  [opts]
+  (into {} (filter #(init-option-set (first %)) opts)))
+
 ;;; Init FSM
 
 (defn initializing-state
@@ -849,15 +839,11 @@
 (defn initialized-state
   "Move the state to \"Initialized\", signaling that the init is not in
   progress and done."
-  [old-app-env]
+  [old-app-env opts]
   {:pre [(:needs-init? old-app-env) (:initializing? old-app-env)]}
   (merge old-app-env {:initializing? false
-                      :needs-init? false}))
-
-(defn auto-init-opts
-  "Just assoc the options to persist to the input map."
-  [opts]
-  (into {} (filter #(init-option-set (first %)) opts)))
+                      :needs-init? false
+                      :previous-init-opts (auto-init-opts opts)}))
 
 (defn needs-init-state
   "Reset the initialization state, moving to \"Needs Init\", signaling
@@ -883,39 +869,10 @@
   []
   (swap! app-env needs-init-state))
 
-(defn persist-init-opts!
-  "Persist the options necessary to the initialization FSM to work."
-  [opts]
-  (swap! app-env assoc :previous-init-opts (auto-init-opts opts)))
-
 (defn reset-init-opts!
   "Reset the initialization persisted options."
   []
   (swap! app-env assoc :previous-init-opts {}))
-
-(defn init-closure-index!
-  "Create and swap in app-env a map from Google Closure provide string
-  to their respective path (without extension).  It merges with the
-  current map if many deps.js are on the source path, precedence to the
-  last (as per merge)."
-  [opts]
-  (let [verbose? (:verbose opts)
-        read-file! (:read-file-fn! opts)]
-    (if read-file!
-      (do (when verbose?
-            (common/debug-prn "Discovering goog/deps.js in" (:src-paths opts)))
-          (doseq [path (:src-paths opts)]
-            (let [goog-deps-path (str (common/normalize-path path) "goog/deps.js")]
-              (read-file! goog-deps-path
-                          (fn [content]
-                            (when content
-                              (do (when verbose?
-                                    (common/debug-prn "Found valid" goog-deps-path))
-                                  (swap! app-env
-                                         update :goog-provide->path
-                                         merge (goog-deps-map content)))))))))
-      (when verbose?
-        (common/debug-prn "No :read-file-fn! provided, skipping goog/deps.js discovering...")))))
 
 (defn init-repl!
   "The init-repl function. It uses the following opts keys:
@@ -923,19 +880,15 @@
   * :init-fns initialization function vector, it will be executed in
   order
 
-  Data is passed from outside and will be forwarded to :init-fn!."
+  Data is passed from outside and will be forwarded to :init-fn!.
+
+  This is a sync method and should not leak any async operation."
   [opts data]
   (when (:verbose opts)
     (common/debug-prn "Initializing REPL environment with data" (with-out-str (pprint data))))
   ;; Target/user init, we need at least one init-fn, the default init function
-  (let [init-fns (:init-fns opts)]
-    (assert (> (count init-fns) 0))
-    (doseq [init-fn! init-fns]
-      (init-fn! data)))
-  ;; Building the closure index
-  (init-closure-index! opts)
-  ;; Persist the options I need for auto init
-  (persist-init-opts! opts))
+  (doseq [init-fn! (:init-fns opts)]
+    (init-fn! data)))
 
 (defn init-repl-if-necessary!
   [opts data]
@@ -943,7 +896,7 @@
                                           (needs-init-from-opts-state opts)
                                           initializing-state)))
     (do (init-repl! opts data)
-        (swap! app-env initialized-state))))
+        (swap! app-env initialized-state opts))))
 
 ;;;;;;;;;;;;;;;;;;;;;;
 ;;; Read-Eval-Call ;;;
