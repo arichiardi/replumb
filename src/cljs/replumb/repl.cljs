@@ -391,6 +391,12 @@
                                   (conj init-fns fn)
                                   init-fns))))
 
+(defn add-init-eval-fn
+  "Given current and user options, returns a map containing a
+  valid :init-fns,conjoining with the one in current if necessary."
+  [opts user-opts]
+  (update-in opts [:init-fns] conj #(set! cljs.js/*eval-fn* (make-js-eval-fn user-opts))))
+
 (defn normalize-opts
   "Process the user options. Returns the map that can be fed to
   read-eval-call."
@@ -399,6 +405,7 @@
     ;; AR - note the order here, the last always overrides
     (-> vld-opts
         (add-default-opts vld-opts)
+        (add-init-eval-fn vld-opts)
         (add-load-fn vld-opts)
         (add-init-fns vld-opts))))
 
