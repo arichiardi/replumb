@@ -18,16 +18,6 @@
     (is (:needs-init? @repl/app-env) "After force-init!, :needs-init? should be true before init")))
 
 (h/read-eval-call-test e/*target-opts*
-  ["def a \"bogus-op\""]
-  (let [_ (repl/persist-init-opts! {:verbose true :src-paths ["src/a" "src/b"] :init-fn! #()})]
-    (is (every? repl/init-option-set (keys (:previous-init-opts @repl/app-env))) "After persist-init-opts!, the app-env should contain the right init options")))
-
-(h/read-eval-call-test e/*target-opts*
-  ["def a \"bogus-op\""]
-  (let [_ (repl/persist-init-opts! {:verbose true :load-fn! #() :custom :opts})]
-    (is (not-any? repl/init-option-set (:previous-init-opts @repl/app-env)) "After persist-init-opts! but no option to persist, the app-env should not contain init options")))
-
-(h/read-eval-call-test e/*target-opts*
   ["(def a \"bogus-op\")"]
   (let [init-map-atom (atom {})
         custom-init-fn (fn [init-map] (reset! init-map-atom init-map))
