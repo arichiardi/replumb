@@ -1,5 +1,6 @@
 (ns replumb.load
-  (:require [cljs.js :as cljs]
+  (:require goog.Promise
+            [cljs.js :as cljs]
             [clojure.string :as string]
             [replumb.common :as common]
             [replumb.cache :as cache]
@@ -136,6 +137,62 @@
   [src-paths goog-path]
   (for [src-path src-paths]
     (str (common/normalize-path src-path) goog-path ".js")))
+
+(defn goog-deps-map
+  "Given the content of goog/deps.js file, create a map
+  provide->path (without extension) of Google dependencies.
+
+  Adapted from planck:
+  https://github.com/mfikes/planck/blob/master/planck-cljs/src/planck/repl.cljs#L438-L451"
+  [deps-js-content]
+  (let [paths-to-provides (map (fn [[_ path provides]]
+                                 [path (map second (re-seq #"'(.*?)'" provides))])
+                               (re-seq #"\ngoog\.addDependency\('(.*)', \[(.*?)\].*"
+                                       deps-js-content))]
+    (into {} (for [[path provides] paths-to-provides
+                   provide provides]
+               [(symbol provide) (str "goog/" (second (re-find #"(.*)\.js$" path)))]))))
+
+(defn read-goog-file-promise
+  "Return a promise that resolves with the result of accumulating the
+  actual call to replumb.repl/read-eval-call on the source with results."
+  [verbose? read-file-fn! path results]
+  {:pre [(map? results)]}
+  (goog.Promise.
+   (fn [resolve _]
+     (let [deps-path (str (common/normalize-path path) "goog/deps.js")]
+       (read-file-fn! deps-path
+                      (fn [content]
+                        (resolve (if content
+                                   (do (when verbose?
+                                         (common/debug-prn "Found valid" deps-path))
+                                       (merge results (goog-deps-map content)))
+                                   results))))))))
+
+(defn goog-closure-index-promise!
+  "Return a promise containing a map Google Closure symbol -> file
+  path (string without extension) as in:
+
+  {goog.a11y.aria.DropEffectValues \"goog/a11y/aria/attributes\"
+   goog.labs.i18n.ListFormatSymbols_en_BW \"goog/labs/i18n/listsymbolsext\"
+   ...}
+
+  It merges maps if many deps.js are on the source path, precedence to
+  the rightmost (as per merge)."
+  [verbose? src-paths read-file-fn!]
+  (let [read-promise (partial read-goog-file-promise verbose? read-file-fn!)]
+    (if read-file-fn!
+      (do (when verbose?
+            (common/debug-prn "Discovering goog/deps.js in" src-paths))
+          (reduce (fn [pmses path]
+                    (.then pmses
+                           #(read-promise path %)
+                           #(read-promise path {}))) ;; AR - if there was an Error, we re-start from {}
+                  (goog.Promise.resolve {})
+                  src-paths))
+      (do (when verbose?
+            (common/debug-prn "No :read-file-fn! provided, skipping goog/deps.js discovering..."))
+          (goog.Promise.resolve {})))))
 
 (defn skip-load?
   [{:keys [name macros]}]

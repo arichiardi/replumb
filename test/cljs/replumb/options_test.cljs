@@ -3,7 +3,7 @@
             [replumb.repl :refer [valid-opts-set valid-opts normalize-opts]]))
 
 (deftest options-valid-set
-  ;; AR - just not to forget adding them in valid-opts-set
+  ;; AR - just to avoid forgetting to add them in valid-opts-set
   (let [opts {:verbose :true
               :load-fn! "fn"
               :warning-as-error true
@@ -25,8 +25,8 @@
   (is (= :nodejs (:target (normalize-opts {:target :nodejs}))) "Target :nodejs is correct"))
 
 (deftest options-init-fn
-  (is (= 1 (count (:init-fns (normalize-opts {:target :browser})))) "Count of :init-fns should at least be 1 if no :init-fn!")
-  (is (= 2 (count (:init-fns (normalize-opts {:target :browser :init-fn! #()})))) "Count of :init-fns should be 2 if :init-fn! is there")
+  (is (<= 1 (count (:init-fns (normalize-opts {:target :browser})))) "Count of :init-fns should at least be 1 if no :init-fn!")
+  (is (<= 2 (count (:init-fns (normalize-opts {:target :browser :init-fn! #()})))) "Count of :init-fns should be 2 if :init-fn! is there")
   (is (every? (complement nil?) (:init-fns (normalize-opts {:target :browser :init-fn! #()}))) "The :init-fns option is a seq non-nil functions."))
 
 (deftest options-src-paths

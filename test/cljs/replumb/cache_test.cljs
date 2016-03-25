@@ -37,7 +37,7 @@
     (h/read-eval-call-test (assoc e/*target-opts* :cache {})
       [:before (do (rename-file-names-to-tmp cache-files-to-search)
                    (rename-file-names-to-tmp src-paths-files-to-search))
-       ""
+       "(def a \"bogus-op\")"
        :after (do (revert-file-names cache-files-to-search)
                   (revert-file-names src-paths-files-to-search))]
       (let [load-fn (repl/make-load-fn (assoc e/*target-opts* :cache {}))
@@ -50,7 +50,7 @@
     (h/read-eval-call-test (assoc e/*target-opts* :cache {:path cache-path})
       [:before (do (rename-file-names-to-tmp cache-files-to-search)
                    (rename-file-names-to-tmp src-paths-files-to-search))
-       ""
+       "(def a \"bogus-op\")"
        :after (do (revert-file-names cache-files-to-search)
                   (revert-file-names src-paths-files-to-search))]
       (let [load-fn (repl/make-load-fn (assoc e/*target-opts* :cache {:path cache-path}))
@@ -63,7 +63,7 @@
     (h/read-eval-call-test (assoc e/*target-opts* :cache {:src-paths-lookup? true})
       [:before (do (rename-file-names-to-tmp cache-files-to-search)
                    (rename-file-names-to-tmp src-paths-files-to-search))
-       ""
+       "(def a \"bogus-op\")"
        :after (do (revert-file-names cache-files-to-search)
                   (revert-file-names src-paths-files-to-search))]
       (let [load-fn (repl/make-load-fn (assoc e/*target-opts* :cache {:src-paths-lookup? true}))
@@ -76,7 +76,7 @@
     (h/read-eval-call-test (assoc e/*target-opts* :cache {:src-paths-lookup? true :path cache-path})
       [:before (do (rename-file-names-to-tmp cache-files-to-search)
                    (rename-file-names-to-tmp src-paths-files-to-search))
-       ""
+       "(def a \"bogus-op\")"
        :after (do (revert-file-names cache-files-to-search)
                   (revert-file-names src-paths-files-to-search))]
       (let [load-fn (repl/make-load-fn (assoc e/*target-opts* :cache {:src-paths-lookup? true :path cache-path}))
@@ -89,7 +89,7 @@
     ;; read-no-files-in-cache-path-yes-src-paths
     (h/read-eval-call-test (assoc e/*target-opts* :cache {})
       [:before (do (rename-file-names-to-tmp cache-files-to-search))
-       ""
+       "(def a \"bogus-op\")"
        :after (do (revert-file-names src-paths-files-to-search))]
       (let [load-fn (repl/make-load-fn (assoc e/*target-opts* :cache {}))
             load-res (load-fn {:macros false :path path} identity)]
@@ -100,7 +100,7 @@
 
     (h/read-eval-call-test (assoc e/*target-opts* :cache {:path cache-path})
       [:before (do (rename-file-names-to-tmp cache-files-to-search))
-       ""
+       "(def a \"bogus-op\")"
        :after (do (revert-file-names cache-files-to-search))]
       (let [load-fn (repl/make-load-fn (assoc e/*target-opts* :cache {:path cache-path}))
             load-res (load-fn {:macros false :path path} identity)]
@@ -143,7 +143,7 @@
 
     ;; read-yes-files-in-cache-path-yes-src-paths
     (h/read-eval-call-test (assoc e/*target-opts* :cache {})
-      [""]
+      ["(def a \"bogus-op\")"]
       (let [load-fn (repl/make-load-fn (assoc e/*target-opts* :cache {}))
             load-res (load-fn {:macros false :path path} identity)]
         (is (contains? load-res :source) "Loading should succeed and the resulting map contain :source")
@@ -196,7 +196,7 @@
     ;; read-yes-files-in-cache-path-no-src-paths
     (h/read-eval-call-test (assoc e/*target-opts* :cache {})
       [:before (rename-file-names-to-tmp src-paths-files-to-search)
-       ""
+       "(def a \"bogus-op\")"
        :after (revert-file-names src-paths-files-to-search)]
       (let [load-fn (repl/make-load-fn (assoc e/*target-opts* :cache {}))
             load-res (load-fn {:macros false :path path} identity)]
@@ -223,7 +223,7 @@
 
     (h/read-eval-call-test (assoc e/*target-opts* :cache {:src-paths-lookup? true})
       [:before (do (rename-file-names-to-tmp src-paths-files-to-search))
-       ""
+       "(def a \"bogus-op\")"
        :after (do (revert-file-names src-paths-files-to-search))]
       (let [load-fn (repl/make-load-fn (assoc e/*target-opts* :cache {:src-paths-lookup? true}))
             load-res (load-fn {:macros false :path path} identity)]
