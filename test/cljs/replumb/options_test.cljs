@@ -3,7 +3,7 @@
             [replumb.repl :refer [valid-opts-set valid-opts normalize-opts]]))
 
 (deftest options-valid-set
-  ;; AR - just not to forget adding them in valid-opts-set
+  ;; AR - just to avoid forgetting to add them in valid-opts-set
   (let [opts {:verbose :true
               :load-fn! "fn"
               :warning-as-error true

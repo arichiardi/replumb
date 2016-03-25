@@ -8,11 +8,11 @@
             [replumb.test-helpers :as h :include-macros true]))
 
 (h/read-eval-call-test e/*target-opts*
-  ["def a \"bogus-op\""]
+  ["(def a \"bogus-op\")"]
   (is (symbol? (repl/current-ns)) "The current ns should be a symbol"))
 
 (h/read-eval-call-test e/*target-opts*
-  ["def a \"bogus-op\""]
+  ["(def a \"bogus-op\")"]
   (let [_ (repl/force-init!)]
     (is (not (:initializing? @repl/app-env)) "After force-init! :initializing? should be false before init")
     (is (:needs-init? @repl/app-env) "After force-init!, :needs-init? should be true before init")))
@@ -28,7 +28,7 @@
     (is (not-any? repl/init-option-set (:previous-init-opts @repl/app-env)) "After persist-init-opts! but no option to persist, the app-env should not contain init options")))
 
 (h/read-eval-call-test e/*target-opts*
-  ["def a \"bogus-op\""]
+  ["(def a \"bogus-op\")"]
   (let [init-map-atom (atom {})
         custom-init-fn (fn [init-map] (reset! init-map-atom init-map))
         _ (swap! repl/app-env merge {:initializing? false :needs-init? true})
@@ -42,7 +42,7 @@
     (is (= (:target e/*target-opts*) (:target @init-map-atom)) "Init map with custom init-fn! should have correct :target")))
 
 (h/read-eval-call-test e/*target-opts*
-  ["def a \"bogus-op\""]
+  ["(def a \"bogus-op\")"]
   (let [_ (repl/read-eval-call (merge e/*target-opts* {:src-paths ["my/custom/path"]}) (fn [_] nil) "(def c 4)")
         previous-init-opts (:previous-init-opts @repl/app-env)]
     (is (some #{"my/custom/path"} (:src-paths previous-init-opts)) "After changing :src-paths the new app-env should contain the new path")))
