@@ -51,47 +51,49 @@
   useful for \"is\" messages, it will have newline (if multi line) or
   space at the end of it"
   [opts sources & forms]
-  (let [strings# (->> sources (filter string?) vec)
-        var-name# (test-var-name strings#)
-        msg# (let [multiline? (some #(.contains % "\n") strings#)
-                   separator (if multiline? \newline \space)]
-               (str (clojure.string/join separator strings#) separator))
-        before-fn# (list 'fn '[]
-                         (when (= :before (first sources)) (second sources)))
-        after-fn# (list 'fn '[]
-                        (when (and (> (count sources) 2)
-                                   (= :after (nth sources (- (count sources) 2))))
-                          (nth sources (dec (count sources)))))]
-    `(cljs.test/deftest ~(symbol var-name#)
+  (let [strings (->> sources (filter string?) vec)
+        var-name (test-var-name strings)
+        msg (let [multiline? (some #(.contains % "\n") strings)
+                  separator (if multiline? \newline \space)]
+              (str (clojure.string/join separator strings) separator))
+        before-fn (list 'fn '[]
+                        (when (= :before (first sources)) (second sources)))
+        after-fn (list 'fn '[]
+                       (when (and (> (count sources) 2)
+                                  (= :after (nth sources (- (count sources) 2))))
+                         (nth sources (dec (count sources)))))]
+    `(cljs.test/deftest ~(symbol var-name)
        (cljs.test/async ~'done
          (let [~'_res_ (atom ::empty)
                ~'_all_res_ (atom ::empty)
-               ~'_msg_ ~msg#
-               set-result-fn# #(do (reset! ~'_all_res_ %) (reset! ~'_res_ (peek %)))
-               make-warning-fn# #(str "WARNING in " ~var-name# "\nThe following evaluations were not successful:\n"
-                                      (clojure.string/join "\n" (map pr-str (remove :success? %))) "\n")]
-           (~before-fn#)
-           (let [promises# (reduce #(.then %1
-                                           (partial replumb.test-helpers/read-eval-call-promise ~opts %2)
-                                           (partial replumb.test-helpers/read-eval-call-promise ~opts %2))
+               ~'_msg_ ~msg
+               make-promise# (partial replumb.test-helpers/read-eval-call-promise ~opts)
+               set-result# #(do (reset! ~'_all_res_ %) (reset! ~'_res_ (peek %)))
+               make-warning# #(str "WARNING in " ~var-name "\nThe following evaluations were not successful:\n"
+                                   (clojure.string/join "\n" (map pr-str (remove :success? %))) "\n")]
+           (~before-fn)
+           (let [promises# (reduce (fn [pmses# results#]
+                                     (.then pmses# #(make-promise# results# %) #(make-promise# results# %)))
                                    (goog.Promise.resolve [])
-                                   ~strings#)]
+                                   ~strings)]
              (doto promises#
-               (.then #(do (set-result-fn# %))
-                      #(do (set-result-fn# %)
-                           (when goog.DEBUG (print (make-warning-fn# %)))))
-               (.thenAlways #(do ~@forms
-                                 (~after-fn#)
-                                 (replumb.core/repl-reset! ~opts)
-                                 (cljs.test/is (replumb.repl/empty-cljs-user?)
-                                               (str "Dirty compiler state detected - you might have forgotten to reset after:\n"
-                                                    (clojure.string/join "\n" ~strings#)
-                                                    "\n---\n"
-                                                    (with-out-str
-                                                      (cljs.pprint/pprint
-                                                       (replumb.ast/get-state (deref replumb.repl/st) (symbol "cljs.user"))))))
-                                 (reset! ~'_res_ ::empty)
-                                 (~'done))))))))))
+               (.then #(set-result# %)
+                      #(do (set-result# %)
+                           (when (:verbose ~opts) (print (make-warning# %)))))
+               (.thenAlways (fn []
+                              ~@forms
+                              (~after-fn)
+                              (replumb.core/repl-reset! ~opts)
+                              (cljs.test/is (replumb.repl/empty-cljs-user?)
+                                            (str "Dirty compiler state detected - you might have forgotten to reset after:"
+                                                 "\n---\n"
+                                                 (clojure.string/join "\n" (map #(str "cljs.user=> " %) ~strings))
+                                                 "\n---\n"
+                                                 (with-out-str
+                                                   (cljs.pprint/pprint
+                                                    (replumb.ast/get-state (deref replumb.repl/st) (symbol "cljs.user"))))))
+                              (reset! ~'_res_ ::empty)
+                              (~'done))))))))))
 
 (comment
   (require-macros '[macro-debug :refer [debug debug-1 debug-all debug->js debug-1->js debug-all->js]])

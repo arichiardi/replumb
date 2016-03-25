@@ -12,8 +12,6 @@
 
 (enable-console-print!)
 
-(set! goog.DEBUG false)
-
 (doo-tests 'replumb.core-test
            'replumb.repl-test
            'replumb.common-test

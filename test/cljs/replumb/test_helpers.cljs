@@ -12,7 +12,7 @@
   [opts source results]
   {:pre [(vector? results)]}
   (goog.Promise.
-   (fn [resolve, reject]
+   (fn [resolve reject]
      (replumb.repl/read-eval-call
       opts
       (partial replumb.repl/validated-call-back!
