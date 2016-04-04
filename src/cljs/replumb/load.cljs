@@ -6,6 +6,23 @@
             [replumb.cache :as cache]
             [cljs.reader :as edn]))
 
+(def loaded-js-set
+  "A set containing namespaces already loaded."
+  '#{cljs.analyzer
+     cljs.compiler
+     cljs.env
+     cljs.reader
+     cljs.source-map
+     cljs.source-map.base64
+     cljs.source-map.base64-vlq
+     cljs.stacktrace
+     cljs.tagged-literals
+     cljs.tools.reader.impl.utils
+     cljs.tools.reader.reader-types
+     clojure.set
+     clojure.string
+     cognitect.transit})
+
 (defn fake-load-fn!
   "This load function just calls:
   (cb {:lang   :js
@@ -61,6 +78,32 @@
                                   (read-files-and-callback! verbose? (rest file-names) read-file-fn! load-fn-cb))))))
     (load-fn-cb nil)))
 
+(defn read-cache-file
+  [{:keys [verbose? read-file-fn! js-path cache-path try-next-files-pair-fn load-fn-cb]} js-source]
+  (read-file-fn! cache-path
+                 (fn [cache-source]
+                   (if cache-source
+                     (do
+                       (when verbose?
+                         (common/debug-prn (str "Retrieved JavaScript from: "
+                                                (if js-source js-path "<skipped>")))
+                         (common/debug-prn (str "Retrieved cache file from: " cache-path)))
+                       (load-fn-cb {:lang (filename->lang js-path)
+                                    :source js-source
+                                    :cache (read-cache-source cache-path cache-source)}))
+                     (try-next-files-pair-fn)))))
+
+(defn read-js-file
+  [{:keys [verbose? read-file-fn! js-path cache-path try-next-files-pair-fn] :as opts} read-cache-file-fn]
+  (read-file-fn! js-path
+                 (fn [js-source]
+                   (if (and js-source (cache/cached-js-valid? js-source))
+                     (do
+                       (when verbose?
+                         (common/debug-prn "Reading" cache-path "..."))
+                       (read-cache-file-fn opts js-source))
+                      (try-next-files-pair-fn)))))
+
 (defn read-files-from-cache-and-callback!
   "Loops over cached-file-names in order to retrieve them. It needs to find
   both the related .js file and .cache.json file, otherwise keeps looping.
@@ -68,32 +111,29 @@
   tries to load the unevaluated ones.
   This function does not check whether parameters are nil, please do it in
   the caller."
-  [verbose? file-names read-file-fn! load-fn-cb cached-file-names]
+  [verbose? file-names read-file-fn! load-fn-cb cached-file-names name]
   (if-let [[js-path cache-path] (first cached-file-names)]
     (let [try-next-files-pair #(read-files-from-cache-and-callback! verbose?
                                                                     file-names
                                                                     read-file-fn!
                                                                     load-fn-cb
-                                                                    (rest cached-file-names))]
-      (when verbose?
-        (common/debug-prn "Reading" js-path "..."))
-      (read-file-fn! js-path
-                     (fn [js-source]
-                       (if (and js-source (cache/cached-js-valid? js-source))
-                         (do
-                           (when verbose?
-                             (common/debug-prn "Reading" cache-path "..."))
-                           (read-file-fn! cache-path
-                                          (fn [cache-source]
-                                            (if cache-source
-                                              (do
-                                                (when verbose?
-                                                  (common/debug-prn (str "Retrieved from cache " js-path " and " cache-path)))
-                                                (load-fn-cb {:lang (filename->lang js-path)
-                                                             :source js-source
-                                                             :cache (read-cache-source cache-path cache-source)}))
-                                              (try-next-files-pair)))))
-                         (try-next-files-pair)))))
+                                                                    (rest cached-file-names)
+                                                                    name)
+          cache-opts {:verbose? verbose?
+                      :read-file-fn! read-file-fn!
+                      :load-fn-cb load-fn-cb
+                      :js-path js-path
+                      :cache-path cache-path
+                      :try-next-files-pair-fn try-next-files-pair}]
+      (if (contains? loaded-js-set name)
+        (do
+          (when verbose?
+            (common/debug-prn "Skipping js loading for " name))
+          (read-cache-file cache-opts nil))
+        (do
+          (when verbose?
+            (common/debug-prn "Reading" js-path "..."))
+          (read-js-file cache-opts read-cache-file))))
     (do
       (when verbose?
         (common/debug-prn "Cannot load cache files..."))
