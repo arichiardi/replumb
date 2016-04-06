@@ -339,7 +339,7 @@
                                       cache-path (into [cache-path])
                                       src-paths-lookup? (into src-paths))
                         cached-file-paths (load/cache-file-paths-for-load-fn cache-paths macros path)]
-                    (apply load/read-files-from-cache-and-callback! (conj args cached-file-paths)))
+                    (apply load/read-files-from-cache-and-callback! (conj args cached-file-paths name)))
                   (apply load/read-files-and-callback! args)))))
     (do (when verbose
           (common/debug-prn "Invalid :read-file-fn! or :src-paths (is it sequential? Are all paths strings?). No *load-fn* will be passed to cljs.js."))
