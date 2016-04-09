@@ -202,6 +202,7 @@ Tell us about your amazing Replumb project!
 
 | Author               | Link | Repo
 |---------------------------|------|------|
+| [@viebel](https://github.com/viebel/), [@RaphaelBoukara](https://github.com/raphaelboukara) | [KLIPSE: a simple and elegant online cljs compiler and evaluator](http://app.klipse.tech) | [klipse](https://github.com/viebel/klipse) |
 | [@joakin](https://github.com/joakin) | [Web repl + notebook](http://chimeces.com/cljs-browser-repl/) | [cljs-browser-repl](https://github.com/joakin/cljs-browser-repl) |
 | [@jaredly](https://github.com/jaredly) | [Repl w/ autocomplete, parinfer, and more](http://jaredforsyth.com/reepl/) | [Reepl](https://github.com/jaredly/reepl) |
 | [@milt](https://github.com/milt) | [Simple Emacs-flavored web repl](http://yetanalytics.github.io/re-pl/) | [re-pl](https://github.com/yetanalytics/re-pl) |
