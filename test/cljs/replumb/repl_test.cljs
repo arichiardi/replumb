@@ -25,8 +25,8 @@
         _ (repl/read-eval-call (merge e/*target-opts* {:init-fn! custom-init-fn}) (fn [_] nil) "(def c 4)")]
     (is (not (:initializing? @repl/app-env)) "Flag :initializing? should be false when the init exits")
     (is (not (:needs-init? @repl/app-env)) "Flag :needs-init? should be false when the init exits")
-    (is (= '(def c 4) (:form @init-map-atom)) "Init map should have correct :form")
-    (is (not (string? (:form @init-map-atom))) "Init map :form should not be a string")
+    (is (= "(def c 4)" (:source @init-map-atom)) "Init map should have correct :form")
+    (is (string? (:source @init-map-atom)) "Init map :form should not be a string")
     (is (= (repl/current-ns) (:ns @init-map-atom)) "Init map should have correct :ns")
     (is (symbol? (:ns @init-map-atom)) "Init map :ns should be a symbol")
     (is (= (:target e/*target-opts*) (:target @init-map-atom)) "Init map with custom init-fn! should have correct :target")))

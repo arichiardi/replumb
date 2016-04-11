@@ -981,23 +981,24 @@
   read-eval-call."
   [opts cb source]
   (try
-    (let [expression-form (read-string {:read-cond :allow :features #{:cljs}} source)
-          opts (normalize-opts opts) ;; AR - does the whole user option processing
-          data {:form expression-form
+    (let [data {:source source
                 :ns (:current-ns @app-env)
-                :target (keyword *target*)}]
+                :target (keyword *target*)}
+          opts (normalize-opts opts)] ;; AR - does the whole user option processing
       (init-repl-if-necessary! opts data)
-      (when (:verbose opts)
-        (common/debug-prn "Calling eval-str on" expression-form "with options" (common/filter-fn-keys opts)))
-      (binding [ana/*cljs-warning-handlers* [(partial custom-warning-handler opts cb)]]
-        (if (repl-special? expression-form)
-          (process-repl-special opts cb data expression-form)
-          (eval-str* (assoc (base-eval-opts! opts)
-                            :on-success-fn! (fn [eval-res]
-                                              (do
-                                                (process-1-2-3 data expression-form (:value eval-res))
-                                                (swap! app-env assoc :current-ns (:ns eval-res)))))
-                     opts cb data source))))
+      (let [expression-form (read-string {:read-cond :allow :features #{:cljs}} source)
+            data (assoc data :form expression-form)]
+        (when (:verbose opts)
+          (common/debug-prn "Calling eval-str on" expression-form "with options" (common/filter-fn-keys opts)))
+        (binding [ana/*cljs-warning-handlers* [(partial custom-warning-handler opts cb)]]
+          (if (repl-special? expression-form)
+            (process-repl-special opts cb data expression-form)
+            (eval-str* (assoc (base-eval-opts! opts)
+                              :on-success-fn! (fn [eval-res]
+                                                (do
+                                                  (process-1-2-3 data expression-form (:value eval-res))
+                                                  (swap! app-env assoc :current-ns (:ns eval-res)))))
+                       opts cb data source)))))
     (catch :default e
       (when (:verbose opts)
         (common/debug-prn "Exception caught in read-eval-call: " (.-stack e)))
