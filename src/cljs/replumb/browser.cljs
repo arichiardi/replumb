@@ -3,7 +3,7 @@
 
 (defn init-fn!
   []
-  (common/set-cljs-user! js/window)
+  (common/set-cljs-user!)
   ;; AR - mimicking clojurescript/src/main/cljs/clojure/browser/repl.cljs
   (set! (.-require__ js/goog) js/goog.require)
   ;; repl.cljs - suppress useless Google Closure error about duplicate provides
