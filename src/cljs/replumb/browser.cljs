@@ -1,8 +1,9 @@
-(ns replumb.browser)
+(ns replumb.browser
+  (:require [replumb.common :as common]))
 
 (defn init-fn!
   []
-  (set! (.. js/window -cljs -user) #js {})
+  (common/set-cljs-user! js/window)
   ;; AR - mimicking clojurescript/src/main/cljs/clojure/browser/repl.cljs
   (set! (.-require__ js/goog) js/goog.require)
   ;; repl.cljs - suppress useless Google Closure error about duplicate provides

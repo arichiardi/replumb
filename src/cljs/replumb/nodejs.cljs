@@ -1,8 +1,9 @@
-(ns replumb.nodejs)
+(ns replumb.nodejs
+  (:require [replumb.common :as common]))
 
 (defn init-fn!
   []
-  (set! (.. js/global -cljs -user) #js {})
+  (common/set-cljs-user! js/global)
   ;; AR - mimicking clojurescript/src/main/clojure/cljs/repl/node.clj
   ;; This solves https://github.com/ScalaConsultants/replumb/issues/56
   ;; node.clj - monkey-patch goog.require, skip all the loaded checks

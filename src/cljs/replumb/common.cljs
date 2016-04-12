@@ -121,3 +121,8 @@
   "Adds a / if missing at the end of the path."
   [path]
   (str path (when-not (= "/" (last path)) "/")))
+
+(defn set-cljs-user!
+  "Set up the cljs.user namespace on the input object"
+  [object]
+  (set! (.-user js/cljs) #js {}))
