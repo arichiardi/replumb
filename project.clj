@@ -15,6 +15,7 @@
                                     "dev-resources/private/browser/js/compiled" ;; browser-repl
                                     "dev-resources/private/browser/js/simple/compiled" ;; browser-repl-simple
                                     "dev-resources/private/node/js/compiled" ;; node-repl
+                                    "dev-resources/private/node/js/simple/compiled" ;; node-repl-simple
                                     "dev-resources/private/test/browser/compiled" ;; browser-test, browser-simple-test
                                     "dev-resources/private/test/node/compiled" ;; node-test, node-simple-test
                                     "dev-resources/public/js/compiled" ;; min
@@ -63,6 +64,17 @@
                                    :output-to "dev-resources/private/node/js/compiled/nodejs-repl.js"
                                    :output-dir "dev-resources/private/node/js/compiled/out"
                                    :asset-path "dev-resources/private/node/js/compiled/out"
+                                   :static-fns true
+                                   :parallel-build true}}
+                       {:id "node-repl-simple"
+                        :source-paths ["src/cljs" "src/node" "repl-demo/node/cljs"]
+                        :compiler {:target :nodejs
+                                   :optimizations :simple
+                                   :main nodejs-repl.core
+                                   :output-to "dev-resources/private/node/js/simple/compiled/nodejs-repl.js"
+                                   :output-dir "dev-resources/private/node/js/simple/compiled/out"
+                                   :asset-path "js/simple/compiled/out"
+                                   :source-map "dev-resources/private/node/js/simple/compiled/replumb-repl.js.map"
                                    :static-fns true
                                    :parallel-build true}}
                        {:id "browser-test"
@@ -133,6 +145,7 @@
             "fig-dev*" ^{:doc "Clean and start figwheel with dev profile"} ["do" "clean" ["figwheel" "dev"]]
 
             "node-repl" ^{:doc "Clean, build and launch the node demo repl. Node.js must be installed."} ["do" "clean" ["cljsbuild" "once" "node-repl"] ["shell" "scripts/node-repl.sh"]]
+            "node-repl-simple" ^{:doc "Clean, build and launch the node demo repl. Node.js must be installed."} ["do" "clean" ["cljsbuild" "once" "node-repl-simple"] ["shell" "scripts/node-repl.sh" "--simple"]]
             "browser-repl" ^{:doc "Clean, build and launch the browser demo repl."} ["do" "clean" ["cljsbuild" "once" "browser-repl"] ["shell" "scripts/browser-repl.sh"]]
             "browser-repl-simple" ^{:doc "Clean, build and launch the browser demo repl."} ["do" "clean" ["cljsbuild" "once" "browser-repl-simple"] ["shell" "scripts/browser-repl.sh"]]
 
@@ -146,7 +159,7 @@
             "test-slimer*" ^{:doc "Clean and execute once unit tests with SlimerJS (must be installed)."} ["do" "clean" ["doo" "slimer" "browser-test" "once"]]
             "auto-slimer" ^{:doc "Clean and execute automatic unit tests with SlimerJS (must be installed)."} ["do" "clean" ["doo" "slimer" "browser-test" "auto"]]
             "test-node" ^{:doc "Execute once unit tests with Node.js (must be installed)."} ["doo" "node" "node-test" "once"]
-            "test-node*" ^{:doc "Clean and execute once unit tests with Node.js (must be installed)."} ["do" "clean" ["doo" "node" "node-test" "once"]]
+            "test-node-simple" ^{:doc "Clean and execute once unit tests with Node.js (must be installed)."} ["doo" "node" "node-test-simple" "once"]
             "auto-node" ^{:doc "Clean and execute automatic unit tests with Node.js (must be installed)."} ["do" "clean" ["doo" "node" "node-test" "auto"]]
             "tests" ^{:doc "Execute once unit tests with PhantomJS and SlimerJS (must be installed)."} ["doo" "headless" "browser-test" "once"]
             "tests*" ^{:doc "Clean and execute once unit tests with PhantomJS and SlimerJS (must be installed)."} ["do" "clean" ["doo" "headless" "browser-test" "once"]]}
