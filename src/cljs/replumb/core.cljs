@@ -164,7 +164,7 @@
   Supported targets: `:nodejs` or `:node`, `:browser`. It throws if not
   supported.
 
-  The 1-arity function requires a `load-fn!` compatible with
+  The 2-arity function requires a `load-fn!` compatible with
   ClojureScript `cljs.js/*load-fn*`. Use it if you know what you are
   doing and follow this protocol:
 
@@ -188,13 +188,13 @@
       If the resource could not be resolved, the callback should be invoked with
       nil.
 
-  The 2-arity function accepts a sequence of source path strings and
+  The 3-arity function accepts a sequence of source path strings and
   `read-file-fn!`, an asynchronous 2-arity function with signature
   `[file-path src-cb]` where src-cb is itself a function `(fn [source]
   ...)` that needs to be called with the file content as string (`nil`
   if no file is found).
 
-  The 3-arity function receives additionally a third parameter `write-file-fn!`,
+  The 4-arity function receives additionally a fourth parameter `write-file-fn!`,
   a synchronous 2-arity function with signature `[file-path data]` that accepts
   a file-path and data to write."
   ([target load-fn!]
