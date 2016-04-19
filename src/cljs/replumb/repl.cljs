@@ -961,6 +961,8 @@
   * :foreign-libs - a way to include foreign libraries. The format is analogous
   to the compiler option.
 
+  * :static-fns - static dispatch in generated JavaScript.
+
   The second parameter cb, is a 1-arity function which receives the
   result map.
 

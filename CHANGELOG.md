@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.2
+
+- Clojurescript 1.8.40 support
+- Add :static-fns option
+- Fix of the empty cljs.user object, now node works with :optimizations :simple
+- Fix for [issue #155](https://github.com/Lambda-X/replumb/issues/155) - defect with condp
+
 ## 0.2.1
 - Clojurescript 1.8.34 support
 - Fix for avoiding printing debug messages when doc is called
