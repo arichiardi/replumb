@@ -32,7 +32,7 @@
   (js/$
    (fn []
      (let [repl-opts (merge (replumb/options :browser
-                                             ["/src/cljs" "/js/compiled/out"]
+                                             ["/src/clj" "/src/cljs" "/js/compiled/out"]
                                              io/fetch-file!)
                             {:warning-as-error true
                              :verbose true})
