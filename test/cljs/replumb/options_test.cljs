@@ -1,4 +1,4 @@
-(ns ^:figwheel-load replumb.options-test
+(ns replumb.options-test
   (:require [cljs.test :refer-macros [deftest is]]
             [replumb.repl :refer [valid-opts-set valid-opts normalize-opts]]))
 
@@ -16,8 +16,9 @@
               :cache {:path "cache/path" :src-paths-lookup? true}
               :context :statement
               :foreign-libs [{:file "processing.js"
-                              :provides ["org.processingjs.Processing"]}]}]
-    (is (every? valid-opts-set (keys (valid-opts opts))) "Please always add valid options to valid-opts-set")))
+                              :provides ["org.processingjs.Processing"]}]
+              :static-fns true}]
+    (is (= (into #{} (keys (valid-opts opts))) valid-opts-set) "Please always add valid options to valid-opts-set")))
 
 (deftest options-target
   (is (= :default (:target (normalize-opts {:target :browser}))) "Target :browser is actually :default")

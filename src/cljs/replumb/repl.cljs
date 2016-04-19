@@ -156,7 +156,7 @@
     :load (:load-fn! user-opts)
     :eval (make-js-eval-fn user-opts)
     :verbose (or (:verbose user-opts) false)
-    :static-fns false}))
+    :static-fns (or (:static-fns user-opts) false)}))
 
 (defn load-eval-opts!
   [user-opts file-name]
@@ -355,7 +355,7 @@
   #{:verbose :warning-as-error :target :init-fn!
     :no-pr-str-on-value :load-fn! :read-file-fn!
     :write-file-fn! :src-paths :cache :context
-    :foreign-libs})
+    :foreign-libs :static-fns})
 
 (defn valid-opts
   "Validate the input user options. Returns a new map without invalid
