@@ -123,6 +123,6 @@
   (str path (when-not (= "/" (last path)) "/")))
 
 (defn set-cljs-user!
-  "Set up the cljs.user namespace on the input object"
-  [object]
+  "Set up the cljs.user namespace"
+  []
   (set! (.-user js/cljs) #js {}))

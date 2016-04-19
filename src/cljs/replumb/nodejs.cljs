@@ -3,7 +3,7 @@
 
 (defn init-fn!
   []
-  (common/set-cljs-user! js/global)
+  (common/set-cljs-user!)
   ;; AR - mimicking clojurescript/src/main/clojure/cljs/repl/node.clj
   ;; This solves https://github.com/ScalaConsultants/replumb/issues/56
   ;; node.clj - monkey-patch goog.require, skip all the loaded checks
