@@ -29,8 +29,7 @@
 (defonce app-env (atom {:current-ns 'cljs.user
                         :last-eval-warning nil
                         :initializing? false
-                        :needs-init? true
-                        :previous-init-opts {}}))
+                        :needs-init? true}))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;; Util fns - many from mfikes/plank ;;;
@@ -824,13 +823,6 @@
 ;;; Initialization ;;;
 ;;;;;;;;;;;;;;;;;;;;;;
 
-(def init-option-set #{:init-fn! :src-paths})
-
-(defn auto-init-opts
-  "Just assoc the options to persist to the input map."
-  [opts]
-  (into {} (filter #(init-option-set (first %)) opts)))
-
 ;;; Init FSM
 
 (defn initializing-state
@@ -849,8 +841,7 @@
   [old-app-env opts]
   {:pre [(:needs-init? old-app-env) (:initializing? old-app-env)]}
   (merge old-app-env {:initializing? false
-                      :needs-init? false
-                      :previous-init-opts (auto-init-opts opts)}))
+                      :needs-init? false}))
 
 (defn needs-init-state
   "Reset the initialization state, moving to \"Needs Init\", signaling
@@ -859,27 +850,12 @@
   (merge old-app-env {:initializing? false
                       :needs-init? true}))
 
-(defn needs-init-from-opts-state
-  "Update the :previous-auto-init-opts and, if necessary, also
-  turns :needs-init? to true, concretely deciding whether when need to
-  initialise again. Move the state to \"Needs Init\"."
-  [old-app-env new-opts]
-  (if-not (= (:previous-init-opts old-app-env)
-             (auto-init-opts new-opts))
-    (needs-init-state old-app-env)
-    old-app-env))
-
 (defn force-init!
   "Force the initialization at the next read-eval-call. Use this every
   time an option that needs to be read at initialization time changes,
   e.g. :source-path. In the future this will be automated."
   []
   (swap! app-env needs-init-state))
-
-(defn reset-init-opts!
-  "Reset the initialization persisted options."
-  []
-  (swap! app-env assoc :previous-init-opts {}))
 
 (defn init-repl!
   "The init-repl function. It uses the following opts keys:
@@ -899,9 +875,7 @@
 
 (defn init-repl-if-necessary!
   [opts data]
-  (when (:needs-init? (swap! app-env #(-> %
-                                          (needs-init-from-opts-state opts)
-                                          initializing-state)))
+  (when (:needs-init? (swap! app-env initializing-state))
     (do (init-repl! opts data)
         (swap! app-env initialized-state opts))))
 
