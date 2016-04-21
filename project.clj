@@ -108,17 +108,17 @@
                                    :static-fns true
                                    :parallel-build true
                                    :closure-defines {"goog.DEBUG" false}}}
-                       #_{:id "node-test-simple"
-                          :source-paths ["src/cljs" "src/node" "test/cljs" "test/node"]
-                          :compiler {:target :nodejs
-                                     :optimizations :simple
-                                     :main launcher.runner
-                                     :output-to "dev-resources/private/test/node/compiled/nodejs-test.js"
-                                     :output-dir "dev-resources/private/test/node/compiled/out"
-                                     :asset-path "dev-resources/private/test/node/compiled/out"
-                                     :static-fns true
-                                     :parallel-build true
-                                     :closure-defines {"goog.DEBUG" false}}}
+                       {:id "node-test-simple"
+                        :source-paths ["src/cljs" "src/node" "test/cljs" "test/node"]
+                        :compiler {:target :nodejs
+                                   :optimizations :simple
+                                   :main launcher.runner
+                                   :output-to "dev-resources/private/test/node/compiled/nodejs-test.js"
+                                   :output-dir "dev-resources/private/test/node/compiled/out"
+                                   :asset-path "dev-resources/private/test/node/compiled/out"
+                                   :static-fns true
+                                   :parallel-build true
+                                   :closure-defines {"goog.DEBUG" false}}}
                        {:id "min"
                         :source-paths ["src/cljs"]
                         :compiler { ;; :main cljs-browser-repl.core ;; https://github.com/emezeske/lein-cljsbuild/issues/420
@@ -147,19 +147,27 @@
             "browser-repl-simple" ^{:doc "Clean, build and launch the browser demo repl."} ["do" "clean" ["cljsbuild" "once" "browser-repl-simple"] ["shell" "scripts/browser-repl.sh"]]
 
             "minify" ^{:doc "Compile sources minified for production."} ["cljsbuild" "once" "min"]
-            "minify*" ^{:doc "Clean and compile sources minified for production."} ["do" "clean" ["cljsbuild" "once" "min"]]
 
             "test-phantom" ^{:doc "Execute once unit tests with PhantomJS (must be installed)."} ["doo" "phantom" "browser-test" "once"]
-            "test-phantom*" ^{:doc "Clean and execute once unit tests with PhantomJS (must be installed)."} ["do" "clean" ["doo" "phantom" "browser-test" "once"]]
-            "auto-phantom" ^{:doc "Clean and execute automatic unit tests with PhantomJS (must be installed)."} ["do" "clean" ["doo" "phantom" "browser-test" "auto"]]
             "test-slimer" ^{:doc "Execute once unit tests with SlimerJS (must be installed)."} ["doo" "slimer" "browser-test" "once"]
-            "test-slimer*" ^{:doc "Clean and execute once unit tests with SlimerJS (must be installed)."} ["do" "clean" ["doo" "slimer" "browser-test" "once"]]
-            "auto-slimer" ^{:doc "Clean and execute automatic unit tests with SlimerJS (must be installed)."} ["do" "clean" ["doo" "slimer" "browser-test" "auto"]]
             "test-node" ^{:doc "Execute once unit tests with Node.js (must be installed)."} ["doo" "node" "node-test" "once"]
             "test-node-simple" ^{:doc "Clean and execute once unit tests with Node.js (must be installed)."} ["doo" "node" "node-test-simple" "once"]
+
+            "auto-phantom" ^{:doc "Clean and execute automatic unit tests with PhantomJS (must be installed)."} ["do" "clean" ["doo" "phantom" "browser-test" "auto"]]
+            "auto-slimer" ^{:doc "Clean and execute automatic unit tests with SlimerJS (must be installed)."} ["do" "clean" ["doo" "slimer" "browser-test" "auto"]]
             "auto-node" ^{:doc "Clean and execute automatic unit tests with Node.js (must be installed)."} ["do" "clean" ["doo" "node" "node-test" "auto"]]
-            "tests" ^{:doc "Execute once unit tests with PhantomJS and SlimerJS (must be installed)."} ["doo" "headless" "browser-test" "once"]
-            "tests*" ^{:doc "Clean and execute once unit tests with PhantomJS and SlimerJS (must be installed)."} ["do" "clean" ["doo" "headless" "browser-test" "once"]]}
+            "auto-node-simple" ^{:doc "Clean and execute once unit tests with Node.js (must be installed)."} ["do" "clean" ["doo" "node" "node-test-simple" "auto"]]
+
+            "tests" ^{:doc "Clean and execute all the unit tests (PhantomJS must be installed)."} ["do" "clean"
+                                                                                                   ["doo" "phantom" "browser-test" "once"]
+                                                                                                   ;; AR
+                                                                                                   ;; In leiningen we don't have a way to generate the source files necessary for node-test-simple to work by itself
+                                                                                                   ;; This feat is done by https://github.com/Lambda-X/boot-pack-source but it is boot only.
+                                                                                                   ;; What happens here is that node-test generates the source for the following node-test-simple files
+                                                                                                   ;;
+                                                                                                   ;; WARNING: they both need to generate code in the same folder or they will break
+                                                                                                   ["doo" "node" "node-test" "once"]
+                                                                                                   ["doo" "node" "node-test-simple" "once"]]}
 
   :deploy-repositories [["releases" {:url "https://clojars.org/repo"
                                      :signing {:gpg-key "clojars@scalac.io"}
