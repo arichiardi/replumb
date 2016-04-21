@@ -950,11 +950,7 @@
   :warning  - in case a warning was thrown and :warning-as-error is falsey
   :form     - the evaluated form as data structure (not a string)
 
-  The third parameter is the source string to be read and evaluated.
-
-  It initializes the repl harness either on first execution or if an
-  option in #{:src-paths :init-fn!} changes from the previous
-  read-eval-call."
+  The third parameter is the source string to be read and evaluated."
   [opts cb source]
   (try
     (let [data {:source source

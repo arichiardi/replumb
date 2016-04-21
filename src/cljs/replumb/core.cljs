@@ -96,11 +96,7 @@
   :form      the evaluated form as data structure (not string)}
   ```
 
-  The third parameter is the source string to be read and evaluated.
-
-  It initializes the repl harness either on first execution or if an
-  option in `#{:src-paths :init-fn!}` changes from the previous
-  `read-eval-call`."
+  The third parameter is the source string to be read and evaluated."
   ([callback source] (repl/read-eval-call {} callback source))
   ([opts callback source] (repl/read-eval-call opts callback source)))
 
