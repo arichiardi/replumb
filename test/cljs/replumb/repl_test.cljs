@@ -9,19 +9,10 @@
 
 (h/read-eval-call-test e/*target-opts*
   ["(def a \"bogus-op\")"]
-  (is (symbol? (repl/current-ns)) "The current ns should be a symbol"))
-
-(h/read-eval-call-test e/*target-opts*
-  ["(def a \"bogus-op\")"]
-  (let [_ (repl/force-init!)]
-    (is (not (:initializing? @repl/app-env)) "After force-init! :initializing? should be false before init")
-    (is (:needs-init? @repl/app-env) "After force-init!, :needs-init? should be true before init")))
-
-(h/read-eval-call-test e/*target-opts*
-  ["(def a \"bogus-op\")"]
-  (let [init-map-atom (atom {})
+  (let [needs-init-state {:initializing? false :needs-init? true}
+        init-map-atom (atom {})
         custom-init-fn (fn [init-map] (reset! init-map-atom init-map))
-        _ (swap! repl/app-env merge {:initializing? false :needs-init? true})
+        _ (swap! repl/app-env merge needs-init-state)
         _ (repl/read-eval-call (merge e/*target-opts* {:init-fn! custom-init-fn}) (fn [_] nil) "(def c 4)")]
     (is (not (:initializing? @repl/app-env)) "Flag :initializing? should be false when the init exits")
     (is (not (:needs-init? @repl/app-env)) "Flag :needs-init? should be false when the init exits")
@@ -33,9 +24,13 @@
 
 (h/read-eval-call-test e/*target-opts*
   ["(def a \"bogus-op\")"]
-  (let [_ (repl/read-eval-call (merge e/*target-opts* {:src-paths ["my/custom/path"]}) (fn [_] nil) "(def c 4)")
-        previous-init-opts (:previous-init-opts @repl/app-env)]
-    (is (some #{"my/custom/path"} (:src-paths previous-init-opts)) "After changing :src-paths the new app-env should contain the new path")))
+  (is (symbol? (repl/current-ns)) "The current ns should be a symbol"))
+
+(h/read-eval-call-test e/*target-opts*
+  ["(def a \"bogus-op\")"]
+  (let [_ (repl/force-init!)]
+    (is (not (:initializing? @repl/app-env)) "After force-init! :initializing? should be false before init")
+    (is (:needs-init? @repl/app-env) "After force-init!, :needs-init? should be true before init")))
 
 (h/read-eval-call-test e/*target-opts*
   ["(throw (ex-info \"This is my custom error message %#FT%\" {:tag :exception}))"

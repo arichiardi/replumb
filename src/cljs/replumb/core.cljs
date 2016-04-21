@@ -237,5 +237,4 @@
   (repl/read-eval-call opts identity "(in-ns 'cljs.user)")
   ;; Other side effects
   (repl/reset-last-warning!)
-  (repl/read-eval-call opts identity "(set! *e nil)")
-  (repl/reset-init-opts!))
+  (repl/read-eval-call opts identity "(set! *e nil)"))
