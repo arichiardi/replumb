@@ -114,7 +114,8 @@
                                    :optimizations :simple
                                    :main launcher.runner
                                    :output-to "dev-resources/private/test/node/compiled/nodejs-test.js"
-                                   :output-dir "dev-resources/private/test/node/compiled/out"
+                                   :output-dir "dev-resources/private/test/node/compiled/simple/out"
+                                   ;; AR we trick the runtime to look at out from :none
                                    :asset-path "dev-resources/private/test/node/compiled/out"
                                    :static-fns true
                                    :parallel-build true
