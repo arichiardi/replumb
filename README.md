@@ -213,6 +213,6 @@ Distributed under the Eclipse Public License, the same as Clojure.
 
 Copyright (C) 2015-16 Scalac Sp. z o.o.
 
-Scalac [scalac.io](http://scalac.io/?utm_source=scalac_github&utm_campaign=scalac1&utm_medium=web) is a full-stack team of great functional developers focused around Scala/Clojure backed by great frontend and mobile developers.
+LambdaX [lambdax.io](http://lambdax.io/) is a Clojure-centric software house: functional experts dedicated to Clojure and ClojureScript. 
 
-On our [blog](http://blog.scalac.io/?utm_source=scalac_github&utm_campaign=scalac1&utm_medium=web) we share our knowledge with community on how to write great, clean code, how to work remotely and about our culture.
+On our [blog](http://lambdax.io/blog) we share our knowledge with the community. Put `(defn)` back into programming!
