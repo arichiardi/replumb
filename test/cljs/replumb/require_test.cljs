@@ -113,34 +113,21 @@ clojure.set
 (h/read-eval-call-test e/*target-opts*
   ["(find-doc \"[^(]newline[^s*]\")"]
   (let [result (unwrap-result @_res_)
-        expected "-------------------------
-*flush-on-newline*
-  When set to true, output will be flushed whenever a newline is printed.
-
-  Defaults to true.
-"]
+        expected #"-------------------------\s+\*flush-on-newline\*\s+When set to true"]
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? result) (str _msg_ "should  be a valid result"))
-    (is (= expected result) (str _msg_ "should return valid docstring"))))
+    (is (re-find expected result) (str _msg_ "should return valid docstring"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(require 'clojure.string)"
    "(find-doc \"[^(]newline[^s*]\")"]
   (let [result (unwrap-result @_res_)
-        expected "-------------------------
-*flush-on-newline*
-  When set to true, output will be flushed whenever a newline is printed.
-
-  Defaults to true.
--------------------------
-trim-newline
-([s])
-  Removes all trailing newline \\n or return \\r characters from
-  string.  Similar to Perl's chomp.
-"]
+        expected1 #"-------------------------\s+\*flush-on-newline\*\s+When set to true"
+        expected2 #"-------------------------\s+trim-newline\s\(\[s\]\)\s+Removes all trailing newline"]
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? result) (str _msg_ "should be a valid result"))
-    (is (= expected result) (str _msg_ "should return valid docstring"))))
+    (is (re-find expected1 result) (str _msg_ "should return expected (part 1) docstring"))
+    (is (re-find expected2 result) (str _msg_ "should return expected (part 2) docstring"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(load-file \"foo/load.clj\")"]
