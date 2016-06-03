@@ -2,7 +2,9 @@
 
 ## 0.2.2
 
-- Clojurescript 1.8.40 support
+- Clojurescript 1.9.36 support
+- Replumb now work with :optimizations :simple (tests are covering it as well)
+- Skip loading already required JavaScript namespaces (see [this commit](https://github.com/Lambda-X/replumb/commit/5e0428c7088712108d6199d52329740fdeeb108a) for details)
 - Add :static-fns option
 - Fix of the empty cljs.user object, now node works with :optimizations :simple
 - Fix for [issue #155](https://github.com/Lambda-X/replumb/issues/155) - defect with condp
