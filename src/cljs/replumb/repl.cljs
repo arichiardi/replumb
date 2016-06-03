@@ -354,7 +354,7 @@
   #{:verbose :warning-as-error :target :init-fn!
     :no-pr-str-on-value :load-fn! :read-file-fn!
     :write-file-fn! :src-paths :cache :context
-    :foreign-libs :static-fns})
+    :foreign-libs :static-fns :init})
 
 (defn valid-opts
   "Validate the input user options. Returns a new map without invalid
@@ -857,6 +857,25 @@
   []
   (swap! app-env needs-init-state))
 
+(defn process-init-requires
+  "Builds a `ns` form the provided map and evaluates it before any
+  other evaluation."
+  ([opts data {:keys [nss cb]}]
+   (let [ns-source (str "(ns " (:current-ns @app-env) \space
+                        (reduce (fn [s spec]
+                                  (str s " (" (first spec) \space
+                                       (clojure.string/join \space (second spec)) ")"))
+                                ""
+                                nss)
+                        ")")]
+     (eval-str* (base-eval-opts! opts)
+                opts
+                (if (and cb (fn? cb))
+                  #(cb %)
+                  identity)
+                data
+                ns-source))))
+
 (defn init-repl!
   "The init-repl function. It uses the following opts keys:
 
@@ -871,7 +890,10 @@
     (common/debug-prn "Initializing REPL environment with data" (with-out-str (pprint data))))
   ;; Target/user init, we need at least one init-fn, the default init function
   (doseq [init-fn! (:init-fns opts)]
-    (init-fn! data)))
+    (init-fn! data))
+  ;; require namespaces at init time if needed
+  (when (seq (get-in opts [:init :nss]))
+    (process-init-requires opts data (:init opts))))
 
 (defn init-repl-if-necessary!
   [opts data]
@@ -936,6 +958,13 @@
   to the compiler option.
 
   * :static-fns - static dispatch in generated JavaScript.
+
+  * :init - a map containing a set of namespaces to load before any other
+  evaluation and a callback cb to call upon completion. The nss map will
+  contain keys that will match the directive type (:require, :use,
+  :require-macros, ect) and values that will be a set of specs of namespaces
+  to load. The format of the values is analogous to the ClojureScript ns form,
+  e.g. '[my.ns :refer [v1 f1]].
 
   The second parameter cb, is a 1-arity function which receives the
   result map.
