@@ -585,3 +585,19 @@ clojure.set
         (is (valid-eval-result? out) (str _msg_ " should be a valid result"))
         (is (= 'cljs.user (repl/current-ns)) (str _msg_ " should not change namespace"))
         (is (= "\"post\"" out) (str _msg_ " should return \"post\""))))))
+
+(h/read-eval-call-test e/*target-opts*
+  [:before (repl/force-init!)
+   "(fun3 2)"]
+  (let [res (unwrap-result @_res_)]
+    (is (not (success? @_res_)) (str _msg_ "should fail."))
+    (is (valid-eval-error? res) (str _msg_ "should be an error"))
+    (is (re-find #"Cannot read property 'call' of undefined" (extract-message res)) (str _msg_ "should be 60"))))
+
+(h/read-eval-call-test (assoc e/*target-opts* :init {:nss {:use #{'[init-require.test3 :only [fun3]]}}})
+  [:before (repl/force-init!)
+   "(fun3 2)"]
+  (let [res (unwrap-result @_res_)]
+    (is (success? @_res_) (str _msg_ "should succeed."))
+    (is (valid-eval-result? res) (str _msg_ "should be a valid result"))
+    (is (= "60" res) (str _msg_ "should be 60"))))

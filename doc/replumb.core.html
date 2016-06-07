@@ -80,6 +80,8 @@ nil.
   <p><code>:foreign-libs</code> - a way to include foreign libraries. The format is analogous to the compiler option. For more info visit the <a href="https://github.com/clojure/clojurescript/wiki/Compiler-Options#foreign-libs">compiler options page</a>.</p></li>
   <li>
   <p><code>:static-fns</code> - static dispatch in generated JavaScript. See the <a href="https://github.com/clojure/clojurescript/wiki/Compiler-Options#static-fns">compiler option page</a>.</p></li>
+  <li>
+  <p>:init - a map containing a set of namespaces to load before any other evaluation and a callback cb to call upon completion. The nss map will contain keys that will match the directive type (:require, :use, :require-macros, ect) and values that will be a set of specs of namespaces to load. The format of the values is analogous to the ClojureScript ns form, e.g. &rsquo;[my.ns :refer [v1 f1]].</p></li>
 </ul>
 <p>The second parameter, <code>callback</code>, should be a 1-arity function which receives the result map, whose result keys will be:</p>
 <pre><code>:success?  a boolean indicating if everything went alright
