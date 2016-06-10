@@ -1,13 +1,13 @@
-(defproject replumb/replumb "0.2.2"
+(defproject replumb/replumb "0.2.3-SNAPSHOT"
   :description "ClojureScript plumbing for your bootstrapped REPLs."
   :url "https://github.com/Lambda-X/replumb"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.9.0-alpha4"]
-                 [org.clojure/clojurescript "1.9.36"]
-                 [org.clojure/tools.reader "1.0.0-alpha3"]
-                 [com.cognitect/transit-clj "0.8.285"]
-                 [com.cognitect/transit-cljs "0.8.237"]]
+                 [org.clojure/clojurescript "1.9.36" :scope "test"]
+                 [org.clojure/tools.reader "1.0.0-alpha3" :scope "test"]
+                 [com.cognitect/transit-clj "0.8.285" :scope "test"]
+                 [com.cognitect/transit-cljs "0.8.237" :scope "test"]]
 
   :plugins [[lein-cljsbuild "1.1.3"]
             [lein-codox "0.9.0"]]
