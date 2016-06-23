@@ -1,4 +1,4 @@
-// Compiled by ClojureScript 1.9.36 {:static-fns true, :target :nodejs}
+// Compiled by ClojureScript 1.9.89 {:static-fns true, :target :nodejs}
 goog.provide('clojure.set');
 goog.require('cljs.core');
 clojure.set.bubble_max_key = (function clojure$set$bubble_max_key(k,coll){
