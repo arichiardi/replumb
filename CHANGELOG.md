@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.2.3
+
+- Clojurescript 1.9.93 support
+- Add `:preloads` option - mimicking the core feature but actually also providing a way to `require/require-macros/use/use-macros/import` whatever symbol you need at init time.
+
 ## 0.2.2
 
 - Clojurescript 1.9.36 support

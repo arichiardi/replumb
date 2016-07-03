@@ -594,10 +594,56 @@ clojure.set
     (is (valid-eval-error? res) (str _msg_ "should be an error"))
     (is (re-find #"Cannot read property 'call' of undefined" (extract-message res)) (str _msg_ "should be 60"))))
 
-(h/read-eval-call-test (assoc e/*target-opts* :init {:nss {:use #{'[init-require.test3 :only [fun3]]}}})
+(h/read-eval-call-test (assoc e/*target-opts* :preloads '[init-require.test1 init-require.test2])
   [:before (repl/force-init!)
-   "(fun3 2)"]
+   "(+ (init-require.test1/fun1 2) (init-require.test2/fun2 2))"]
+  (let [res (unwrap-result @_res_)]
+    (is (success? @_res_) (str _msg_ " (where :preloads is a sequence of symbols) should succeed."))
+    (is (valid-eval-result? res) (str _msg_ " (where :preloads is a sequence of symbols) should be a valid result"))
+    (is (= "60" res) (str _msg_ "should be 60"))))
+
+(h/read-eval-call-test (assoc e/*target-opts* :preloads {:use '#{[init-require.test1 :only [fun1]]
+                                                                 [init-require.test2 :only [fun2]]}})
+  [:before (repl/force-init!)
+   "(+ (fun1 2) (fun2 2))"]
   (let [res (unwrap-result @_res_)]
     (is (success? @_res_) (str _msg_ "should succeed."))
     (is (valid-eval-result? res) (str _msg_ "should be a valid result"))
     (is (= "60" res) (str _msg_ "should be 60"))))
+
+(h/read-eval-call-test (assoc e/*target-opts* :preloads {:require '#{[init-require.test1 :as test1]
+                                                                     [init-require.test2 :as test2]}})
+  [:before (repl/force-init!)
+   "(+ (test1/fun1 2) (test2/fun2 2))"]
+  (let [res (unwrap-result @_res_)]
+    (is (success? @_res_) (str _msg_ "should succeed."))
+    (is (valid-eval-result? res) (str _msg_ "should be a valid result"))
+    (is (= "60" res) (str _msg_ "should be 120"))))
+
+(h/read-eval-call-test (assoc e/*target-opts* :preloads {:require-macros '#{[init-require.test3 :refer [fun3]]}
+                                                         :require '#{[init-require.test2 :refer [fun2]]
+                                                                     init-require.test3}})
+  [:before (repl/force-init!)
+   "(+ (fun3 2) (fun2 2))"
+   :after (repl/purge-cljs-user! '[init-require.test3])]
+  (let [res (unwrap-result @_res_)]
+    (is (success? @_res_) (str _msg_ "should succeed."))
+    (is (valid-eval-result? res) (str _msg_ "should be a valid result"))
+    (is (= "100" res) (str _msg_ "should be 120"))))
+
+(h/read-eval-call-test (assoc e/*target-opts* :preloads {:import #{foo.bar.baz.MyRecord}})
+  [:before (repl/force-init!)
+   "(apply str ((juxt :first :second) (foo.bar.baz.MyRecord. \"ABC\" \"DEF\")))"]
+  (let [res (unwrap-result @_res_)]
+    (is (success? @_res_) (str _msg_ "should succeed."))
+    (is (valid-eval-result? res) (str _msg_ "should be a valid result"))
+    (is (re-find #"ABCDEF" res) "The result should be ABCDEF")))
+
+(h/read-eval-call-test (assoc e/*target-opts* :preloads {:require #{}})
+  [:before (repl/force-init!)
+   "(def a 3)
+   a"]
+  (let [res (unwrap-result @_res_)]
+    (is (success? @_res_) (str _msg_ "should succeed."))
+    (is (valid-eval-result? res) (str _msg_ "should be a valid result"))
+    (is (= "3" res) (str _msg_ "should be 3"))))

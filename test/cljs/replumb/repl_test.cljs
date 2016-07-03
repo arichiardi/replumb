@@ -1,11 +1,18 @@
 (ns replumb.repl-test
-  (:require [cljs.test :refer-macros [is]]
+  (:require [cljs.test :refer-macros [is deftest]]
             [replumb.repl :as repl]
             [replumb.load :as load]
             [replumb.core :as core :refer [success? unwrap-result]]
             [replumb.common :as common :refer [echo-callback valid-eval-result? extract-message valid-eval-error? has-valid-warning?]]
             [replumb.test-env :as e]
             [replumb.test-helpers :as h :include-macros true]))
+
+(deftest make-ns-string
+  (is (= "(ns cljs.user)" (replumb.repl/make-ns-string {} 'cljs.user)) "Empty map should return an empty ns form")
+  (is (= "(ns cljs.user)" (replumb.repl/make-ns-string {:require []} 'cljs.user)) "Empty spec sequence should return an empty ns form")
+  (is (= "(ns cljs.user (:require my-ns your-ns))" (replumb.repl/make-ns-string {:require '[my-ns your-ns]} 'cljs.user)) "Require in spec return correct ns form")
+  (is (= "(ns cljs.user (:require my-ns your-ns) (:use their-ns))" (replumb.repl/make-ns-string {:require '[my-ns your-ns]
+                                                                                                   :use '[their-ns]} 'cljs.user)) "Require and use in spec return correct ns form"))
 
 (h/read-eval-call-test e/*target-opts*
   ["(def a \"bogus-op\")"]

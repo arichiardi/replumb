@@ -53,7 +53,7 @@ There is one entry namespace, ```replumb.core```, whose functions you should cal
 ```
 
 Note that `replumb`, like ClojureScript, abstracts over `IO` details. You will
-need to provide your own read/write functions for it to work. There are examples of 
+need to provide your own read/write functions for it to work. There are examples of
 this in both `replumb.browser.io` and `replumb.nodejs.io` that you can freely copy over.
 
 ## Read-eval-call options
@@ -70,6 +70,7 @@ To customize how to print, use `(set! *print-fn* (fn [& args] ...)`
 * `:warning-as-error` will consider a compiler warning as error.
 * `:target` `:nodejs` and `:browser` supported, the latter is used if
 missing.
+
 * `:init-fn!` user provided initialization function, it will be passed a
 map:
 
@@ -102,7 +103,7 @@ you know what you are doing and follow this protocol:
     >
     > If the resource could not be resolved, the callback should be invoked with
     > nil.
-    
+
 * `:read-file-fn!` an asynchronous 2-arity function with signature
 `[file-path src-cb]` where src-cb is itself a function `(fn [source]
 ...)` that needs to be called with the file content as string (`nil`
@@ -131,6 +132,17 @@ to the compiler option. For more info visit the [compiler option page](https://g
 
 * `:static-fns` - static dispatch in generated JavaScript. See the
   [compiler option page](https://github.com/clojure/clojurescript/wiki/Compiler-Options#static-fns).
+
+* `:preloads` - accepts either a sequence of symbols, akin to the core feature,
+  or a map containing keys to specs, analogous to the `:ns` form syntax:
+
+  ```clojure
+  {:preloads {:require '#{[my-ns.core :refer [init]] your-ns.core}
+              :use '#{their-ns}
+              :cb #(println "Result:" %)}}
+  ```
+  (Note the set, order does not matter)
+
 
 The second parameter, `callback`, should be a 1-arity function which receives
 the `result` map, whose result keys will be:
@@ -213,6 +225,6 @@ Distributed under the Eclipse Public License, the same as Clojure.
 
 Copyright (C) 2015-16 Scalac Sp. z o.o.
 
-LambdaX [lambdax.io](http://lambdax.io/) is a Clojure-centric software house: functional experts dedicated to Clojure and ClojureScript. 
+LambdaX [lambdax.io](http://lambdax.io/) is a Clojure-centric software house: functional experts dedicated to Clojure and ClojureScript.
 
 On our [blog](http://lambdax.io/blog) we share our knowledge with the community. Put `(defn)` back into programming!
