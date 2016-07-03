@@ -18,7 +18,7 @@
               :foreign-libs [{:file "processing.js"
                               :provides ["org.processingjs.Processing"]}]
               :static-fns true
-              :init {:nss #{'[foo.baz.baz :as foo]}}}]
+              :preloads '[foo.baz.baz]}]
     (is (= (into #{} (keys (valid-opts opts))) valid-opts-set) "Please always add valid options to valid-opts-set")))
 
 (deftest options-target

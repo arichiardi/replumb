@@ -275,6 +275,26 @@
                   ~@(-> specs canonicalize-specs process-reloads!)))
       {:merge true :line 1 :column 1})))
 
+(defn make-ns-string
+  "Make a ns form as string, starting from a map of kind and specs as
+  in:
+
+  {:require #{[my-ns] [your-ns]}
+   :use #{their-ns}}
+
+  This function does not perform any validation of the kind
+  keys (:require, :use, etc...)."
+  [kind-and-specs target-ns]
+  (str "(ns " target-ns
+       (when-let [s (not-empty
+                     (reduce-kv (fn [s kind specs]
+                                  (when (seq specs)
+                                    (str (if (seq s) (str s \space) s)
+                                         "(" kind \space (clojure.string/join \space specs) ")")))
+                                ""
+                                kind-and-specs))]
+         (str " " s)) ")"))
+
 (defn file-path-from-goog-dependencies
   "Retrives the path for a file from (.-dependencies_.nameToPath js/goog). If
   not found will returns nil."
@@ -354,7 +374,7 @@
   #{:verbose :warning-as-error :target :init-fn!
     :no-pr-str-on-value :load-fn! :read-file-fn!
     :write-file-fn! :src-paths :cache :context
-    :foreign-libs :static-fns :init})
+    :foreign-libs :static-fns :preloads})
 
 (defn valid-opts
   "Validate the input user options. Returns a new map without invalid
@@ -819,6 +839,26 @@
       find-doc (process-find-doc opts cb data argument)
       load-file (process-load-file opts cb data argument))))
 
+(defn process-init-requires
+  "Builds a `ns` for the given specs and evaluates it."
+  ([opts cb data specs]
+   (let [verbose (:verbose opts)
+         ns-form (make-ns-string specs (:current-ns @app-env))]
+     (when verbose
+       (common/debug-prn "Spec for :preloads" ns-form))
+     (cljs/eval-str
+       st
+       ns-form
+       ns-form
+       (base-eval-opts! opts)
+       (fn [res]
+         (when verbose
+           (common/debug-prn "Evaluation returned (:preloads): " res))
+         (if (fn? cb)
+           #(cb %)
+           (when verbose
+             (common/debug-prn "The :cb key did not contain a function, skipping..."))))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;
 ;;; Initialization ;;;
 ;;;;;;;;;;;;;;;;;;;;;;
@@ -857,25 +897,6 @@
   []
   (swap! app-env needs-init-state))
 
-(defn process-init-requires
-  "Builds a `ns` form the provided map and evaluates it before any
-  other evaluation."
-  ([opts data {:keys [nss cb]}]
-   (let [ns-source (str "(ns " (:current-ns @app-env) \space
-                        (reduce (fn [s spec]
-                                  (str s " (" (first spec) \space
-                                       (clojure.string/join \space (second spec)) ")"))
-                                ""
-                                nss)
-                        ")")]
-     (eval-str* (base-eval-opts! opts)
-                opts
-                (if (and cb (fn? cb))
-                  #(cb %)
-                  identity)
-                data
-                ns-source))))
-
 (defn init-repl!
   "The init-repl function. It uses the following opts keys:
 
@@ -891,9 +912,12 @@
   ;; Target/user init, we need at least one init-fn, the default init function
   (doseq [init-fn! (:init-fns opts)]
     (init-fn! data))
-  ;; require namespaces at init time if needed
-  (when (seq (get-in opts [:init :nss]))
-    (process-init-requires opts data (:init opts))))
+  ;; Require :preloads namespaces at init time if needed
+  (when-let [preloads (:preloads opts)]
+    (->> (cond
+           (sequential? preloads) {:require preloads}
+           :else preloads)
+         (process-init-requires opts (get-in opts [:preloads :cb]) data))))
 
 (defn init-repl-if-necessary!
   [opts data]
