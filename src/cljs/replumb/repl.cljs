@@ -935,73 +935,77 @@
   The first parameter is a map of configuration options, currently
   supporting:
 
-  * :verbose - will enable the evaluation logging, defaults to false.
-  To customize how to print, use (set! *print-fn* (fn [& args] ...)
+    * :verbose - will enable the evaluation logging, defaults to false.
+    To customize how to print, use (set! *print-fn* (fn [& args] ...)
 
-  * :warning-as-error - will consider a compiler warning as error.
+    * :warning-as-error - will consider a compiler warning as error.
 
-  * :target - :nodejs and :browser supported, the latter is used if
-  missing.
+    * :target - :nodejs and :browser supported, the latter is used if
+    missing.
 
-  * :init-fn! - user provided initialization function, it will be passed
-  a map of data currently containing:
+    * :init-fn! - user provided initialization function, it will be passed
+    a map of data currently containing:
 
-      :form   ;; the form to evaluate, as data, past the reader step
-      :ns     ;; the current namespace, as symbol
-      :target ;; *target* as keyword, :default is the default
+        :form   ;; the form to evaluate, as data, past the reader step
+        :ns     ;; the current namespace, as symbol
+        :target ;; *target* as keyword, :default is the default
 
-  * :load-fn! - will override replumb's default cljs.js/*load-fn*.
-  It rules out :read-file-fn!, losing any perk of using replumb.load
-  helpers. Use it if you know what you are doing and keep in mind
-  that :load-fn! is never used with load-file. It is the only case where
-  it does not take precedence over :read-file-fn!.
+    * :load-fn! - will override replumb's default cljs.js/*load-fn*.
+    It rules out :read-file-fn!, losing any perk of using replumb.load
+    helpers. Use it if you know what you are doing and keep in mind
+    that :load-fn! is never used with load-file. It is the only case where
+    it does not take precedence over :read-file-fn!.
 
-  * :read-file-fn! an asynchronous 2-arity function with signature
-  [file-path src-cb] where src-cb is itself a function (fn [source] ...)
-  that needs to be called with the file content as string (nil if no
-  file is found). It is mutually exclusive with :load-fn! and will be
-  ignored in case both are present.
+    * :read-file-fn! an asynchronous 2-arity function with signature
+    [file-path src-cb] where src-cb is itself a function (fn [source] ...)
+    that needs to be called with the file content as string (nil if no
+    file is found). It is mutually exclusive with :load-fn! and will be
+    ignored in case both are present.
 
-  * :write-file-fn! a synchronous 2-arity function with signature
-  [file-path data] that accepts a file-path and data to write.
+    * :write-file-fn! a synchronous 2-arity function with signature
+    [file-path data] that accepts a file-path and data to write.
 
-  * :src-paths - a vector of paths containing source files.
+    * :src-paths - a vector of paths containing source files.
 
-  * :cache - a map containing two optional values: the first, :path, indicates
-  the path of the cached files. The second, :src-paths-lookup?, indicates
-  if look for cached files in :src-paths. If both present, :path will have
-  the priority but both will be inspected.
+    * :cache - a map containing two optional values: the first, :path,
+    indicates the path of the cached files. The
+    second, :src-paths-lookup?, indicates if look for cached files
+    in :src-paths. If both present, :path will have the priority but both
+    will be inspected.
 
-  * :no-pr-str-on-value - in case of :success? avoid converting the
-  result map :value to string.
+    * :no-pr-str-on-value - in case of :success? avoid converting the
+    result map :value to string.
 
-  * :context - indicates the evaluation context that will be passed to
-  cljs/eval-str. One in :expr, :statement, :return. Defaults to :expr.
+    * :context - indicates the evaluation context that will be passed to
+    cljs/eval-str. One in :expr, :statement, :return. Defaults to :expr.
 
-  * :foreign-libs - a way to include foreign libraries. The format is analogous
-  to the compiler option.
+    * :foreign-libs - a way to include foreign libraries. The format is
+    analogous to the compiler option.
 
-  * :static-fns - static dispatch in generated JavaScript.
+    * :static-fns - static dispatch in generated JavaScript.
 
-  * :init - a map containing a set of namespaces to load before any other
-  evaluation and a callback cb to call upon completion. The nss map will
-  contain keys that will match the directive type (:require, :use,
-  :require-macros, ect) and values that will be a set of specs of namespaces
-  to load. The format of the values is analogous to the ClojureScript ns form,
-  e.g. '[my.ns :refer [v1 f1]].
+    * :preloads - accepts either a sequence of, akin to the core feature,
+    symbols or a map containing keys to specs, analogous to the :ns form
+    syntax:
 
-  The second parameter cb, is a 1-arity function which receives the
+    {:preloads {:require '#{[my-ns.core :refer [init]] your-ns.core}
+                :use '#{their-ns}
+                :cb #(println \"Result:\" %)}}
+
+    (Note the set, order does not matter)
+
+  The second parameter, cb, is a 1-arity function which receives the
   result map.
 
   Therefore, given cb (fn [result-map] ...), the main map keys are:
 
-  :success? - a boolean indicating if everything went right
-  :value    - (if (:success? result)), this key contains the yielded value as
-              string, unless :no-pr-str-on-value is true, in which case it
-              returns the bare value.
-  :error    - (if-not (:success? result)) will contain a js/Error
-  :warning  - in case a warning was thrown and :warning-as-error is falsey
-  :form     - the evaluated form as data structure (not a string)
+    :success? - a boolean indicating if everything went right
+    :value    - (if (:success? result)), this key contains the yielded value as
+                string, unless :no-pr-str-on-value is true, in which case it
+                returns the bare value.
+    :error    - (if-not (:success? result)) will contain a js/Error
+    :warning  - in case a warning was thrown and :warning-as-error is falsey
+    :form     - the evaluated form as data structure (not a string)
 
   The third parameter is the source string to be read and evaluated."
   [opts cb source]
