@@ -275,6 +275,26 @@
                   ~@(-> specs canonicalize-specs process-reloads!)))
       {:merge true :line 1 :column 1})))
 
+(defn make-ns-string
+  "Make a ns form as string, starting from a map of kind and specs as
+  in:
+
+  {:require #{[my-ns] [your-ns]}
+   :use #{their-ns}}
+
+  This function does not perform any validation of the kind
+  keys (:require, :use, etc...)."
+  [kind-and-specs target-ns]
+  (str "(ns " target-ns
+       (when-let [s (not-empty
+                     (reduce-kv (fn [s kind specs]
+                                  (when (seq specs)
+                                    (str (if (seq s) (str s \space) s)
+                                         "(" kind \space (clojure.string/join \space specs) ")")))
+                                ""
+                                kind-and-specs))]
+         (str " " s)) ")"))
+
 (defn file-path-from-goog-dependencies
   "Retrives the path for a file from (.-dependencies_.nameToPath js/goog). If
   not found will returns nil."
@@ -354,7 +374,7 @@
   #{:verbose :warning-as-error :target :init-fn!
     :no-pr-str-on-value :load-fn! :read-file-fn!
     :write-file-fn! :src-paths :cache :context
-    :foreign-libs :static-fns :init})
+    :foreign-libs :static-fns :preloads})
 
 (defn valid-opts
   "Validate the input user options. Returns a new map without invalid
@@ -819,6 +839,26 @@
       find-doc (process-find-doc opts cb data argument)
       load-file (process-load-file opts cb data argument))))
 
+(defn process-init-requires
+  "Builds a `ns` for the given specs and evaluates it."
+  ([opts cb data specs]
+   (let [verbose (:verbose opts)
+         ns-form (make-ns-string specs (:current-ns @app-env))]
+     (when verbose
+       (common/debug-prn "Spec for :preloads" ns-form))
+     (cljs/eval-str
+       st
+       ns-form
+       ns-form
+       (base-eval-opts! opts)
+       (fn [res]
+         (when verbose
+           (common/debug-prn "Evaluation returned (:preloads): " res))
+         (if (fn? cb)
+           #(cb %)
+           (when verbose
+             (common/debug-prn "The :cb key did not contain a function, skipping..."))))))))
+
 ;;;;;;;;;;;;;;;;;;;;;;
 ;;; Initialization ;;;
 ;;;;;;;;;;;;;;;;;;;;;;
@@ -857,25 +897,6 @@
   []
   (swap! app-env needs-init-state))
 
-(defn process-init-requires
-  "Builds a `ns` form the provided map and evaluates it before any
-  other evaluation."
-  ([opts data {:keys [nss cb]}]
-   (let [ns-source (str "(ns " (:current-ns @app-env) \space
-                        (reduce (fn [s spec]
-                                  (str s " (" (first spec) \space
-                                       (clojure.string/join \space (second spec)) ")"))
-                                ""
-                                nss)
-                        ")")]
-     (eval-str* (base-eval-opts! opts)
-                opts
-                (if (and cb (fn? cb))
-                  #(cb %)
-                  identity)
-                data
-                ns-source))))
-
 (defn init-repl!
   "The init-repl function. It uses the following opts keys:
 
@@ -891,9 +912,12 @@
   ;; Target/user init, we need at least one init-fn, the default init function
   (doseq [init-fn! (:init-fns opts)]
     (init-fn! data))
-  ;; require namespaces at init time if needed
-  (when (seq (get-in opts [:init :nss]))
-    (process-init-requires opts data (:init opts))))
+  ;; Require :preloads namespaces at init time if needed
+  (when-let [preloads (:preloads opts)]
+    (->> (cond
+           (sequential? preloads) {:require preloads}
+           :else preloads)
+         (process-init-requires opts (get-in opts [:preloads :cb]) data))))
 
 (defn init-repl-if-necessary!
   [opts data]
@@ -911,73 +935,77 @@
   The first parameter is a map of configuration options, currently
   supporting:
 
-  * :verbose - will enable the evaluation logging, defaults to false.
-  To customize how to print, use (set! *print-fn* (fn [& args] ...)
+    * :verbose - will enable the evaluation logging, defaults to false.
+    To customize how to print, use (set! *print-fn* (fn [& args] ...)
 
-  * :warning-as-error - will consider a compiler warning as error.
+    * :warning-as-error - will consider a compiler warning as error.
 
-  * :target - :nodejs and :browser supported, the latter is used if
-  missing.
+    * :target - :nodejs and :browser supported, the latter is used if
+    missing.
 
-  * :init-fn! - user provided initialization function, it will be passed
-  a map of data currently containing:
+    * :init-fn! - user provided initialization function, it will be passed
+    a map of data currently containing:
 
-      :form   ;; the form to evaluate, as data, past the reader step
-      :ns     ;; the current namespace, as symbol
-      :target ;; *target* as keyword, :default is the default
+        :form   ;; the form to evaluate, as data, past the reader step
+        :ns     ;; the current namespace, as symbol
+        :target ;; *target* as keyword, :default is the default
 
-  * :load-fn! - will override replumb's default cljs.js/*load-fn*.
-  It rules out :read-file-fn!, losing any perk of using replumb.load
-  helpers. Use it if you know what you are doing and keep in mind
-  that :load-fn! is never used with load-file. It is the only case where
-  it does not take precedence over :read-file-fn!.
+    * :load-fn! - will override replumb's default cljs.js/*load-fn*.
+    It rules out :read-file-fn!, losing any perk of using replumb.load
+    helpers. Use it if you know what you are doing and keep in mind
+    that :load-fn! is never used with load-file. It is the only case where
+    it does not take precedence over :read-file-fn!.
 
-  * :read-file-fn! an asynchronous 2-arity function with signature
-  [file-path src-cb] where src-cb is itself a function (fn [source] ...)
-  that needs to be called with the file content as string (nil if no
-  file is found). It is mutually exclusive with :load-fn! and will be
-  ignored in case both are present.
+    * :read-file-fn! an asynchronous 2-arity function with signature
+    [file-path src-cb] where src-cb is itself a function (fn [source] ...)
+    that needs to be called with the file content as string (nil if no
+    file is found). It is mutually exclusive with :load-fn! and will be
+    ignored in case both are present.
 
-  * :write-file-fn! a synchronous 2-arity function with signature
-  [file-path data] that accepts a file-path and data to write.
+    * :write-file-fn! a synchronous 2-arity function with signature
+    [file-path data] that accepts a file-path and data to write.
 
-  * :src-paths - a vector of paths containing source files.
+    * :src-paths - a vector of paths containing source files.
 
-  * :cache - a map containing two optional values: the first, :path, indicates
-  the path of the cached files. The second, :src-paths-lookup?, indicates
-  if look for cached files in :src-paths. If both present, :path will have
-  the priority but both will be inspected.
+    * :cache - a map containing two optional values: the first, :path,
+    indicates the path of the cached files. The
+    second, :src-paths-lookup?, indicates if look for cached files
+    in :src-paths. If both present, :path will have the priority but both
+    will be inspected.
 
-  * :no-pr-str-on-value - in case of :success? avoid converting the
-  result map :value to string.
+    * :no-pr-str-on-value - in case of :success? avoid converting the
+    result map :value to string.
 
-  * :context - indicates the evaluation context that will be passed to
-  cljs/eval-str. One in :expr, :statement, :return. Defaults to :expr.
+    * :context - indicates the evaluation context that will be passed to
+    cljs/eval-str. One in :expr, :statement, :return. Defaults to :expr.
 
-  * :foreign-libs - a way to include foreign libraries. The format is analogous
-  to the compiler option.
+    * :foreign-libs - a way to include foreign libraries. The format is
+    analogous to the compiler option.
 
-  * :static-fns - static dispatch in generated JavaScript.
+    * :static-fns - static dispatch in generated JavaScript.
 
-  * :init - a map containing a set of namespaces to load before any other
-  evaluation and a callback cb to call upon completion. The nss map will
-  contain keys that will match the directive type (:require, :use,
-  :require-macros, ect) and values that will be a set of specs of namespaces
-  to load. The format of the values is analogous to the ClojureScript ns form,
-  e.g. '[my.ns :refer [v1 f1]].
+    * :preloads - accepts either a sequence of, akin to the core feature,
+    symbols or a map containing keys to specs, analogous to the :ns form
+    syntax:
 
-  The second parameter cb, is a 1-arity function which receives the
+    {:preloads {:require '#{[my-ns.core :refer [init]] your-ns.core}
+                :use '#{their-ns}
+                :cb #(println \"Result:\" %)}}
+
+    (Note the set, order does not matter)
+
+  The second parameter, cb, is a 1-arity function which receives the
   result map.
 
   Therefore, given cb (fn [result-map] ...), the main map keys are:
 
-  :success? - a boolean indicating if everything went right
-  :value    - (if (:success? result)), this key contains the yielded value as
-              string, unless :no-pr-str-on-value is true, in which case it
-              returns the bare value.
-  :error    - (if-not (:success? result)) will contain a js/Error
-  :warning  - in case a warning was thrown and :warning-as-error is falsey
-  :form     - the evaluated form as data structure (not a string)
+    :success? - a boolean indicating if everything went right
+    :value    - (if (:success? result)), this key contains the yielded value as
+                string, unless :no-pr-str-on-value is true, in which case it
+                returns the bare value.
+    :error    - (if-not (:success? result)) will contain a js/Error
+    :warning  - in case a warning was thrown and :warning-as-error is falsey
+    :form     - the evaluated form as data structure (not a string)
 
   The third parameter is the source string to be read and evaluated."
   [opts cb source]

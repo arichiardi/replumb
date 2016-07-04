@@ -4,4 +4,4 @@
 
 (defn fun1
   [p]
-  (* 10 p))
+  (* var1 p))

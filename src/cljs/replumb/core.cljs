@@ -83,12 +83,14 @@
   * `:static-fns` - static dispatch in generated JavaScript. See the
   [compiler option page](https://github.com/clojure/clojurescript/wiki/Compiler-Options#static-fns).
 
-  * :init - a map containing a set of namespaces to load before any other
-  evaluation and a callback cb to call upon completion. The nss map will
-  contain keys that will match the directive type (:require, :use,
-  :require-macros, ect) and values that will be a set of specs of namespaces
-  to load. The format of the values is analogous to the ClojureScript ns form,
-  e.g. '[my.ns :refer [v1 f1]].
+  * `:preloads` - accepts either a sequence of symbols, akin to the core feature,
+  or a map containing keys to specs, analogous to the `:ns` form syntax:
+  ```
+  {:preloads {:require '#{[my-ns.core :refer [init]] your-ns.core}
+                  :use '#{their-ns}
+                  :cb #(println \"Result:\" %)}}
+  ```
+  (Note the set, order does not matter)
 
   The second parameter, `callback`, should be a 1-arity function which receives
   the result map, whose result keys will be:
