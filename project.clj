@@ -1,10 +1,10 @@
-(defproject replumb/replumb "0.2.3"
+(defproject replumb/replumb "0.2.4-SNAPSHOT"
   :description "ClojureScript plumbing for your bootstrapped REPLs."
   :url "https://github.com/Lambda-X/replumb"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.9.0-alpha7"]
-                 [org.clojure/clojurescript "1.9.93" :scope "test"]
+  :dependencies [[org.clojure/clojure "1.9.0-alpha10"]
+                 [org.clojure/clojurescript "1.9.198" :scope "test"]
                  [org.clojure/tools.reader "1.0.0-alpha3" :scope "test"]
                  [com.cognitect/transit-clj "0.8.285" :scope "test"]
                  [com.cognitect/transit-cljs "0.8.239" :scope "test"]]
@@ -179,13 +179,13 @@
                    :source-paths ["src/cljs" "src/clj" "test/clj" "test/cljs" "test/browser" "src/browser" "repl-demo/browser/cljs" "dev"]
                    :dependencies [[com.cemerick/piggieback "0.2.1"]
                                   [org.clojure/tools.nrepl "0.2.12"]
-                                  [figwheel-sidecar "0.5.0-6"]
+                                  [figwheel-sidecar "0.5.4-7"]
                                   [cljsjs/jqconsole "2.13.2-0"]
                                   [reagent "0.5.1"]
                                   [binaryage/devtools "0.5.2"]
                                   [spellhouse/clairvoyant "0.0-72-g15e1e44"]]
                    :plugins [[lein-doo "0.1.7-SNAPSHOT"]
-                             [lein-figwheel "0.5.0-6" :exclusions [cider/cider-nrepl]]
+                             [lein-figwheel "0.5.4-7" :exclusions [cider/cider-nrepl]]
                              [lein-shell "0.4.2"]]}
              :repl {:plugins [[cider/cider-nrepl "0.11.0-SNAPSHOT"]]
                     :repl-options {:nrepl-middleware [#_cider.nrepl/cider-middleware

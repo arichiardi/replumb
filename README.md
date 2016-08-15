@@ -56,7 +56,7 @@ Note that `replumb`, like ClojureScript, abstracts over `IO` details. You will
 need to provide your own read/write functions for it to work. There are examples of
 this in both `replumb.browser.io` and `replumb.nodejs.io` that you can freely copy over.
 
-## Read-eval-call options
+### Read-eval-call options
 
 The core of it all is `read-eval-call`, which reads, evaluates and calls back
 with the evaluation result.
@@ -162,7 +162,7 @@ See the [```browser-repl```](https://github.com/ScalaConsultants/replumb/blob/ma
 for an actual implementation using [```jq-console```](https://github.com/replit/jq-console).
 
 
-## Node.js
+### Node.js
 
 Support is provided, but only `:optimizations :none` works fine at the moment:
 
@@ -198,17 +198,27 @@ Another challenge faced during the development was about the asynchronous evalua
 
 This project adheres to the [SemVer](http://semver.org/) specification.
 
-### Documentation
+## Documentation
 
 The documentation referring to the latest version (`SNAPSHOT` or release) can always be found in the ```doc``` folder of this repo or generated through `lein codox`.
 
 The [wiki](https://github.com/ScalaConsultants/replumb/wiki) is also good (growing) source of info.
 
-### Contributions
+## Hacking
 
-Contributions are welcome, any of them. Have a look at ```CONTRIBUTING.md``` for details.
+Contributions are welcome, of any kind. Have a look at ```CONTRIBUTING.md``` for details.
 
-### Community
+The project uses [`lein-figwheel`](https://github.com/bhauman/lein-figwheel) and needs a simple `lein repl` to bootstrap, after which the following customary three commands needs to be executed in the resulting repl:
+
+```
+(require 'figwheel-sidecar.repl-api)
+(figwheel-sidecar.repl-api/start-figwheel!)
+(figwheel-sidecar.repl-api/cljs-repl)
+```
+
+Now you point your browser to [http://localhost:3449](http://localhost:3449) and you'll be thrown in the Clojurescript-in-clojurescript parallel world. Enjoy!
+
+## Community
 
 Tell us about your amazing Replumb project!
 
