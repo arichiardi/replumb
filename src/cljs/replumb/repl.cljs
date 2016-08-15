@@ -58,7 +58,6 @@
   cannot be found."
   [opts rdr]
   (binding [ana/*cljs-ns* (:current-ns @app-env)
-            env/*compiler* st
             r/*data-readers* tags/*cljs-data-readers*
             r/resolve-symbol ana/resolve-symbol]
     (r/read opts rdr)))
@@ -68,7 +67,6 @@
   cannot be found."
   [opts s]
   (binding [ana/*cljs-ns* (:current-ns @app-env)
-            env/*compiler* st
             r/*data-readers* tags/*cljs-data-readers*
             r/resolve-symbol ana/resolve-symbol]
     (r/read-string opts s)))
@@ -155,6 +153,7 @@
     :load (:load-fn! user-opts)
     :eval (make-js-eval-fn user-opts)
     :verbose (or (:verbose user-opts) false)
+    :*compiler* (set! env/*compiler* st)
     :static-fns (or (:static-fns user-opts) false)}))
 
 (defn load-eval-opts!
