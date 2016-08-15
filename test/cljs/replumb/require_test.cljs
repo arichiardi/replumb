@@ -270,42 +270,41 @@ clojure.set
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:use [clojure.string :as s :only (trim)]))"]
   (let [error (unwrap-result @_res_)]
-    (is (not (success? @_res_)) "(ns my.namespace (:use [clojure.string :as s :only (trim)])) should not succeed")
-    (is (valid-eval-error? error) "(ns my.namespace (:use [clojure.string :as s :only (trim)])) should be an instance of js/Error")
-    (is (re-find #"Only \[lib.ns :only \(names\)\] specs supported in :use / :use-macros;" (extract-message error))
-        "(ns my.namespace (:use [clojure.string :as s :only (trim)])) should have correct error message")))
+    (is (not (success? @_res_)) (str _msg_ "should not succeed"))
+    (is (valid-eval-error? error) (str _msg_ "should be an instance of js/Error"))
+    (is (re-find #"offending spec: \[clojure.string :as s :only \(trim\)\]" (extract-message error))
+        (str _msg_ "have correct error message"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:use [clojure.string :only (trim)]))"
    "(trim \"   clojure   \")"]
   (let [out (unwrap-result @_res_)]
-    (is (success? @_res_) "(ns my.namespace (:use ... )) and (trim ...) should succeed")
-    (is (valid-eval-result? out) "(ns my.namespace (:use ... )) and (trim ...) should be a valid result.")
-    (is (re-find #"clojure" out) "The result should be \"clojure\"")))
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
+    (is (re-find #"clojure" out) (str _msg_ "should include \"clojure\""))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require [clojure.set :as s :refer [union]]))"
    "(s/difference (set (range 1 5)) (union #{1 2} #{2 3}))"]
   (let [out (unwrap-result @_res_)]
-    (is (success? @_res_) "(ns my.namespace (:require ... )) and (s/difference ...) should succeed")
-    (is (valid-eval-result? out) "(ns my.namespace (:require ... )) and (s/difference ...) should be a valid result.")
-    (is (re-find #"\{4\}" out) "The result should be #{4}")))
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
+    (is (= "#{4}" out) (str _msg_ "should return #{4}"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require clojure.set))"
    "(clojure.set/difference (set (range 1 5)) (clojure.set/union #{1 2} #{2 3}))"]
   (let [out (unwrap-result @_res_)]
-    (is (success? @_res_) "(ns my.namespace (:require ... )) and (clojure.set/difference ...) should succeed")
-    (is (valid-eval-result? out) "(ns my.namespace (:require ... )) and (clojure.set/difference ...) should be a valid result.")
-    (is (re-find #"\{4\}" out) "The result should be #{4}")))
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
+    (is (= "#{4}" out) (str _msg_ "should return #{4}"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:require [clojure set string]))"]
   (let [error (unwrap-result @_res_)]
     (is (not (success? @_res_)) (str _msg_ "should not succeed. Prefix lists are not supported."))
     (is (valid-eval-error? error) (str _msg_ "should be an instance of js/Error"))
-    (is (re-find #"Only :as and :refer options supported in :require / :require-macros;" (extract-message error))
-        (str _msg_ "should have correct error message."))))
+    (is (re-find #"offending spec: \[clojure set string\]" (extract-message error)) (str _msg_ "should have correct error message."))))
 
 ;; http://stackoverflow.com/questions/24463469/is-it-possible-to-use-refer-all-in-a-clojurescript-require
 (h/read-eval-call-test e/*target-opts*
@@ -313,16 +312,16 @@ clojure.set
   (let [error (unwrap-result @_res_)]
     (is (not (success? @_res_)) (str _msg_ "should not succeed. :refer :all is not allowed."))
     (is (valid-eval-error? error) (str _msg_ "should be an instance of js/Error"))
-    (is (re-find #":refer must be followed by a sequence of symbols in :require / :require-macros;" (extract-message error))
+    (is (re-find #"Could not eval \(ns my.namespace \(:require \[clojure.string :refer :all\]\)\)" (extract-message error))
         (str _msg_ "should have correct error message."))))
 
 (h/read-eval-call-test e/*target-opts*
-  ["(ns my.namespace (:refer-clojure :rename {print core-print}))"]
-  (let [error (unwrap-result @_res_)]
-    (is (not (success? @_res_)) (str _msg_ "should not succeed. Only :exlude is allowed for :refer-clojure."))
-    (is (valid-eval-error? error) (str _msg_ "should be an instance of js/Error"))
-    (is (re-find #"Only \[:refer-clojure :exclude \(names\)\] form supported" (extract-message error))
-        (str _msg_ "should have correct error message."))))
+  ["(ns my.namespace (:refer-clojure :rename {print core-print}))"
+   "(core-print \"print with renamed core-print\")"]
+  (let [out (unwrap-result @_res_)]
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
+    (is (= "nil" out) (str _msg_ "should return nil after the print"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(ns my.namespace (:refer-clojure :exclude [max]))"
