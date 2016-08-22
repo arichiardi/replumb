@@ -122,7 +122,8 @@
   (fn [{:keys [path name source cache]}]
     (let [verbose (:verbose opts)
           write-file-fn! (:write-file-fn! opts)
-          cache-path (get-in opts [:cache :path])]
+          cache-path (get-in opts [:cache :path])
+          eval-fn (or (:eval opts) js/eval)]
       (when (and path source cache cache-path)
         (if write-file-fn!
           (let [cache-prefix-for-path (cache/cache-prefix-for-path cache-path
@@ -137,7 +138,7 @@
             (write-file-fn! json-path (cache/cljs->transit-json cache)))
           (when verbose
             (common/debug-prn "Invalid :write-file-fn!. No cache will be written."))))
-      (js/eval source))))
+      (eval-fn source))))
 
 (defn base-eval-opts!
   "Gets the base set of evaluation options. The 1-arity function
@@ -370,7 +371,7 @@
 
 (def valid-opts-set
   "Set of valid option used for external input validation."
-  #{:verbose :warning-as-error :target :init-fn!
+  #{:verbose :warning-as-error :target :init-fn! :eval
     :no-pr-str-on-value :load-fn! :read-file-fn!
     :write-file-fn! :src-paths :cache :context
     :foreign-libs :static-fns :preloads})
