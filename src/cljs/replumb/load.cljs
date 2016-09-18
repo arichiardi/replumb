@@ -91,7 +91,7 @@
                          (common/debug-prn (str "Retrieved cache file from: " cache-path)))
                        (load-fn-cb {:lang (filename->lang js-path)
                                     :source js-source
-                                    :cache (read-cache-source cache-path cache-source)}))
+                                    :cache (read-cache-source cache-path cache-source) }))
                      (try-next-files-pair-fn)))))
 
 (defn read-js-file
