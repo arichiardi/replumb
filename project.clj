@@ -143,10 +143,10 @@
           :output-path "doc"
           :metadata {:doc/format :markdown}}
 
-  :aliases {"node-repl" ^{:doc "Clean, build and launch the node demo repl. Node.js must be installed."} ["do" "clean" ["cljsbuild" "once" "node-repl"] ["shell" "scripts/node-repl.sh"]]
-            "node-repl-simple" ^{:doc "Clean, build and launch the node demo repl. Node.js must be installed."} ["do" "clean" ["cljsbuild" "once" "node-repl-simple"] ["shell" "scripts/node-repl.sh" "--simple"]]
-            "browser-repl" ^{:doc "Clean, build and launch the browser demo repl."} ["do" "clean" ["cljsbuild" "once" "browser-repl"] ["shell" "scripts/browser-repl.sh"]]
-            "browser-repl-simple" ^{:doc "Clean, build and launch the browser demo repl."} ["do" "clean" ["cljsbuild" "once" "browser-repl-simple"] ["shell" "scripts/browser-repl.sh"]]
+  :aliases {"repl-node" ^{:doc "Clean, build and launch the node demo repl. Node.js must be installed."} ["do" "clean" ["cljsbuild" "once" "node-repl"] ["shell" "scripts/node-repl.sh"]]
+            "repl-node-simple" ^{:doc "Clean, build and launch the node demo repl. Node.js must be installed."} ["do" "clean" ["cljsbuild" "once" "node-repl-simple"] ["shell" "scripts/node-repl.sh" "--simple"]]
+            "repl-browser" ^{:doc "Clean, build and launch the browser demo repl."} ["do" "clean" ["cljsbuild" "once" "browser-repl"] ["shell" "scripts/browser-repl.sh"]]
+            "repl-browser-simple" ^{:doc "Clean, build and launch the browser demo repl."} ["do" "clean" ["cljsbuild" "once" "browser-repl-simple"] ["shell" "scripts/browser-repl.sh"]]
 
             "minify" ^{:doc "Compile sources minified for production."} ["cljsbuild" "once" "min"]
 
