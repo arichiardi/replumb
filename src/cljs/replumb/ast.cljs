@@ -48,6 +48,15 @@
   {:pre [(symbol? ns)]}
   (get-in state [:cljs.analyzer/namespaces ns :defs]))
 
+(defn ns-macros
+  "Given compiler state and namespace symbol, returns its AST's `:macros`
+  key content.
+
+  Beware, there can be a lot of data."
+  [state ns]
+  {:pre [(symbol? ns)]}
+  (get-in state [:cljs.analyzer/namespaces ns :macros]))
+
 (defn namespace
   "Given compiler state and namespace symbol, returns its whole AST
   content.
