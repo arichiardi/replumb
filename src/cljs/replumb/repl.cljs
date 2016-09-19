@@ -86,18 +86,20 @@
   var. Analogous to clojure.core/resolve"
   [opts env sym]
   {:pre [(map? env) (symbol? sym)]}
-  (let [macro-var (ana/resolve-macro-var env sym)
-        var (ana/resolve-var env sym ana/confirm-var-exist-warning)]
-    (when (and (not (:no-pr-str-on-value opts)) (:verbose opts))
-      (do (common/debug-prn "cljs.analyzer/resolve-macro-var returned" (with-out-str (pprint macro-var)))
-          (common/debug-prn "cljs.analyzer/resolve-var returned" (with-out-str (pprint var)))))
+  (let [var (try (ana/resolve-var env sym (ana/confirm-var-exists-throw))
+                 (catch :default e
+                   (when (:verbose opts) (common/debug-prn "Exception safely wrapped:" (.-message e)))
+                   (ana/resolve-macro-var env sym)))]
+    (when (:verbose opts)
+      (common/debug-prn "cljs.analyzer/resolve-var/resolve-macro-var returned" var))
     ;; AR - we need to merge because ana/resolve-var sometimes returns more
     ;; info than ana/resolve-macro-var, sometimes not
-    (merge macro-var var)))
+    ;; AR - remove call to ana/resolve-macro-var after changes in CLJS-1335
+    var))
 
 (defn get-var
-  [opts env sym]
-  (let [var (with-compiler-env st (resolve opts env sym))]
+  [opts sym]
+  (when-let [var (with-compiler-env st (resolve opts (empty-analyzer-env) sym))]
     (if (= (namespace (:name var)) (str (:ns var)))
       (update var :name #(symbol (name %)))
       var)))
@@ -515,7 +517,6 @@
       contain it as :error, overriding the original.
     - if (:warning-as-error opts) is falsey, the new map will contain
       the warning as :warning along with the original :value"
-
   [opts {:keys [error] :as orig}]
   (if-let [warning-msg (:last-eval-warning @app-env)]
     (if-not error
@@ -663,7 +664,7 @@
                        (docs/special-doc-map sym) (repl/print-doc (docs/special-doc sym))
                        (docs/repl-special-doc-map sym) (repl/print-doc (docs/repl-special-doc sym))
                        (ast/namespace @st sym) (repl/print-doc (select-keys (ast/namespace @st sym) [:name :doc]))
-                       :else (repl/print-doc (get-var opts (empty-analyzer-env) sym)))))))))
+                       :else (repl/print-doc (get-var opts sym)))))))))
 
 (defn process-pst
   [opts cb data expr]
@@ -733,17 +734,18 @@
 ;; Inspired by cljs.repl/source-fn
 (defn process-source
   [opts cb data sym]
-  (let [var (get-var opts (empty-analyzer-env) sym)
+  (let [var (get-var opts sym)
         call-back (partial call-back! (merge opts {:no-pr-str-on-value true}) cb data)]
     (if-let [full-path-or-ns (or (:file var) (:file (:meta var)))]
       ;; see discussion here: https://github.com/ScalaConsultants/replumb/issues/17#issuecomment-163832028
       ;; if (symbol? filepath) is true, filepath will contain the symbol of a namespace
       ;; eg. clojure.set
       (let [paths-to-try (if-not (symbol? full-path-or-ns)
-                           (load/file-paths (:src-paths opts) full-path-or-ns)
-                           (load/file-paths-for-load-fn (:src-paths opts) ;; this branch tries the conversion ns->file
-                                                        (macro? var)
-                                                        (cljs/ns->relpath full-path-or-ns)))]
+                           ;; AR - we try first the string as is because now
+                           ;; CLJS-1515 can return directly the file in the
+                           ;; meta :file key.
+                           (into [full-path-or-ns] (load/file-paths (:src-paths opts) full-path-or-ns))
+                           (load/file-paths-for-load-fn (:src-paths opts) (macro? var) (cljs/ns->relpath full-path-or-ns)))]
         (fetch-source opts var paths-to-try call-back))
       (call-back (common/wrap-success "nil")))))
 

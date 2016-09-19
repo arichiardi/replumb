@@ -15,9 +15,9 @@
   ([x y] (cljs.core/max x y))
   ([x y & more]
    (reduce max (cljs.core/max x y) more)))"]
-    (is (success? @_res_) "(source max) should succeed.")
-    (is (valid-eval-result? source-string) "(source max) should be a valid result")
-    (is (= expected source-string) "(source max) should return valid source")))
+    (is (success? @_res_) (str _msg_ "should succeed."))
+    (is (valid-eval-result? source-string) (str _msg_ "should be a valid result"))
+    (is (= expected source-string) (str _msg_ "should return valid source"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(source nil?)"]
@@ -26,16 +26,16 @@
   \"Returns true if x is nil, false otherwise.\"
   [x]
   (coercive-= x nil))"]
-    (is (success? @_res_) "(source nil?) should succeed.")
-    (is (valid-eval-result? source-string) "(source nil?) should be a valid result")
-    (is (= expected source-string) "(source nil?) should return valid source")))
+    (is (success? @_res_) (str _msg_ "should succeed."))
+    (is (valid-eval-result? source-string) (str _msg_ "should be a valid result"))
+    (is (= expected source-string) (str _msg_ "should return valid source"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(source not-existing)"]
   (let [source-string (unwrap-result @_res_)]
-    (is (success? @_res_) "(source not-existing) should succeed.")
-    (is (valid-eval-result? source-string) "(source not-existing) should be a valid result")
-    (is (= "nil" source-string) "(source not-existing) should return nil")))
+    (is (success? @_res_) (str _msg_ "should succeed."))
+    (is (valid-eval-result? source-string) (str _msg_ "should be a valid result"))
+    (is (= "nil" source-string) (str _msg_ "should return nil"))))
 
 ;; AR - when bundling and https://github.com/ScalaConsultants/replumb/issues/69
 ;; will be hacked together, this will work. The reason is that we need
@@ -49,9 +49,9 @@
 (h/read-eval-call-test e/*target-opts*
   ["(source or)"]
   (let [source-string (unwrap-result @_res_)]
-    (is (success? @_res_) "(source or) should succeed.")
-    (is (valid-eval-result? source-string) "(source or) should be a valid result")
-    (is (re-find #"core/defmacro or" source-string) "(source or) should return correct source")))
+    (is (success? @_res_) (str _msg_ "should succeed."))
+    (is (valid-eval-result? source-string) (str _msg_ "should be a valid result"))
+    (is (re-find #"core/defmacro or" source-string) (str _msg_ "should return correct source"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(require 'clojure.set)"
@@ -68,9 +68,9 @@
   ([s1 s2 & sets]
      (let [bubbled-sets (bubble-max-key count (conj sets s2 s1))]
        (reduce into (first bubbled-sets) (rest bubbled-sets)))))"]
-    (is (success? @_res_) "(source clojure.set/union) should succeed.")
-    (is (valid-eval-result? source-string) "(source clojure.set/union) should be a valid result")
-    (is (= expected source-string) "(source clojure.set/union) should return valid source")))
+    (is (success? @_res_) (str _msg_ "should succeed"))
+    (is (valid-eval-result? source-string) (str _msg_ "should be a valid result"))
+    (is (= expected source-string) (str _msg_ "should return valid source"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(require 'clojure.string)"
@@ -80,17 +80,17 @@
   \"Removes whitespace from both ends of string.\"
   [s]
   (gstring/trim s))"]
-    (is (success? @_res_) "(source clojure.string/trim) should succeed.")
-    (is (valid-eval-result? source-string) "(source clojure.string/trim) should be a valid result")
-    (is (= expected source-string) "(source clojure.string/trim) should return valid source")))
+    (is (success? @_res_) (str _msg_ "should succeed."))
+    (is (valid-eval-result? source-string) (str _msg_ "should be a valid result"))
+    (is (= expected source-string) (str _msg_ "should return valid source"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(require 'clojure.string)"
    "(source clojure.string/not-existing)"]
   (let [source-string (unwrap-result @_res_)]
-    (is (success? @_res_) "(source clojure.string/not-existing) should succeed.")
-    (is (valid-eval-result? source-string) "(source clojure.string/not-existing) should be a valid result")
-    (is (= "nil" source-string) "(source clojure.string/not-existing) should return valid source")))
+    (is (success? @_res_) (str _msg_ "should succeed."))
+    (is (valid-eval-result? source-string) (str _msg_ "should be a valid result"))
+    (is (= "nil" source-string) (str _msg_ "should return valid source"))))
 
 ;; https://github.com/ScalaConsultants/replumb/issues/86
 (h/read-eval-call-test e/*target-opts*
@@ -106,9 +106,9 @@
    "(source foo.bar.baz/a)"]
   (let [source-string (unwrap-result @_res_)
         expected "(def a \"whatever\")"]
-    (is (success? @_res_) "(source foo.bar.baz/a) should succeed.")
-    (is (valid-eval-result? source-string) "(source foo.bar.baz/a) should be a valid result")
-    (is (= expected source-string) "(source foo.bar.baz/a) should return valid source")))
+    (is (success? @_res_) (str _msg_ "should succeed."))
+    (is (valid-eval-result? source-string) (str _msg_ "should be a valid result"))
+    (is (= expected source-string) (str _msg_ "should return valid source"))))
 
 ;; https://github.com/ScalaConsultants/replumb/issues/86
 (h/read-eval-call-test e/*target-opts*
@@ -116,6 +116,6 @@
    "(source baz/a)"]
   (let [source-string (unwrap-result @_res_)
         expected "(def a \"whatever\")"]
-    (is (success? @_res_) "(require '[foo.bar.baz :as baz]) and (source baz/a) should succeed.")
-    (is (valid-eval-result? source-string) "(require '[foo.bar.baz :as baz]) and (source baz/a) should be a valid result")
-    (is (= expected source-string) "(require '[foo.bar.baz :as baz]) and (source baz/a) should return valid source")))
+    (is (success? @_res_) (str _msg_ "should succeed."))
+    (is (valid-eval-result? source-string) (str _msg_ "should be a valid result"))
+    (is (= expected source-string) (str _msg_ "should return valid source"))))

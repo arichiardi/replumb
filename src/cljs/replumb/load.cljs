@@ -71,7 +71,8 @@
         (read-file-fn! name (fn [source]
                               (if source
                                 (load-fn-cb {:lang (filename->lang name)
-                                             :source source})
+                                             :source source
+                                             :file name})
                                 (do
                                   (when verbose?
                                     (common/debug-prn "No source found..."))
@@ -90,7 +91,7 @@
                          (common/debug-prn (str "Retrieved cache file from: " cache-path)))
                        (load-fn-cb {:lang (filename->lang js-path)
                                     :source js-source
-                                    :cache (read-cache-source cache-path cache-source)}))
+                                    :cache (read-cache-source cache-path cache-source) }))
                      (try-next-files-pair-fn)))))
 
 (defn read-js-file
@@ -172,7 +173,7 @@
     [(str src-path ".js" ) (str src-path extension cache-extension)]))
 
 (defn file-paths-for-closure
-  "Produces a sequence of filenames to try reading crafted for goog
+  "Produces a sequence of file paths to try reading crafted for goog
   libraries, in the order they should be tried."
   [src-paths goog-path]
   (for [src-path src-paths]

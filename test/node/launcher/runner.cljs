@@ -8,16 +8,19 @@
             replumb.macro-test
             replumb.require-test
             replumb.source-test
+            replumb.ast-test
             replumb.cache-test))
 
 (enable-console-print!)
 
-(doo-tests 'replumb.core-test
-           'replumb.repl-test
-           'replumb.common-test
-           'replumb.load-test
-           'replumb.options-test
-           'replumb.macro-test
-           'replumb.require-test
-           'replumb.source-test
-           'replumb.cache-test)
+(doo-tests
+ 'replumb.core-test
+ 'replumb.repl-test
+ 'replumb.common-test
+ 'replumb.load-test
+ 'replumb.options-test
+ 'replumb.macro-test
+ 'replumb.require-test
+ 'replumb.source-test
+ 'replumb.ast-test
+ 'replumb.cache-test)
