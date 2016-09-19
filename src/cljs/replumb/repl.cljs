@@ -624,7 +624,7 @@
   ;; TODO - cannot find a way to handle (require something) correctly, note no quote
   (if-not (= 'quote (ffirst specs))
     (call-back! opts cb data (common/error-argument-must-be-symbol "require" ex-info-data))
-    (let [is-self-require? (and (= :kind :require) (self-require? specs))
+    (let [is-self-require? (and (= kind :require) (self-require? specs))
           [target-ns restore-ns] (if-not is-self-require?
                                    [(current-ns) nil]
                                    ['cljs.user (current-ns)])
