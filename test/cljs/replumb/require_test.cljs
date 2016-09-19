@@ -135,7 +135,7 @@ clojure.set
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? result) (str _msg_ "should be a valid result"))
     (is (= "#'foo.load/c" result) (str _msg_ "should return #'foo.load/c (last evaluated expression)"))
-    (is (= (repl/current-ns) 'cljs.user) (str _msg_ "should not change namespace"))))
+    (is (= 'cljs.user (repl/current-ns)) (str _msg_ "should not change namespace"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(load-file \"foo/load.clj\")"
