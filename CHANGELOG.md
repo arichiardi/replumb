@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.4
+
+- Clojurescript 1.9.229 support
+- Adapt code to CLJS-1515 - the `:file` key in var's meta is now a string pointing to an actual file
+- Fix for [issue #202](https://github.com/Lambda-X/replumb/issues/202) - Comparison for self-require
+- Fix for [issue #195](https://github.com/Lambda-X/replumb/issues/195) - Require issues with clojurescript 1.9.198
+
 ## 0.2.3
 
 - Clojurescript 1.9.93 support
