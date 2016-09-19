@@ -45,7 +45,7 @@
 (defn empty-analyzer-env
   []
   (assoc (ana/empty-env)
-         :ns (ast/namespace @st (:current-ns @app-env))
+         :ns (ast/namespace @st (current-ns))
          :context :expr))
 
 (defn map-keys
@@ -57,7 +57,7 @@
   for reader implementations). This function throws if a valid form
   cannot be found."
   [opts rdr]
-  (binding [ana/*cljs-ns* (:current-ns @app-env)
+  (binding [ana/*cljs-ns* (current-ns)
             r/*data-readers* tags/*cljs-data-readers*
             r/resolve-symbol ana/resolve-symbol]
     (r/read opts rdr)))
@@ -66,7 +66,7 @@
   "Reading forms from a string. This function throws if a valid one
   cannot be found."
   [opts s]
-  (binding [ana/*cljs-ns* (:current-ns @app-env)
+  (binding [ana/*cljs-ns* (current-ns)
             r/*data-readers* tags/*cljs-data-readers*
             r/resolve-symbol ana/resolve-symbol]
     (r/read-string opts s)))
@@ -148,7 +148,7 @@
   ([]
    (base-eval-opts! {}))
   ([user-opts]
-   {:ns (:current-ns @app-env)
+   {:ns (current-ns)
     :context (or (:context user-opts) :expr)
     :source-map false
     :def-emits-var true
@@ -173,7 +173,7 @@
                 ns (if (sequential? spec)
                      (first spec)
                      spec)]
-            (= ns @current-ns))))
+            (= ns (current-ns)))))
    specs))
 
 (defn canonicalize-specs
@@ -624,10 +624,10 @@
   ;; TODO - cannot find a way to handle (require something) correctly, note no quote
   (if-not (= 'quote (ffirst specs))
     (call-back! opts cb data (common/error-argument-must-be-symbol "require" ex-info-data))
-    (let [is-self-require? (and (= :kind :require) (self-require? specs))
+    (let [is-self-require? (and (= kind :require) (self-require? specs))
           [target-ns restore-ns] (if-not is-self-require?
-                                   [(:current-ns @app-env) nil]
-                                   ['cljs.user (:current-ns @app-env)])
+                                   [(current-ns) nil]
+                                   ['cljs.user (current-ns)])
           ns-form (make-ns-form kind specs target-ns)
           restore-ns! #(when is-self-require?
                          (swap! app-env assoc :current-ns restore-ns))
@@ -712,7 +712,7 @@
                                    read-file-fn!
                                    (fn [result]
                                      (if result
-                                       (binding [ana/*cljs-ns* (:current-ns @app-env)
+                                       (binding [ana/*cljs-ns* (current-ns)
                                                  env/*compiler* st
                                                  r/*data-readers* tags/*cljs-data-readers*
                                                  r/resolve-symbol ana/resolve-symbol]
@@ -844,7 +844,7 @@
   "Builds a `ns` for the given specs and evaluates it."
   ([opts cb data specs]
    (let [verbose (:verbose opts)
-         ns-form (make-ns-string specs (:current-ns @app-env))]
+         ns-form (make-ns-string specs (current-ns))]
      (when verbose
        (common/debug-prn "Spec for :preloads" ns-form))
      (cljs/eval-str
@@ -1012,7 +1012,7 @@
   [opts cb source]
   (try
     (let [data {:source source
-                :ns (:current-ns @app-env)
+                :ns (current-ns)
                 :target (keyword *target*)}
           opts (normalize-opts opts)] ;; AR - does the whole user option processing
       (init-repl-if-necessary! opts data)

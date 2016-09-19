@@ -135,7 +135,7 @@ clojure.set
     (is (success? @_res_) (str _msg_ "should succeed"))
     (is (valid-eval-result? result) (str _msg_ "should be a valid result"))
     (is (= "#'foo.load/c" result) (str _msg_ "should return #'foo.load/c (last evaluated expression)"))
-    (is (= (repl/current-ns) 'cljs.user) (str _msg_ "should not change namespace"))))
+    (is (= 'cljs.user (repl/current-ns)) (str _msg_ "should not change namespace"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(load-file \"foo/load.clj\")"
@@ -538,6 +538,24 @@ clojure.set
         (is (valid-eval-result? out) (str _msg_ " should be a valid result"))
         (is (= 'cljs.user (repl/current-ns)) (str _msg_ " should not change namespace"))
         (is (= "\"post\"" out) (str _msg_ " should return \"post\"")))))
+
+  ;; https://github.com/Lambda-X/replumb/issues/202
+  (let [alterable-core-path "dev-resources/private/test/src/cljs/alterable/core.cljs"
+        content "(ns alterable.core)\n\n(def b \"successful self-require!\")"]
+    ;; AR - we don't swap any file here, we just make sure that a self-require
+    ;; works
+    (h/read-eval-call-test e/*target-opts*
+      [:before (e/*write-file-fn* alterable-core-path content)
+       "(require 'alterable.core)"
+       "(in-ns 'alterable.core)"
+       "(require 'alterable.core :reload)"
+       "alterable.core/b"
+       :after (e/*delete-file-fn* alterable-core-path)]
+      (let [out (unwrap-result @_res_)]
+        (is (success? @_res_) (str _msg_ " should succeed"))
+        (is (valid-eval-result? out) (str _msg_ " should be a valid result"))
+        (is (= 'alterable.core (repl/current-ns)) (str _msg_ " should change namespace"))
+        (is (= "\"successful self-require!\"" out) (str _msg_ " should return \"post\"")))))
 
   (let [alterable-core-path "dev-resources/private/test/src/cljs/alterable/core.cljs"
         alterable-utils-path "dev-resources/private/test/src/cljs/alterable/utils.cljs"
