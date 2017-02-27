@@ -3,11 +3,13 @@
   :url "https://github.com/Lambda-X/replumb"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.9.0-alpha11"]
-                 [org.clojure/clojurescript "1.9.229" :scope "test"]
-                 [org.clojure/tools.reader "1.0.0-beta1" :scope "test"]
-                 [com.cognitect/transit-clj "0.8.285" :scope "test"]
-                 [com.cognitect/transit-cljs "0.8.239" :scope "test"]]
+  :dependencies [[org.clojure/clojure "1.9.0"]
+                 [org.clojure/clojurescript "1.10.145" :scope "test"]
+                 [org.clojure/tools.reader "1.2.2" :scope "test"]
+                 [com.cognitect/transit-clj "0.8.300" :scope "test"]
+                 [com.cognitect/transit-cljs "0.8.243" :scope "test"]
+                 [org.clojure/spec.alpha "0.1.143"]
+                 [org.clojure/test.check "0.10.0-alpha2"]]
 
   :plugins [[lein-cljsbuild "1.1.4"]
             [lein-codox "0.9.0"]]
@@ -183,7 +185,7 @@
                                   [cljsjs/jqconsole "2.13.2-0"]
                                   [reagent "0.6.0-rc"]
                                   [binaryage/devtools "0.8.1"]]
-                   :plugins [[lein-doo "0.1.7-SNAPSHOT"]
+                   :plugins [[lein-doo "0.1.7"]
                              [lein-figwheel "0.5.7" :exclusions [cider/cider-nrepl]]
                              [lein-shell "0.4.2"]]}
              :repl {:repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}})
