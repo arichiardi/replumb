@@ -1,5 +1,5 @@
 (ns replumb.repl
-  (:refer-clojure :exclude [load-file ns-publics ns-interns find-ns])
+  (:refer-clojure :exclude [load-file ns-publics ns-interns find-ns resolve])
   (:require-macros [cljs.env.macros :refer [with-compiler-env]])
   (:require [cljs.js :as cljs]
             [cljs.tagged-literals :as tags]
