@@ -4,7 +4,7 @@ before_script:
     - cd scripts; curl -O https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein; chmod +x lein; cd ..
     - scripts/lein version
     - phantomjs -v
-    - nvm use 0.12.7
+    - nvm install 0.12.7
     - node -v
 script: scripts/lein tests
 jdk:
