@@ -20,9 +20,9 @@
 
 (defn cache-prefix-for-path
   ([path macros]
-   (str (munge path) (when macros "$macros")))
+   (str path (when macros "$macros")))
   ([cache-path path macros]
-   (str cache-path  "/" (munge path) (when macros "$macros"))))
+   (str cache-path "/" path (when macros "$macros"))))
 
 (defn is-macros?
   [cache]
