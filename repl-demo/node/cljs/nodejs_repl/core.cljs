@@ -40,25 +40,26 @@
   [arg]
   (string/split arg #":"))
 
-(defn print-usage
-  []
-  (println "Usage:\n\nnode path-to/nodejs-repl.js [--verbose] src-path1:src-path2:src-path3"))
+;; first arg is verbosity true/false
+;; second arg is the cache path
+;; third arg is the classpath string (: separated)
 
 (defn -main [& args]
   (println args)
-  (if (or (empty? args) (> (count args) 2))
-    (print-usage)
-    (let [verbose? (= "--verbose" (first args))
-          opts (merge (replumb/options :nodejs
-                                       (arg->src-paths (if-not verbose?
-                                                         (first args)
-                                                         (second args)))
-                                       io/read-file!)
-                      {:verbose verbose?})]
-      (print "Starting Node.js sample repl:\n"
-             (find opts :target) "\n"
-             (find opts :src-paths) "\n"
-             (find opts :verbose))
-      (read-eval-print-loop opts))))
+  (assert (= (count args) 3) "Only three params are supported (in order): verbose, cache path and classpath string.")
+  (let [verbose? (= "true" (first args))
+        cache-path (second args)
+        classpath-string (nth args 2)
+        opts (merge (replumb/options :nodejs
+                                     (arg->src-paths classpath-string)
+                                     io/read-file!)
+                    {:verbose verbose?
+                     :cache {:path cache-path}})]
+    (print "Starting Node.js sample repl:\n"
+           (find opts :target) "\n"
+           (find opts :src-paths) "\n"
+           (find opts :verbose) "\n"
+           (find opts :cache))
+    (read-eval-print-loop opts)))
 
 (set! *main-cli-fn* -main)
