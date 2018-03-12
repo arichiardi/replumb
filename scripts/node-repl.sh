@@ -5,7 +5,7 @@ test_cp_dir="dev-resources/private/test"
 
 repl_js="$compile_dir/nodejs-repl.js"
 verbose=
-cache_dir="$test_cp_dir/.replumb-cache"
+cache_dir="$test_cp_dir/cache"
 
 if [ "$1" == "--simple" ]; then
     repl_js=dev-resources/private/node/js/simple/compiled/nodejs-repl.js
@@ -16,7 +16,6 @@ if [[ "$@" =~ "--verbose" ]] || [[ "$@" == "-v" ]]; then
 else
     verbose=false
 fi
-
 
 classpath_dirs="$compile_dir/out:\
 $test_cp_dir/src/cljs:\

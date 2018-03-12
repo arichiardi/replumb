@@ -32,13 +32,35 @@
               cmd)))
       (.prompt))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Main, from mfikes/elbow ;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defn arg->src-paths
   [arg]
   (string/split arg #":"))
+
+(def in-memory-cache (atom {}))
+
+(defn repl-read-fn!
+  [file-path src-cb]
+  (if-let [cache-data (get @in-memory-cache file-path)]
+    (do
+      (if cache-data
+        (println "Hit" file-path "from in-memory cache.")
+        (println "Miss" file-path "from in-memory cache."))
+      (src-cb cache-data))
+    ;; little dance, better to use .readFileSync directly here
+    (io/read-file!
+     file-path
+     (fn [disk-data]
+       (do (swap! in-memory-cache assoc file-path disk-data)
+           (src-cb disk-data))))))
+
+(defn repl-write-fn!
+  [file-path data]
+  (swap! in-memory-cache assoc file-path data)
+  (println "Stored" file-path "in in-memory cache."))
+
+;;;;;;;;;;;;
+;;; Main ;;;
+;;;;;;;;;;;;
 
 ;; first arg is verbosity true/false
 ;; second arg is the cache path
@@ -52,7 +74,8 @@
         classpath-string (nth args 2)
         opts (merge (replumb/options :nodejs
                                      (arg->src-paths classpath-string)
-                                     io/read-file!)
+                                     repl-read-fn!
+                                     repl-write-fn!)
                     {:verbose verbose?
                      :cache {:path cache-path}})]
     (print "Starting Node.js sample repl:\n"
