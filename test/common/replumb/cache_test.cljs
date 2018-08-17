@@ -266,6 +266,23 @@
         (is (= (:lang load-res) :clj) "The resulting language should be clj")
         (is (not (contains? load-res :cache)) "The resulting map should not contain :cache.")))
 
+    (h/read-eval-call-test (assoc e/*target-opts*  :cache {:path cache-path} :write-file-fn! nil)
+      [:before #_(rename-file-names-to-tmp cache-files-to-search)
+       "(require 'foo.bar.baz)"
+       :after #_(revert-file-names cache-files-to-search)]
+      (let [load-fn (repl/make-load-fn (assoc e/*target-opts* :cache {:cache {:path cache-path} :write-file-fn! nil}))
+            load-res (load-fn {:macros false :path path} identity)
+            out (unwrap-result @_res_)
+            [set-js-path set-json-path] cache-files-to-search]
+        (is (success? @_res_) "(require 'clojure.set) should succeed and write to cache.")
+        (is (valid-eval-result? out) "(require 'clojure.set) should be a valid result")
+        (is (not (e/*file-exists-fn* set-js-path)) "clojure_SLASH_set.js should not exist")
+        (is (not (e/*file-exists-fn* set-json-path)) "clojure_SLASH_set.cache.json should not exist")
+        (is (contains? load-res :source) "Loading should succeed and the resulting map contain :source")
+        (is (contains? load-res :lang) "Loading should succeed and the resulting map contain :lang")
+        (is (= (:lang load-res) :clj) "The resulting language should be clj")
+        (is (not (contains? load-res :cache)) "The resulting map should not contain :cache.")))
+
     ;; write-files-to-cache
     ;; AR - this is a weird one, because we skip loading clojure.set, we also skip writing.
     ;; There probably is a problem in the make-js-eval-fn part that writes the cache.

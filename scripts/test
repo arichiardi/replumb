@@ -1,0 +1,24 @@
+#!/bin/bash
+
+set -xeuo pipefail
+
+export NODE_ENV=dev
+
+output_dir=.cljs-test-runner
+
+main_cmd="clojure -Srepro -A:dev:test:node -m cljs-test-runner.main \
+ --out $output_dir \
+ --env node"
+
+watch_args=
+other_args="$@"
+
+if [[ "$@" =~ "--watch" || "$@" =~ "-w" ]]; then
+    watch_args="-w src/cljs -w test/common"
+    other_args="$(echo $other_args | sed -r 's/--watch|-w//g')"
+fi
+
+main_cmd+=" $watch_args"
+main_cmd+="$other_args"
+
+$main_cmd

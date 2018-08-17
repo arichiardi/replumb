@@ -13,9 +13,11 @@ pom.xml.asc
 .nrepl-port
 .repl/
 figwheel_server.log
-resources/**/compiled
-dev-resources/**/compiled/
+/**/compiled/
 out/
 *.orig
 .projectile
 .nrepl-history
+/.cljs*/
+.cpcache
+.dir-locals.el

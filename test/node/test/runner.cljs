@@ -1,4 +1,4 @@
-(ns launcher.runner
+(ns test.runner
   (:require [doo.runner :as doo :refer-macros [doo-tests]]
             replumb.core-test
             replumb.repl-test
