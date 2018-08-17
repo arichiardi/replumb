@@ -1,6 +1,6 @@
 (ns replumb.repl
   (:refer-clojure :exclude [load-file ns-publics ns-interns find-ns resolve])
-  (:require-macros [cljs.env.macros :refer [with-compiler-env]])
+  (:require-macros [cljs.env.macros :as env])
   (:require [cljs.js :as cljs]
             [cljs.tagged-literals :as tags]
             [cljs.tools.reader :as r]
@@ -81,28 +81,54 @@
   [var]
   (:macro var))
 
+(defn- drop-macros-suffix
+  [ns-name]
+  (if (s/ends-with? ns-name "$macros")
+    (apply str (drop-last 7 ns-name))
+    ns-name))
+
 (defn resolve
   "From cljs.analyzer.api.clj. Given an analysis environment resolve a
-  var. Analogous to clojure.core/resolve"
-  [opts env sym]
-  {:pre [(map? env) (symbol? sym)]}
-  (let [var (try (ana/resolve-var env sym (ana/confirm-var-exists-throw))
-                 (catch :default e
-                   (when (:verbose opts) (common/debug-prn "Exception safely wrapped:" (.-message e)))
-                   (ana/resolve-macro-var env sym)))]
-    (when (:verbose opts)
-      (common/debug-prn "cljs.analyzer/resolve-var/resolve-macro-var returned" var))
-    ;; AR - we need to merge because ana/resolve-var sometimes returns more
-    ;; info than ana/resolve-macro-var, sometimes not
-    ;; AR - remove call to ana/resolve-macro-var after changes in CLJS-1335
-    var))
+  var. Analogous to clojure.core/resolve."
+  ([env sym]
+   (resolve {} env sym))
+  ([opts env sym]
+   {:pre [(map? env) (symbol? sym)]}
+   (let [var (try (ana/resolve-var env sym (ana/confirm-var-exists-throw))
+                  (catch :default e
+                    (when (:verbose opts) (common/debug-prn "Exception safely wrapped:" (.-message e)))
+                    (ana/resolve-macro-var env sym)))]
+     (when (:verbose opts)
+       (common/debug-prn "cljs.analyzer/resolve-var/resolve-macro-var returned" var))
+     ;; AR - we need to merge because ana/resolve-var sometimes returns more
+     ;; info than ana/resolve-macro-var, sometimes not
+     ;; AR - remove call to ana/resolve-macro-var after changes in CLJS-1335
+     var)))
 
-(defn get-var
-  [opts sym]
-  (when-let [var (with-compiler-env st (resolve opts (empty-analyzer-env) sym))]
-    (if (= (namespace (:name var)) (str (:ns var)))
-      (update var :name #(symbol (name %)))
-      var)))
+(defn- get-macro-var
+  ([env sym macros-ns]
+   (get-macro-var {} env sym macros-ns))
+  ([opts env sym macros-ns]
+   {:pre [(symbol? macros-ns)]}
+   (when-let [macro-var (env/with-compiler-env st
+                          (resolve opts env (symbol macros-ns (name sym))))]
+     (assoc macro-var :ns macros-ns))))
+
+(defn- get-var
+  ([env sym]
+   (get-var {} env sym))
+  ([opts env sym]
+   (binding [ana/*cljs-warning-handlers* nil]
+     (let [var (or (env/with-compiler-env st (resolve opts env sym))
+                   (some #(get-macro-var opts env sym %)
+                         (vals (ast/macros @st (current-ns)))))]
+       (when var
+         (-> (cond-> var
+               (not (:ns var))
+               (assoc :ns (symbol (namespace (:name var))))
+               (identical? (namespace (:name var)) (str (:ns var)))
+               (update :name #(symbol (name %))))
+             (update :ns (comp symbol drop-macros-suffix str))))))))
 
 (def replumb-repl-special-set
   '#{in-ns require require-macros import load-file doc source pst dir apropos find-doc})
@@ -651,6 +677,58 @@
          catch   try
          finally try} sym sym))
 
+(defn- undo-reader-conditional-spacing
+  "Undoes the effect that wrapping a reader conditional around
+   a defn has on a docstring."
+  [s]
+  ;; We look for five spaces (or six, in case that the docstring
+  ;; is not aligned under the first quote) after the first newline
+  ;; (or two, in case the doctring has an unpadded blank line
+  ;; after the first), and then replace all five (or six) spaces
+  ;; after newlines with two.
+  (when-not (nil? s)
+    (if (re-find #"[^\n]*\n\n?\s{5,6}\S.*" s)
+      (s/replace-all s #"\n      ?" "\n  ")
+      s)))
+
+(defn- doc* [opts sym]
+  (if-let [special-name ('{& fn catch try finally try} sym)]
+    (doc* special-name)
+    (cond
+      (docs/special-doc-map sym)
+      (repl/print-doc (merge (docs/special-doc sym)
+                             {:special-form true
+                              :name sym}))
+
+      (docs/repl-special-doc-map sym)
+      (repl/print-doc (docs/repl-special-doc sym))
+
+      (ast/namespace @st sym)
+      (repl/print-doc (select-keys (ast/namespace @st sym) [:name :doc]))
+
+      (get-var opts (empty-analyzer-env) sym)
+      (repl/print-doc
+       (let [aenv (empty-analyzer-env)
+             var (get-var opts aenv sym)
+             m (-> (select-keys var [:ns :name :doc :forms :arglists :macro :url])
+                   (update-in [:doc] undo-reader-conditional-spacing)
+                   (merge
+                    {:forms (-> var :meta :forms second)
+                     :arglists (-> var :meta :arglists second)}))]
+         (cond-> (update-in m [:name] clojure.core/name)
+           (:protocol-symbol var)
+           (assoc :protocol true
+                  :methods
+                  (->> (get-in var [:protocol-info :methods])
+                       (map (fn [[fname sigs]]
+                              [fname {:doc (:doc
+                                            (get-var opts aenv
+                                                     (symbol (str (:ns var)) (str fname))))
+                                      :arglists (seq sigs)}]))
+                       (into {}))))))
+
+      :else (repl/print-doc (get-var opts sym)))))
+
 (defn process-doc
   [opts cb data sym]
   (let [opts (merge opts {:no-pr-str-on-value true})]
@@ -658,13 +736,7 @@
                 cb
                 data
                 (common/wrap-success
-                 (with-out-str
-                   (let [sym (doc-map-special-symbols sym)]
-                     (cond
-                       (docs/special-doc-map sym) (repl/print-doc (docs/special-doc sym))
-                       (docs/repl-special-doc-map sym) (repl/print-doc (docs/repl-special-doc sym))
-                       (ast/namespace @st sym) (repl/print-doc (select-keys (ast/namespace @st sym) [:name :doc]))
-                       :else (repl/print-doc (get-var opts sym)))))))))
+                 (with-out-str (doc* opts sym))))))
 
 (defn process-pst
   [opts cb data expr]

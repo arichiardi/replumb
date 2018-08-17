@@ -1,10 +1,10 @@
 language: clojure
 before_script:
-    - rm -Rf ~/.m2/repository/lein-doo
     - cd scripts; curl -O https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein; chmod +x lein; cd ..
     - scripts/lein version
     - phantomjs -v
-    - nvm install 0.12.7
+    - nvm install --lts
+    - nvm use --lts
     - node -v
 script: scripts/lein tests
 jdk:

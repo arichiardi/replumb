@@ -32,33 +32,57 @@
               cmd)))
       (.prompt))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;; Main, from mfikes/elbow ;;;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (defn arg->src-paths
   [arg]
   (string/split arg #":"))
 
-(defn print-usage
-  []
-  (println "Usage:\n\nnode path-to/nodejs-repl.js [--verbose] src-path1:src-path2:src-path3"))
+(def in-memory-cache (atom {}))
+
+(defn repl-read-fn!
+  [file-path src-cb]
+  (if-let [cache-data (get @in-memory-cache file-path)]
+    (do
+      (if cache-data
+        (println "Hit" file-path "from in-memory cache.")
+        (println "Miss" file-path "from in-memory cache."))
+      (src-cb cache-data))
+    ;; little dance, better to use .readFileSync directly here
+    (io/read-file!
+     file-path
+     (fn [disk-data]
+       (do (swap! in-memory-cache assoc file-path disk-data)
+           (src-cb disk-data))))))
+
+(defn repl-write-fn!
+  [file-path data]
+  (swap! in-memory-cache assoc file-path data)
+  (println "Stored" file-path "in in-memory cache."))
+
+;;;;;;;;;;;;
+;;; Main ;;;
+;;;;;;;;;;;;
+
+;; first arg is verbosity true/false
+;; second arg is the cache path
+;; third arg is the classpath string (: separated)
 
 (defn -main [& args]
   (println args)
-  (if (or (empty? args) (> (count args) 2))
-    (print-usage)
-    (let [verbose? (= "--verbose" (first args))
-          opts (merge (replumb/options :nodejs
-                                       (arg->src-paths (if-not verbose?
-                                                         (first args)
-                                                         (second args)))
-                                       io/read-file!)
-                      {:verbose verbose?})]
-      (print "Starting Node.js sample repl:\n"
-             (find opts :target) "\n"
-             (find opts :src-paths) "\n"
-             (find opts :verbose))
-      (read-eval-print-loop opts))))
+  (assert (= (count args) 3) "Only three params are supported (in order): verbose, cache path and classpath string.")
+  (let [verbose? (= "true" (first args))
+        cache-path (second args)
+        classpath-string (nth args 2)
+        opts (merge (replumb/options :nodejs
+                                     (arg->src-paths classpath-string)
+                                     repl-read-fn!
+                                     repl-write-fn!)
+                    {:verbose verbose?
+                     :cache {:path cache-path}})]
+    (print "Starting Node.js sample repl:\n"
+           (find opts :target) "\n"
+           (find opts :src-paths) "\n"
+           (find opts :verbose) "\n"
+           (find opts :cache))
+    (read-eval-print-loop opts)))
 
 (set! *main-cli-fn* -main)

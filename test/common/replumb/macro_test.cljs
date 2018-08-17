@@ -14,7 +14,7 @@
   (let [out (unwrap-result @_res_)]
     (is (success? @_res_) (str _msg_ "should succeed."))
     (is (valid-eval-result? out) (str _msg_ "should be a valid result"))
-    (is (= "true" out) (str _msg_ "should return true"))))
+    (is (= "#'cljs.user/hello" out) (str _msg_ "should return the var"))))
 
 (h/read-eval-call-test e/*target-opts*
   ["(defmacro hello [x] `(inc ~x))"

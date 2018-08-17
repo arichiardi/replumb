@@ -1,0 +1,32 @@
+#!/bin/bash
+
+set -xuo pipefail
+
+compile_dir=dev-resources/public/js/compiled/out
+ns_prefix=clojure/set
+
+declare -a test_files
+test_extensions=(.js .cljs.cache.json)
+
+test_dir=dev-resources/private/test/cache
+
+error=0
+
+if [ ! -d "$compile_dir" ]; then
+  error=1
+fi
+
+for ext in ${test_extensions[@]}; do
+  if [ ! -e "$compile_dir/$ns_prefix$ext" ]; then
+    error=1
+  fi
+done
+
+if [ $error = 1 ]; then
+  echo "You need to launch \"lein cljsbuild once dev\" for producing the right files"
+else
+  for ext in ${test_extensions[@]}; do
+    mkdir -p $(echo "$test_dir/$ns_prefix" | cut -d '/' -f 1)
+    cp -v "$compile_dir/$ns_prefix$ext" "$test_dir/$ns_prefix$ext"
+  done
+fi

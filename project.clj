@@ -3,11 +3,13 @@
   :url "https://github.com/Lambda-X/replumb"
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.9.0-alpha11"]
-                 [org.clojure/clojurescript "1.9.229" :scope "test"]
-                 [org.clojure/tools.reader "1.0.0-beta1" :scope "test"]
-                 [com.cognitect/transit-clj "0.8.285" :scope "test"]
-                 [com.cognitect/transit-cljs "0.8.239" :scope "test"]]
+  :dependencies [[org.clojure/clojure "1.9.0"]
+                 [org.clojure/clojurescript "1.10.145" :scope "test"]
+                 [org.clojure/tools.reader "1.2.2" :scope "test"]
+                 [com.cognitect/transit-clj "0.8.300" :scope "test"]
+                 [com.cognitect/transit-cljs "0.8.243" :scope "test"]
+                 [org.clojure/spec.alpha "0.1.143"]
+                 [org.clojure/test.check "0.10.0-alpha2"]]
 
   :plugins [[lein-cljsbuild "1.1.4"]
             [lein-codox "0.9.0"]]
@@ -76,12 +78,19 @@
                                    :output-dir "dev-resources/private/node/js/simple/compiled/out"
                                    :asset-path "js/simple/compiled/out"
                                    :source-map "dev-resources/private/node/js/simple/compiled/replumb-repl.js.map"
+                                   :source-map-timestamp false
+                                   :cache-analysis true
+                                   :aot-cache true
+                                   :closure-defines {'cljs.core/*target* "nodejs"}
                                    :static-fns true
+                                   :compiler-stats true
+                                   :process-shim false
+                                   :fn-invoke-direct true
                                    :parallel-build true}}
                        {:id "browser-test"
-                        :source-paths ["src/cljs" "test/cljs" "test/browser"]
+                        :source-paths ["src/cljs" "test/common" "test/browser"]
                         :compiler {:optimizations :none
-                                   :main launcher.runner
+                                   :main test.runner
                                    :output-to "dev-resources/private/test/browser/compiled/browser-test.js"
                                    :output-dir "dev-resources/private/test/browser/compiled/out"
                                    :asset-path "dev-resources/private/test/browser/compiled/out"
@@ -89,9 +98,9 @@
                                    :parallel-build true
                                    :closure-defines {"goog.DEBUG" false}}}
                        #_{:id "browser-test-simple"
-                          :source-paths ["src/cljs" "test/cljs" "test/browser"]
+                          :source-paths ["src/cljs" "test/common" "test/browser"]
                           :compiler {:optimizations :simple
-                                     :main launcher.runner
+                                     :main test.runner
                                      :output-to "dev-resources/private/test/browser/compiled/browser-test.js"
                                      :output-dir "dev-resources/private/test/browser/compiled/out"
                                      :asset-path "dev-resources/private/test/browser/compiled/out"
@@ -99,10 +108,10 @@
                                      :parallel-build true
                                      :closure-defines {"goog.DEBUG" false}}}
                        {:id "node-test"
-                        :source-paths ["src/cljs" "src/node" "test/cljs" "test/clj" "test/node"]
+                        :source-paths ["src/cljs" "src/node" "test/common" "test/node"]
                         :compiler {:target :nodejs
                                    :optimizations :none
-                                   :main launcher.runner
+                                   :main test.runner
                                    :output-to "dev-resources/private/test/node/compiled/nodejs-test.js"
                                    :output-dir "dev-resources/private/test/node/compiled/out"
                                    :asset-path "dev-resources/private/test/node/compiled/out"
@@ -110,10 +119,10 @@
                                    :parallel-build true
                                    :closure-defines {"goog.DEBUG" false}}}
                        {:id "node-test-simple"
-                        :source-paths ["src/cljs" "src/node" "test/cljs" "test/node"]
+                        :source-paths ["src/cljs" "src/node" "test/common" "test/node"]
                         :compiler {:target :nodejs
                                    :optimizations :simple
-                                   :main launcher.runner
+                                   :main test.runner
                                    :output-to "dev-resources/private/test/node/compiled/nodejs-test.js"
                                    :output-dir "dev-resources/private/test/node/compiled/simple/out"
                                    ;; AR we trick the runtime to look at out from :none
@@ -176,14 +185,13 @@
                                      :creds :gpg}]]
 
   :profiles {:dev {:resource-paths ["dev-resources"]
-                   :source-paths ["src/cljs" "src/clj" "test/clj" "test/cljs" "test/browser" "src/browser" "repl-demo/browser/cljs" "dev"]
-                   :dependencies [[com.cemerick/piggieback "0.2.1"]
-                                  [org.clojure/tools.nrepl "0.2.12"]
-                                  [figwheel-sidecar "0.5.7"]
+                   :source-paths ["src/cljs" "src/clj" "test/common" "test/browser" "src/browser" "repl-demo/browser/cljs" "dev"]
+                   :dependencies [[cider/piggieback "0.3.5"]
+                                  [figwheel-sidecar "0.5.16"]
                                   [cljsjs/jqconsole "2.13.2-0"]
                                   [reagent "0.6.0-rc"]
                                   [binaryage/devtools "0.8.1"]]
-                   :plugins [[lein-doo "0.1.7-SNAPSHOT"]
+                   :plugins [[lein-doo "0.1.7"]
                              [lein-figwheel "0.5.7" :exclusions [cider/cider-nrepl]]
                              [lein-shell "0.4.2"]]}
              :repl {:repl-options {:nrepl-middleware [cemerick.piggieback/wrap-cljs-repl]}}})

@@ -86,12 +86,14 @@
                    (if cache-source
                      (do
                        (when verbose?
-                         (common/debug-prn (str "Retrieved JavaScript from: "
-                                                (if js-source js-path "<skipped>")))
-                         (common/debug-prn (str "Retrieved cache file from: " cache-path)))
-                       (load-fn-cb {:lang (filename->lang js-path)
-                                    :source js-source
-                                    :cache (read-cache-source cache-path cache-source) }))
+                         (common/debug-prn (if js-source
+                                             (str "JavaScript read from: " js-path)
+                                             (str "JavaScript read skipped for: " js-path " (already loaded namespace)")))
+                         (common/debug-prn (str "Cache file read from: " cache-path)))
+                       (load-fn-cb (merge {:lang (filename->lang js-path)
+                                           :cache (read-cache-source cache-path cache-source)}
+                                          (when js-source
+                                            {:source js-source}))))
                      (try-next-files-pair-fn)))))
 
 (defn read-js-file
@@ -129,7 +131,7 @@
       (if (contains? loaded-js-set name)
         (do
           (when verbose?
-            (common/debug-prn "Skipping js loading for " name))
+            (common/debug-prn "Skipping cache loading for" name))
           (read-cache-file cache-opts nil))
         (do
           (when verbose?
